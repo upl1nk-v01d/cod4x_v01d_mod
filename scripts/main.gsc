@@ -110,6 +110,7 @@ init()
 	if (!isDefined(game["waypointless_map"])){ game["waypointless_map"]="off"; }
 	if (!isDefined(game["realPlayers"])){ game["realPlayers"]=0; }
 	if (!isDefined(game["isConnecting"])){ game["isConnecting"]=[]; }
+	if (!isDefined(game["isJoinedSpectators"])){ game["isJoinedSpectators"]=[]; }
 	if (level.waypointCount == 0) {
 		game["waypointless_map"]="on";
 	} else {
@@ -147,6 +148,7 @@ init()
         
         level waittill("connected", player);
 		if (!player.isbot) { player thread _player_info(1,player.name); }
+		if(!isDefined(game["isJoinedSpectators"][player.name])){ game["isJoinedSpectators"][player.name]=false; }
         
         player thread _welcome();			
         player thread _info();
@@ -298,11 +300,17 @@ _menu_response()
 		//cl("^3"+self.name+": response:"+response);
 		if(response == "axis" || response == "allies" || response == "autoassign")
 		{
+			game["isJoinedSpectators"][self.name]=false; 
 			self thread _fs();
 			//self notify("menuresponse", game["menu_changeclass"], "custom"+(1));
 			wait 0.05;
 			self closeMenu();
 			self closeInGameMenu();
+		}
+		
+		if(response == "spectator"){ 
+			if(isDefined(game["wasKilled"])){ game["wasKilled"][self.name]=true; }
+			game["isJoinedSpectators"][self.name]=true; 
 		}
 		
 		if(isSubStr(response, "rc_ct_") && isAlive(self)){
@@ -2484,10 +2492,10 @@ _fs()
 		}
 
 
-		cl("^3self.sessionteam:"+self.sessionteam);
-		cl("^3self.pers[team]:"+self.pers["team"]);
+		//cl("^3self.sessionteam:"+self.sessionteam);
+		//cl("^3self.pers[team]:"+self.pers["team"]);
 		
-		if (self.pers["team"] == "spectator"){
+		if (game["isJoinedSpectators"][self.name]==false){
 			/*playerCounts = self maps\mp\gametypes\_teams::CountPlayers();
 			if (playerCounts["axis"] >= playerCounts["allies"])
 				self.pers["team"] = "allies";
@@ -2498,11 +2506,12 @@ _fs()
 			//self setclientdvar("g_scriptMainMenu", game["menu_class_"+self.pers["team"]]);
 			//self notify("menuresponse", game["menu_team"], self.pers["team"]);
 			//self.class = "undefined";
+			self.waitingToSpawn = true;
 			[[level.autoassign]]();
 			//wait 0.05;
-			if (getdvarint("developer")>0){
-				wait 0.5;
-			}
+			//if (getdvarint("developer")>0){
+			//	wait 0.5;
+			//}
 			//self notify("menuresponse", game["menu_changeclass"], "custom"+(randomInt(5)+1));
 			//self notify("menuresponse", game["menu_changeclass"], "custom"+(1));
 			//self closeMenu();
@@ -2515,19 +2524,20 @@ _fs()
 			//wait 0.05;
 			level.tp = (gettime() - level.st)/1000;
 			cl("^2level.tp "+level.tp);
-			if (level.tp>20) { 
+			if (level.tp<60) { 
 				self.pers["lives"] = 0; 
 				self iprintln("^2You have 1 live\n");
-				//if(!getdvarint("bots_main_debug")>0){
-				//	[[level.spawnPlayer]]();
-				//}
-				//self.sessionstate = "playing";
+				if(!getdvarint("bots_main_debug")>0){
+					[[level.spawnPlayer]]();
+				}
+				self.sessionstate = "playing";
 				cl("^4forcespawned "+self.name);
 			} else { 
 				self.pers["lives"] = getdvarint("scr_sab_numlives")-1; 
 			}
-		} else if (self.pers["team"] == "axis" || self.pers["team"] == "allies"){
-			wait 0.1;
+		} 
+		
+		if (self.pers["team"] == "axis" || self.pers["team"] == "allies"){
 			self.sessionteam = self.pers["team"];
 			//self notify("menuresponse", game["menu_changeclass"], "custom"+(1));
 			self [[level.class]]("custom1");

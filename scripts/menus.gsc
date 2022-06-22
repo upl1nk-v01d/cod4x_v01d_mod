@@ -603,7 +603,7 @@ _buy_menu_main(){
 				//else if (self.hasChosen[i]=="Ammo"){ self _buy_menu_show(buyMenuAmmo,"buyMenuMain",false,3); }
 			}
 		}
-		while(isDefined(self.buyMenuShow) && isDefined(self.hasChosen)){ 
+		while(isDefined(self.buyMenuShow) && isDefined(self.hasChosen) && isAlive(self)){ 
 			if(distance(self.spawnStartOrigin,self.origin)>=16){ self.buyMenuShow=undefined; }
 			//cl("^3self.spawnStartOrigin");
 			wait 0.05; 

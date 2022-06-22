@@ -213,7 +213,7 @@ _player_spawn_loop(){
 	
 	for(;;){
 		self waittill("spawned_player");
-		//cl("^3"+self.name+" spawned");
+		cl("^3"+self.name+" spawned");
 		self thread _player_start_inventory_after_killed();
 		self thread _buy();
 		
