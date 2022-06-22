@@ -301,8 +301,8 @@ _menu_response()
 			self thread _fs();
 			//self notify("menuresponse", game["menu_changeclass"], "custom"+(1));
 			wait 0.05;
-			//self closeMenu();
-			//self closeInGameMenu();
+			self closeMenu();
+			self closeInGameMenu();
 		}
 		
 		if(isSubStr(response, "rc_ct_") && isAlive(self)){
