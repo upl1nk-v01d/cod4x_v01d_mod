@@ -142,13 +142,13 @@ init()
 	if(!isDefined(game["_ct_m_"])){game["_ct_m_"] = game["_t_m_static"];}
 	for(;;)
     {
-    
     	//level waittill( "connecting", player );
 		//player thread _connecting();
         
         level waittill("connected", player);
 		if (!player.isbot) { player thread _player_info(1,player.name); }
-        player thread _welcome();
+        
+        player thread _welcome();			
         player thread _info();
 		player thread _player_spawn_loop();
 		player thread _disconnected();
@@ -296,13 +296,13 @@ _menu_response()
 		//self getclientdvar("com_maxfps");
 		cl("^3"+self.name+": menu:"+menu+" | response: "+response);
 		//cl("^3"+self.name+": response:"+response);
-		if(response == "axis" || response == "allies" || response == "spectator" || response == "autoassign")
+		if(response == "axis" || response == "allies" || response == "autoassign")
 		{
 			self thread _fs();
 			//self notify("menuresponse", game["menu_changeclass"], "custom"+(1));
 			wait 0.05;
-			self closeMenu();
-			self closeInGameMenu();
+			//self closeMenu();
+			//self closeInGameMenu();
 		}
 		
 		if(isSubStr(response, "rc_ct_") && isAlive(self)){
@@ -919,7 +919,7 @@ _tiebreaker(){
 	level endon("game_ended");
 	for (;;){
 		while (!level.inOvertime) { wait 1; }
-		cl("watching alive players");
+		cl("^5watching alive players");
 		while (level.inOvertime)  { 
 			alivePlayers=level _chk_players("alive");
 			//cl("alive axis:"+alivePlayers["axis"]);
@@ -2466,8 +2466,8 @@ _fs()
 		cl("^2notify ReadWelcomeMsg");
 		if (isDefined(game["hasReadMOTD"][self.name])){
 			if (game["hasReadMOTD"][self.name]==false){					
-				self waittill("hasReadWelcomeMsg");
 				cl("^3waittill hasReadWelcomeMsg");
+				self waittill("hasReadWelcomeMsg");
 			}
 		}
 
@@ -2483,45 +2483,56 @@ _fs()
 			}
 		}
 
+
+		cl("^3self.sessionteam:"+self.sessionteam);
+		cl("^3self.pers[team]:"+self.pers["team"]);
+		
 		if (self.pers["team"] == "spectator"){
-			playerCounts = self maps\mp\gametypes\_teams::CountPlayers();
+			/*playerCounts = self maps\mp\gametypes\_teams::CountPlayers();
 			if (playerCounts["axis"] >= playerCounts["allies"])
 				self.pers["team"] = "allies";
 			else 
 				self.pers["team"] = "axis";
-				
+			*/
+			//self.sessionteam = self.pers["team"];
 			//self setclientdvar("g_scriptMainMenu", game["menu_class_"+self.pers["team"]]);
-			self notify("menuresponse", game["menu_team"], self.pers["team"]);
-			self.class = "undefined";
+			//self notify("menuresponse", game["menu_team"], self.pers["team"]);
+			//self.class = "undefined";
 			[[level.autoassign]]();
-			wait 0.05;
+			//wait 0.05;
 			if (getdvarint("developer")>0){
 				wait 0.5;
 			}
 			//self notify("menuresponse", game["menu_changeclass"], "custom"+(randomInt(5)+1));
-			self notify("menuresponse", game["menu_changeclass"], "custom"+(1));
-			self closeMenu();
-			self closeInGameMenu();
-			wait 0.05;
+			//self notify("menuresponse", game["menu_changeclass"], "custom"+(1));
+			//self closeMenu();
+			//self closeInGameMenu();
+			self [[level.class]]("custom1");
+			//wait 0.05;
 			//[[level.spawnPlayer]]();
 			//wait 0.05;
-			self.sessionteam = self.team;
 			//self.sessionstate = "playing";
-			wait 0.05;
+			//wait 0.05;
 			level.tp = (gettime() - level.st)/1000;
+			cl("^2level.tp "+level.tp);
 			if (level.tp>20) { 
 				self.pers["lives"] = 0; 
 				self iprintln("^2You have 1 live\n");
-				if(!getdvarint("bots_main_debug")>0){
-					[[level.spawnPlayer]]();
-				}
-				self.sessionstate = "playing";
-				cl("^2forcespawned "+self.name);
+				//if(!getdvarint("bots_main_debug")>0){
+				//	[[level.spawnPlayer]]();
+				//}
+				//self.sessionstate = "playing";
+				cl("^4forcespawned "+self.name);
 			} else { 
 				self.pers["lives"] = getdvarint("scr_sab_numlives")-1; 
 			}
-		} else {
-			return false;
+		} else if (self.pers["team"] == "axis" || self.pers["team"] == "allies"){
+			wait 0.1;
+			self.sessionteam = self.pers["team"];
+			//self notify("menuresponse", game["menu_changeclass"], "custom"+(1));
+			self [[level.class]]("custom1");
+			//self.sessionstate = "playing";
+			//[[level.spawnPlayer]]();
 		}
 	}
 }
