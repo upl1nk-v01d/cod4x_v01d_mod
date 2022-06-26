@@ -1,5 +1,6 @@
 #include maps\mp\_load;
 #include maps\mp\_utility;
+#include scripts\cl;
 
 init()
 {
@@ -532,7 +533,7 @@ _buy(){
 		if(isDefined(self.hasChosen)){
 			for(i=0;i<self.hasChosen.size;i++){
 				//cl("^3self.hasChosen:"+self.hasChosen[i]);
-				if (isSubStr(self.hasChosen[i],"mp")){ 
+				if (isSubStr(self.hasChosen[i],"_mp")){ 
 					//cl("^4found weapon: "+self.hasChosen[i]); 
 					if(isDefined(self.money) && self.money["acc"]>=int(self.hasChosen[i-1])){ 
 						if (FS_TestFile("/scripts/main.gsc")){
@@ -553,6 +554,8 @@ _buy(){
 							self SetWeaponAmmoClip(self.hasChosen[i],1); 
 							self playSound("grenade_pickup");
 						} else {
+							self giveMaxAmmo(self.hasChosen[i]);
+							cl(self.name+" has "+self getAmmoCount(self.hasChosen[i]));
 							self playSound("weap_pickup");
 						}
 						//if (isSubStr(self.hasChosen[i],"grenade")){ self SetWeaponAmmoClip(self.hasChosen[i],1); setWeaponAmmoStock(self.hasChosen[i],int(ammo+1)); }
@@ -603,9 +606,4 @@ _ownersAttacker(){
 		assert(isdefined(self.tookWeaponFrom));
 		wait 0.5;
 	}
-}
-
-cl(txt){
-	if (isDefined(txt)){ print("-- "+txt+" -- \n"); }
-	else { print("!! undefined !! \n"); }
 }
