@@ -395,7 +395,7 @@ _welcome_msg(){
 		}
 	}
 	self notify("hasReadWelcomeMsg");
-	self freezeControls(false);
+	//self freezeControls(false);
 }
 
 _use_accept(){
