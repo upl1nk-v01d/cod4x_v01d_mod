@@ -27,7 +27,7 @@ init()
 	
 	if (getDvar("g_gametype") != "sab") { return; }
 	
-	level._maps = StrTok("mp_carentan,15,mp_rasalem,15,mp_efa_lake,9,mp_bo2carrier,17,mp_bog,15,mp_summit,17,mp_backlot,15,mp_harbor_v2,15,mp_sugarcane,11,mp_csgo_assault,15,mp_csgo_inferno,15,mp_csgo_office,15,mp_csgo_overpass,15,mp_csgo_mirage,15,mp_finca,17,mp_csgo_safehouse,13,mp_csgo_cbble,15,mp_csgo_shortdust,15,mp_csgo_stmarc,11,mp_ins_panj,11,mp_creek,13,mp_csgo_mirage,17,mp_csgo_overpass,17,mp_ins_heights,11,mp_ins_peak,11", "," );
+	level._maps = StrTok("mp_carentan,14,mp_rasalem,16,mp_efa_lake,10,mp_bo2carrier,18,mp_bog,16,mp_summit,18,mp_backlot,16,mp_harbor_v2,16,mp_sugarcane,12,mp_csgo_assault,16,mp_csgo_inferno,16,mp_csgo_office,16,mp_csgo_overpass,16,mp_csgo_mirage,16,mp_finca,16,mp_csgo_safehouse,14,mp_csgo_cbble,16,mp_csgo_shortdust,16,mp_csgo_stmarc,12,mp_ins_panj,12,mp_creek,14,mp_csgo_mirage,18,mp_csgo_overpass,18,mp_ins_heights,12,mp_ins_peak,12", "," );
 	level._weapons = StrTok("tac330_mp,tac330_sil_mp,svg100_mp,rw1_mp,ak74u_mp,barrett_mp,dragunov_mp,g3_mp,m14_mp,m4_mp,mp44_mp,remington700_mp,skorpion_mp,uzi_mp,m1014_mp,law_mp,at4_mp,mm1_mp,striker_mp", "," );
 	for (i=0;i<level._weapons.size;i++){
 		PrecacheItem(level._weapons[i]);
@@ -106,9 +106,9 @@ init()
 	}
 	
 	if (!isDefined(game["nm"])){ game["nm"]="on"; setDvar("_newmode_", game["nm"]); }
-	if (!isDefined(game["bmf"])){ game["bmf"]=getdvarint("bots_manage_fill"); }
 	if (!isDefined(game["waypointless_map"])){ game["waypointless_map"]="off"; }
 	if (!isDefined(game["realPlayers"])){ game["realPlayers"]=0; }
+	if (!isDefined(game["botPlayers"])){ game["botPlayers"]=0; }
 	if (!isDefined(game["isConnecting"])){ game["isConnecting"]=[]; }
 	if (!isDefined(game["isJoinedSpectators"])){ game["isJoinedSpectators"]=[]; }
 	if (level.waypointCount == 0) {
@@ -134,6 +134,8 @@ init()
 	level thread _randomize_bomb_pos();
 	level thread _artillery_monitor();
 	level thread _bc();
+	level thread _player_collision(12);
+	
 	//level thread _grenades_monitor();
 	//level thread _projectiles_monitor();
 	
@@ -165,7 +167,17 @@ init()
 		//tm++;  ctm++;
 		//if (tm > 13) { tm=1; }
 		//if (ctm > 5) { ctm=1; }
+		
+		//if(isDefined(game["botPlayers"])){ setDvar("bots_manage_fill", game["botPlayers"]+1-game["realPlayers"]); }
+
     }
+}
+
+_player_collision(timer){
+	level waittill("prematch_over");
+	setDvar("g_friendlyplayercanblock",0);
+	wait timer;
+	setDvar("g_friendlyplayercanblock",1);
 }
 
 _player_connecting_loop(){
@@ -220,6 +232,9 @@ _player_spawn_loop(){
 		//self thread _dev_sound_test();
 		//self thread _dev_hp_test();
 		self thread _dev_wpt_helpers_add_remove();
+		
+		
+		//if(isDefined(game["botPlayers"])){ setDvar("bots_manage_fill", game["botPlayers"]+1-game["realPlayers"]); }
 		
 		wait 0.1;
 	}
@@ -301,6 +316,10 @@ _menu_response()
 		if(response == "axis" || response == "allies" || response == "autoassign")
 		{
 			game["isJoinedSpectators"][self.name]=false; 
+			self notify("hasReadWelcomeMsg");
+			self notify("hasPressedFButton");
+			game["hasReadMOTD"][self.name]=true;
+			self suicide();
 			self thread _fs();
 			//self notify("menuresponse", game["menu_changeclass"], "custom"+(1));
 			wait 0.05;
@@ -322,6 +341,7 @@ _menu_response()
 					players[i] playLocalSound(response);
 				}
 			}
+			self thread _head_icon();
 			wait 3;
 		}
 		
@@ -329,6 +349,8 @@ _menu_response()
 			if(self.pers["team"]=="axis"){ 
 				//self notify("menuresponse", "-1", "ESC");
 				self playSound(self.bc); 
+				self thread _head_icon();
+				//players[i] iprintln("^4"+self.name+":: "+coms[int(response[6])-1]+"!");
 				wait 0.1;
 				self closeMenu(); 
 				self closeInGameMenu();
@@ -339,6 +361,7 @@ _menu_response()
 		if(isSubStr(response, "ct_taunt") && isAlive(self)){
 			if(self.pers["team"]=="allies"){ 
 				self playSound(response); 
+				self thread _head_icon();
 				wait 3;
 			}
 		}
@@ -352,6 +375,13 @@ _menu_response()
 			else if(isSubStr(response, "tools_artillery")){ self switchToWeapon("artillery_mp"); } 
 		}
 	}
+}
+
+_head_icon(){
+	self pingPlayer();
+	self thread maps\mp\gametypes\_quickmessages::saveHeadIcon();
+	wait 3;
+	self thread maps\mp\gametypes\_quickmessages::restoreHeadIcon();
 }
 
 _bombPing(t){
@@ -649,6 +679,7 @@ _welcome(tm,ctm)
 		
 	self waittill("spawned_player");
 	
+	self.pers["lives"] = getdvarint("scr_sab_numlives")-1;
 	self.pers["deaths"] = 0;
 	self.deaths = 0;
 	self.pers["kills"] = 0;
@@ -1399,6 +1430,7 @@ _init_bots_dvars(){
 			else { setDvar("bots_manage_fill", 11); }
 		}
 	}
+	game["botPlayers"]=getDvarInt("bots_manage_fill");
 }
 
 _get_team_score(){
@@ -1690,7 +1722,9 @@ _aim_mod(){
 			//if (offsetX>1){ offsetX*=0.11; s2=1; }	
 			//else { offsetX/=1.11; s2=0; }
 			curView = self getPlayerAngles();
-			if(self PlayerADS()) { k=0.5; } else { k=1; }
+			if(self HoldBreathButtonPressed()) { k=0.05; } 
+			else if(self PlayerADS()) { k=0.2; } 
+			else { k=1; }
 			self setPlayerAngles((curView[0]+offsetY*k, curView[1]+offsetX*k, curView[2]+offsetZ*k)); 
 			//curVel = self getOrigin();
 			//self setVelocity(curVel[0], curVel[1]-0.01, curVel[2]); 
@@ -2411,8 +2445,10 @@ _prematch(){
 	self endon ( "death" );
 	self waittill("spawned_player");
 	for(;;){
+		self freezeControls(true);
 		level waittill("prematch_over");
 		cl("prematch is over");
+		self freezeControls(false);
 	}
 }
 
@@ -2471,10 +2507,10 @@ _fs()
 		
 	else {
 		self notify("ReadWelcomeMsg");
-		cl("^2notify ReadWelcomeMsg");
+		//cl("^2notify ReadWelcomeMsg");
 		if (isDefined(game["hasReadMOTD"][self.name])){
 			if (game["hasReadMOTD"][self.name]==false){					
-				cl("^3waittill hasReadWelcomeMsg");
+				//cl("^3waittill hasReadWelcomeMsg");
 				self waittill("hasReadWelcomeMsg");
 			}
 		}
@@ -2495,20 +2531,20 @@ _fs()
 		//cl("^3self.sessionteam:"+self.sessionteam);
 		//cl("^3self.pers[team]:"+self.pers["team"]);
 		
-		if (game["isJoinedSpectators"][self.name]==false){
-			/*playerCounts = self maps\mp\gametypes\_teams::CountPlayers();
+		if (game["isJoinedSpectators"][self.name]==false && self.pers["team"]=="spectator"){
+			playerCounts = self maps\mp\gametypes\_teams::CountPlayers();
 			if (playerCounts["axis"] >= playerCounts["allies"])
 				self.pers["team"] = "allies";
 			else 
 				self.pers["team"] = "axis";
-			*/
-			//self.sessionteam = self.pers["team"];
+			
+			self.sessionteam = self.pers["team"];
 			//self setclientdvar("g_scriptMainMenu", game["menu_class_"+self.pers["team"]]);
 			//self notify("menuresponse", game["menu_team"], self.pers["team"]);
 			//self.class = "undefined";
-			self.waitingToSpawn = true;
+			//self.waitingToSpawn = true;
 			[[level.autoassign]]();
-			//wait 0.05;
+			wait 0.05;
 			//if (getdvarint("developer")>0){
 			//	wait 0.5;
 			//}
@@ -2524,25 +2560,30 @@ _fs()
 			//wait 0.05;
 			level.tp = (gettime() - level.st)/1000;
 			cl("^2level.tp "+level.tp);
-			if (level.tp<60) { 
-				self.pers["lives"] = 0; 
-				self iprintln("^2You have 1 live\n");
-				if(!getdvarint("bots_main_debug")>0){
-					[[level.spawnPlayer]]();
-				}
-				self.sessionstate = "playing";
+			if (level.tp<60 && self.pers["lives"]>0) { 
+				if(level.tp<15){ self.pers["lives"]=3; } 
+				//else { self.pers["lives"]=0; }
+				//self iprintln("^2You have "+self.pers["lives"]+" live\n");
+				//self iprintln("^2You have 1 live\n");
+				//if(!getdvarint("bots_main_debug")>0){
+				//	[[level.spawnPlayer]]();
+				//}
+				//self.sessionstate = "playing";
 				cl("^4forcespawned "+self.name);
-			} else { 
-				self.pers["lives"] = getdvarint("scr_sab_numlives")-1; 
-			}
+			} 
+			//else { 
+			//	self.pers["lives"] = getdvarint("scr_sab_numlives")-1; 
+			//}
 		} 
 		
 		if (self.pers["team"] == "axis" || self.pers["team"] == "allies"){
 			self.sessionteam = self.pers["team"];
+			wait 0.05;
 			//self notify("menuresponse", game["menu_changeclass"], "custom"+(1));
 			self [[level.class]]("custom1");
 			//self.sessionstate = "playing";
 			//[[level.spawnPlayer]]();
+			//self.pers["lives"] = getdvarint("scr_sab_numlives")-1;
 		}
 	}
 }
