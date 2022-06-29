@@ -57,7 +57,7 @@ _spawn_loop(){
 		while(level.inPrematchPeriod){ wait 0.1; }
 		self thread _buy_menu_main();
 		wait 1;
-		self _show_hint_msg(0,"press FIRE button to select",1,1,1,0,1,-200,-80);
+		self _show_hint_msg(2,"press FIRE button to select",1,1,1,0,1,-200,-80);
 		self _show_hint_msg(0,"press ADS button to return",1,1,1,0,1,-200,-70);
 		//delay,txt,dur,r,g,b,a,ox,oy
 	}
@@ -233,32 +233,36 @@ createRectangle(align,relative,x,y,width,height,color,sort,alpha,shader)
 	return barElemBG;
 }
 
-_get_motd_txt(){
-	realTime = getRealTime();
+_get_motd_txt(d){
+	if(!isDefined(d)){ d=0; };
+	realTime = getRealTime()-(86400*d);
 	realDate = TimeToString(realTime, 0, "%F");
 	dateTime = TimeToString(realTime, 0, "%F %T");
 	//dateTime = StrRepl(playername, ":", "_");
 	filename = "motd/"+realDate+".log";
 	line="";
-	lines="";
+	lines=[];
 	chars=[];
 	//cl("^3realDate: " + realDate);
 	
-	if ( !FS_TestFile( filename ) ) { cl("^1No log file available!"); } 
+	lines[0]="^2"+realDate+"\n";
+	if ( !FS_TestFile( filename ) ) { 
+		cl("^1No log file available!"); 
+		lines[1]="^1\n\n\nNo Report";
+	} 
 	else {
 		csv = FS_FOpen(filename, "read");
 		line = FS_ReadLine(csv);
+		lines[1]="\n";
 		while (isDefined(line) && line != ""){
 			cl("^3line: " + line);
 			if (line == "") { continue; }
-			lines+=line+"\n";
+			lines[1]+=line+"\n";
 			line = FS_ReadLine(csv);
 		}
 		FS_FClose(csv);
 		
-		lines+="\n\n\n^1Press USE button to destroy this message\n";
-		
-		return lines;
+		//return lines;
 		/*div=lines.size/256; c=0;
 		for(d=0;d<div;d++){
 			for(i=0;i<lines;i++){
@@ -268,6 +272,9 @@ _get_motd_txt(){
 		
 		return chars;*/
 	}
+	lines[2]="\n\n\n\n\n\n\n\n^2Press LEFT or RIGHT button to navigate\n";
+	lines[2]+="^1Press JUMP button to destroy this message\n";
+	return lines;
 }
 
 //---------------------------------------------------------------------------------------------------
@@ -322,6 +329,7 @@ _welcome_msg(){
 	hudWelcome=[]; hudWelcomeBG=[];
 	hudWelcome[0]="Welcome to my -=sabotage=- server! :)";
 	c=0;r=0;g=0;b=0;a=0;
+	w=1;h=1;
 	//while(!isDefined(self.money)) { wait 0.5; }
 	
 	//cl("^2before waittill ReadWelcomeMsg");
@@ -357,14 +365,17 @@ _welcome_msg(){
 	}
 	
 	if (game["hasReadMOTD"][self.name]==false){
-		self thread _use_accept();
-		hudWelcome[0]=_get_motd_txt();	
+		self thread _accept();
+		motd=_get_motd_txt();
+		self.hudMOTD[0]=motd;
 		
-		if(isDefined(hudWelcome[0])){
-			while(r<1){
-				self _create_menu_text("hudWelcome",hudWelcome,"default", 1.6,1.4,(r,g,b),0,"CENTER","CENTER",0,-70,a,1);
-				self _create_menu_bg("hudWelcomeBG","CENTER","CENTER",0,0,400,400,(r,g,b),1,a,"black",50);
+		if(isDefined(self.hudMOTD)){
+			while(h<300){
+				self _create_menu_text("hudWelcome",self.hudMOTD[0],"default", 1.6,1.4,(r,g,b),0,"CENTER","CENTER",0,-70,a,2);
+				self _create_menu_bg("hudWelcomeBG","CENTER","CENTER",0,0,w,h,(r,g,b),1,a,"black",50);
 				if(r<1){ r+=0.1;g+=0.1;b+=0.1;a+=0.1; }
+				if(w<400){ w+=30; }
+				if(h<300){ h+=20; }
 				wait 0.05;
 				//self _destroy_menu(self.money["hudWelcomeBG"]);
 				self _destroy_menu("hudWelcome");
@@ -373,18 +384,19 @@ _welcome_msg(){
 				//wait 0.05;
 			}
 			
-			while(r>0){
-				self _create_menu_text("hudWelcome",hudWelcome,"default", 1.6,1.4,(r,g,b),0,"CENTER","CENTER",0,-70,a,1);
-				self _create_menu_bg("hudWelcomeBG","CENTER","CENTER",0,0,400,400,(r,g,b),1,a,"black",50);
+			self notify("readyToPressAccept");
+			self thread _nav_motd();
+
+			while(h>1){
+				self _create_menu_text("hudWelcome",self.hudMOTD[0],"default", 1.6,1.4,(r,g,b),0,"CENTER","CENTER",0,-70,a,2);
+				self _create_menu_bg("hudWelcomeBG","CENTER","CENTER",0,0,w,h,(r,g,b),1,a,"black",50);
 				//if(r==1){ wait 2; }
-				if(r==1){ 
-					self notify("readyToPressFButton");
-					while(game["hasReadMOTD"][self.name]==false) { wait 0.05; }
-					//self waittill("hasPressedFButton"); 
-				}
-		
 				//self _create_menu_text("hudWelcome",txt,"default", 1.6,1.4,(1,1,1),0,"CENTER","CENTER",0,0,1,1);
-				if(r>0){ r-=0.1;g-=0.1;b-=0.1;a-=0.1; }
+				if(game["hasReadMOTD"][self.name]==true){
+					if(r>0){ r-=0.1;g-=0.1;b-=0.1;a-=0.1; }
+					if(w>1){ w-=30; }
+					if(h>1){ h-=20; }
+				}
 				wait 0.05;
 				//self _destroy_menu(self.money["hudWelcomeBG"]);
 				self _destroy_menu("hudWelcome");
@@ -398,15 +410,15 @@ _welcome_msg(){
 	//self freezeControls(false);
 }
 
-_use_accept(){
+_accept(){
 	self endon ( "disconnect" );
 	//self endon ( "death" );
 	//self endon( "intermission" );
 	//self endon( "game_ended" );
 	//if (!getdvarint("developer")>0){ return; }
 	if(self.isbot){ return; }
-	self waittill("readyToPressFButton");
-	while (!self UseButtonPressed()){ wait 0.05; }
+	self waittill("readyToPressAccept");
+	while (!self JumpButtonPressed()){ wait 0.05; }
 	self notify("hasPressedFButton");
 	game["hasReadMOTD"][self.name]=true;
 	self playLocalSound("mp_last_stand");
@@ -415,6 +427,38 @@ _use_accept(){
 	if(isDefined(game["id"])){ self iprintln("^5your ID is "+game["id"][self.name]+" in players database"); }
 }
 
+_nav_motd(){
+	self endon ( "disconnect" );
+	//self endon ( "death" );
+	//self endon( "intermission" );
+	//self endon( "game_ended" );
+	//if (!getdvarint("developer")>0){ return; }
+	if(self.isbot){ return; }
+	
+	d=0;
+	while(game["hasReadMOTD"][self.name]==false){
+		if (self MoveLeftButtonPressed()){ 
+			//cl(self.name+" pressed LEFT key");
+			self notify("hasPressedMoveLeftButton");
+			d++;
+			motd=_get_motd_txt(d);
+			if(isDefined(motd)){ self.hudMOTD[0]=motd; }
+			self playLocalSound("mouse_click");
+			while (self MoveLeftButtonPressed()){ wait 0.05; }
+		}
+		
+		if (self MoveRightButtonPressed()){ 
+			//cl(self.name+" pressed RIGHT key"); 
+			self notify("hasPressedMoveRightButton");
+			if(d>0){ d--; }
+			motd=_get_motd_txt(d);
+			if(isDefined(motd)){ self.hudMOTD[0]=motd; }
+			self playLocalSound("mouse_click");
+			while (self MoveRightButtonPressed()){ wait 0.05; }
+		}
+		wait 0.05;
+	}
+}
 
 _money_menu(){
 	self endon ( "disconnect" );
