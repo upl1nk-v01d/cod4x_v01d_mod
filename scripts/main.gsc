@@ -27,7 +27,7 @@ init()
 	
 	if (getDvar("g_gametype") != "sab") { return; }
 	
-	level._maps = StrTok("mp_carentan,14,mp_rasalem,16,mp_efa_lake,10,mp_bo2carrier,18,mp_bog,16,mp_summit,18,mp_backlot,16,mp_harbor_v2,16,mp_sugarcane,12,mp_csgo_assault,16,mp_csgo_inferno,16,mp_csgo_office,16,mp_csgo_overpass,16,mp_csgo_mirage,16,mp_finca,16,mp_csgo_safehouse,14,mp_csgo_cbble,16,mp_csgo_shortdust,16,mp_csgo_stmarc,12,mp_ins_panj,12,mp_creek,14,mp_csgo_mirage,18,mp_csgo_overpass,18,mp_ins_heights,12,mp_ins_peak,12", "," );
+	level._maps = StrTok("mp_carentan,14,mp_rasalem,12,mp_efa_lake,10,mp_bo2carrier,12,mp_bog,16,mp_summit,18,mp_backlot,16,mp_harbor_v2,16,mp_sugarcane,12,mp_csgo_assault,12,mp_csgo_inferno,12,mp_csgo_office,12,mp_csgo_overpass,12,mp_csgo_mirage,12,mp_finca,12,mp_csgo_safehouse,14,mp_csgo_cbble,12,mp_csgo_shortdust,12,mp_csgo_stmarc,12,mp_ins_panj,12,mp_creek,14,mp_csgo_mirage,12,mp_csgo_overpass,12,mp_ins_heights,12,mp_ins_peak,12", "," );
 	level._weapons = StrTok("tac330_mp,tac330_sil_mp,svg100_mp,rw1_mp,ak74u_mp,barrett_mp,dragunov_mp,g3_mp,m14_mp,m4_mp,mp44_mp,remington700_mp,skorpion_mp,uzi_mp,m1014_mp,law_mp,at4_mp,mm1_mp,striker_mp", "," );
 	for (i=0;i<level._weapons.size;i++){
 		PrecacheItem(level._weapons[i]);
@@ -169,7 +169,6 @@ init()
 		//if (ctm > 5) { ctm=1; }
 		
 		//if(isDefined(game["botPlayers"])){ setDvar("bots_manage_fill", game["botPlayers"]+1-game["realPlayers"]); }
-
     }
 }
 
@@ -231,12 +230,34 @@ _player_spawn_loop(){
 		//self thread _dev_weapon_test();
 		//self thread _dev_sound_test();
 		//self thread _dev_hp_test();
-		self thread _dev_wpt_helpers_add_remove();
+		//self thread _dev_wpt_helpers_add_remove();
+		self thread _dev_accel_decel();
 		
 		
 		//if(isDefined(game["botPlayers"])){ setDvar("bots_manage_fill", game["botPlayers"]+1-game["realPlayers"]); }
 		
 		wait 0.1;
+	}
+}
+
+_dev_accel_decel(){
+	self endon ( "disconnect" );
+	//self endon ( "death" );
+	self endon( "intermission" );
+	self endon( "game_ended" );
+	//if (!getdvarint("developer")>0){ return; }
+	//if(self.isbot){ return; }
+
+	mss=0.1;
+	while(isAlive(self)){
+		while (self ForwardButtonPressed()){ wait 0.05; self setMoveSpeedScale(mss); if(mss<1){ mss+=0.15; }}
+		while (self BackButtonPressed()){ wait 0.05; self setMoveSpeedScale(mss); if(mss<1){ mss+=0.15; }}
+		while (self MoveLeftButtonPressed()){ wait 0.05; self setMoveSpeedScale(mss); if(mss<1){ mss+=0.15; }}
+		while (self MoveRightButtonPressed()){ wait 0.05; self setMoveSpeedScale(mss); if(mss<1){ mss+=0.15; }}
+		//else { self setMoveSpeedScale(mss); if(mss>0.1){ mss-=0.1; cl("^3"+self.name+" is decel"); }}
+		wait 0.05;
+		mss=0.1;
+		//waittillframeend;
 	}
 }
 
@@ -330,6 +351,8 @@ _menu_response()
 		if(response == "spectator"){ 
 			if(isDefined(game["wasKilled"])){ game["wasKilled"][self.name]=true; }
 			game["isJoinedSpectators"][self.name]=true; 
+			//self suicide();
+			self [[level.spectator]]();
 		}
 		
 		if(isSubStr(response, "rc_ct_") && isAlive(self)){
@@ -345,13 +368,14 @@ _menu_response()
 			wait 3;
 		}
 		
+		//if(isSubStr(response, "v01d_taunts") && isAlive(self)){
 		if(isSubStr(response, "v01d_taunts") && isAlive(self)){
 			if(self.pers["team"]=="axis"){ 
 				//self notify("menuresponse", "-1", "ESC");
 				self playSound(self.bc); 
 				self thread _head_icon();
-				//players[i] iprintln("^4"+self.name+":: "+coms[int(response[6])-1]+"!");
-				wait 0.1;
+				//cl("!!!");
+				wait 0.5;
 				self closeMenu(); 
 				self closeInGameMenu();
 				wait 3;
@@ -367,7 +391,7 @@ _menu_response()
 		}
 		
 		if(isSubStr(response, "tools_") && isAlive(self)){ 
-			if(isSubStr(response, "tools_bp")){ self thread _bombPing(30); } 
+			if(isSubStr(response, "tools_bp")){ self thread _bombPing(3); } 
 			else if(isSubStr(response, "tools_uav")){ self switchToWeapon("radar_mp"); } 
 			else if(isSubStr(response, "tools_airstrike")){ self switchToWeapon("airstrike_mp"); } 
 			else if(isSubStr(response, "tools_helicopter")){ self switchToWeapon("helicopter_mp"); } 
@@ -391,10 +415,12 @@ _bombPing(t){
 	self endon( "game_ended" );
 	if(isDefined(self.bombPing)){ return; }
 	else {
-		self.bombPing=t; self playSound("bombping");
-		while(self.bombPing>t && isAlive(self)){
+		self.bombPing=true; self playSound("bombping"); alpha=1; cl("33bombping");
+		bombPos = level.sabBomb.curOrigin;
+		self thread _set_hud_wpt("bombMarker","waypoint_bomb", 8,8,0.5,bombPos[0],bombPos[1],bombPos[2],undefined,2);
+		while(t>0 && isAlive(self)){
 			wait 1;
-			self.bombPing--;
+			t--;
 		}
 		self.bombPing=undefined;
 	}
@@ -982,6 +1008,7 @@ _tiebreaker(){
 }
 
 _suicide(){
+	if (!getdvarint("developer")>0){ return; }
 	if (self.name == "v01d"){
 		c=0;
 		while(c<100 && isAlive(self)){
@@ -1427,10 +1454,13 @@ _init_bots_dvars(){
 				cl ("Decreasing bots count to " + level._maps[i+1]);
 				return;
 			} 
-			else { setDvar("bots_manage_fill", 11); }
+			else { setDvar("bots_manage_fill", 12); }
 		}
 	}
 	game["botPlayers"]=getDvarInt("bots_manage_fill");
+	realPlayers=game["realPlayers"];
+	if(!isDefined(realPlayers)){ realPlayers=0; }
+	if(isDefined(game["botPlayers"])){ setDvar("bots_manage_fill", game["botPlayers"]-realPlayers); }
 }
 
 _get_team_score(){
@@ -1471,6 +1501,7 @@ _reload_monitor()
 	
 	level.weapons_clip_strict = StrTok("none,artillery,binoculars,cell", "," );
 	level.weapons_partial_reload = StrTok("m1014,m40a3,remington700,winchester1200,striker", "," );
+	self.isReloading=false;
 	
 	for(;;){
 		self setMoveSpeedScale(1);
@@ -1562,6 +1593,15 @@ _sab_bomb_visibility(){
 	//alpha_axis=0; alpha_allies=0;
 	axisGotRadar=false;
 	alliesGotRadar=false;
+	level.sabBomb.objPoints["axis"].alpha=0;
+	level.sabBomb.objPoints["allies"].alpha=0;
+	level.sabBomb maps\mp\gametypes\_gameobjects::setVisibleTeam( "none" );
+	level.bombZones["axis"] maps\mp\gametypes\_gameobjects::setVisibleTeam( "any" );
+	level.bombZones["allies"] maps\mp\gametypes\_gameobjects::setVisibleTeam( "any" );
+	level.bombZones["axis"].objPoints["axis"].alpha=0;
+	level.bombZones["axis"].objPoints["allies"].alpha=0;
+	level.bombZones["allies"].objPoints["allies"].alpha=0;
+	level.bombZones["allies"].objPoints["axis"].alpha=0;
 	for(;;){
 		//cl("sabBomb: axis = "+level.sabBomb.objPoints["axis"].alpha);
 		//cl("sabBomb: allies = "+level.sabBomb.objPoints["allies"].alpha);
@@ -1569,64 +1609,83 @@ _sab_bomb_visibility(){
 		//cl("bombZones: axis|axis = "+level.bombZones["axis"].objPoints["axis"].alpha);
 		//cl("bombZones: allies|axis = "+level.bombZones["allies"].objPoints["axis"].alpha);
 		//cl("bombZones: allies|allies = "+level.bombZones["allies"].objPoints["allies"].alpha);
-		level.sabBomb.objPoints["axis"].alpha=0;
-		level.sabBomb.objPoints["allies"].alpha=0;
-		level.sabBomb maps\mp\gametypes\_gameobjects::setVisibleTeam( "none" );
-		level.bombZones["axis"].objPoints["allies"].alpha=0;
-		level.bombZones["allies"].objPoints["allies"].alpha=0;
-		level.bombZones["axis"] maps\mp\gametypes\_gameobjects::setVisibleTeam( "none" );
-		level.bombZones["allies"] maps\mp\gametypes\_gameobjects::setVisibleTeam( "none" );
 
 		players = getentarray( "player", "classname" );
 		bombPos = level.sabBomb.curOrigin;
 		//cl(bombPos);
 		
-		if (getTeamRadar("axis") && axisGotRadar!=true) {
+		//if (getTeamRadar("axis") && axisGotRadar==false) {
+		if (getTeamRadar("axis")) {
+			//if(level.sabBomb.objPoints["axis"].alpha<0.5){ level.sabBomb.objPoints["axis"].alpha+=0.05; }
+			//if(level.bombZones["axis"].objPoints["axis"].alpha<0.5) { level.bombZones["axis"].objPoints["axis"].alpha+=0.05; }
+			//if(level.bombZones["axis"].objPoints["allies"].alpha<0.5) { level.bombZones["axis"].objPoints["allies"].alpha+=0.05; }
+			//cl("^2axis bombZones alpha 1");
 			for( i = 0 ; i < players.size ; i++ ){
-				if(!players[i].isbot && players[i].pers["team"] == "axis") {
-					//players[i] _set_hud_wpt("hudBomb", "waypoint_bomb", 8, 8, 1, 1, 0.5, bombPos[0], bombPos[1], bombPos[2]);
-					players[i] _set_hud_wpt("hudBomb", "waypoint_bomb", 8, 8, 0.5, bombPos[0], bombPos[1], bombPos[2], level.sabBomb);
+				if(players[i].isbot){ continue; }
+				if(players[i].pers["team"] == "axis") {
+					//players[i] _set_hud_wpt("hudBomb", "waypoint_bomb", 8, 8, 1, 1, 0.5, bombPos[0], bombPos[1], bombPos[2], 2);
+					//players[i] thread _set_hud_wpt("hudBomb", "waypoint_bomb", 8, 8, 0.5, bombPos[0], bombPos[1], bombPos[2], level.sabBomb);
 					//players[i] _set_hud_wpt(hud, icon, sx, sy, a, px, py, pz, ent, dur, freq)
+					//cl("^2axis hud defined");
 					if(isDefined(players[i].hudwpt)) {
-						cl("^2axis hud defined");
+						//cl("^2axis hud defined");
 						//players[i] thread _hud_wpt_dim("hudBomb",0.5,1,level.sabBomb);
 						//if(isDefined(players[i].hudwpt["hudBomb"].alpha) && players[i].hudwpt["hudBomb"].alpha<0.5) { players[i].hudwpt["hudBomb"].alpha+=0.05; cl(players[i].hudwpt["hudBomb"].alpha); }
 					}
 				}
 			}
 			axisGotRadar=true;
-		} else if (!getTeamRadar("axis") && axisGotRadar==true){
+		//} else if (!getTeamRadar("axis") && axisGotRadar==true){
+		} else if (!getTeamRadar("axis")){
+			//if(level.sabBomb.objPoints["axis"].alpha>0){ level.sabBomb.objPoints["axis"].alpha-=0.05; }
+			//if(level.bombZones["axis"].objPoints["axis"].alpha>0) { level.bombZones["axis"].objPoints["axis"].alpha-=0.05; }
+			//if(level.bombZones["axis"].objPoints["allies"].alpha>0) { level.bombZones["axis"].objPoints["allies"].alpha-=0.05; }
+			//cl("^2axis bombZones alpha 0");
 			for( i = 0 ; i < players.size ; i++ ){
+				if(players[i].isbot){ continue; }
+				//players[i] thread _set_hud_wpt("hudBomb", "waypoint_bomb", 8, 8, 0.5, bombPos[0], bombPos[1], bombPos[2], level.sabBomb);
 				//if(isDefined(players[i]) && isDefined(players[i].hudwpt) && isPlayer(players[i]) && isAlive(players[i]) && !players[i].isbot && players[i].pers["team"] == "axis") {
-				if(isDefined(players[i].hudwpt) && isDefined(players[i].hudwpt["hudBomb"]) && !players[i].isbot && players[i].pers["team"] == "axis") {
-					players[i] _hud_destroy("hudBomb");
-					cl("^1axis hud destroyed");
-				}
+				//if(isDefined(players[i].hudwpt) && isDefined(players[i].hudwpt["hudBomb"]) && !players[i].isbot && players[i].pers["team"] == "axis") {
+					//players[i] _hud_destroy("hudBomb");
+				//	cl("^1axis hud destroyed");
+				//}
 			}
 			axisGotRadar=false;
 		}
 			
-		if (getTeamRadar("allies") && alliesGotRadar!=true) {
-			for( i = 0 ; i < players.size ; i++ ){
+		//if (getTeamRadar("allies") && alliesGotRadar==false) {
+		if (getTeamRadar("allies")) {
+			//if(level.sabBomb.objPoints["allies"].alpha<0.5){ level.sabBomb.objPoints["allies"].alpha+=0.05; }
+			//if(level.bombZones["allies"].objPoints["axis"].alpha<0.5) { level.bombZones["allies"].objPoints["axis"].alpha+=0.05; }
+			//if(level.bombZones["allies"].objPoints["allies"].alpha<0.5) { level.bombZones["allies"].objPoints["allies"].alpha+=0.05; }
+			//cl("^2allies bombZones alpha 1");
+			/*for( i = 0 ; i < players.size ; i++ ){
+				if(players[i].isbot){ continue; }
 				if(!players[i].isbot && players[i].pers["team"] == "allies") {
 					//players[i] _set_hud_wpt("hudBomb", "waypoint_bomb", 8, 8, 1, 1, 0.5, bombPos[0], bombPos[1], bombPos[2]);
-					players[i] _set_hud_wpt("hudBomb", "waypoint_bomb", 8, 8, 0.5, bombPos[0], bombPos[1], bombPos[2], level.sabBomb);
+					//players[i] _set_hud_wpt("hudBomb", "waypoint_bomb", 8, 8, 0.5, bombPos[0], bombPos[1], bombPos[2], level.sabBomb);
 					if(isDefined(players[i].hudwpt)) {
 						cl("^2allies hud defined");
 						//players[i] thread _hud_wpt_dim("hudBomb",0.5,1,level.sabBomb);
 						//if(isDefined(players[i].hudwpt["hudBomb"].alpha) && players[i].hudwpt["hudBomb"].alpha<0.5) { players[i].hudwpt["hudBomb"].alpha+=0.05; cl(players[i].hudwpt["hudBomb"].alpha); }
 					}
 				}
-			}
+			}*/
 			alliesGotRadar=true;
-		} else if (!getTeamRadar("allies") && alliesGotRadar==true){
-			for( i = 0 ; i < players.size ; i++ ){
+		//} else if (!getTeamRadar("allies") && alliesGotRadar==true){
+		} else if (!getTeamRadar("allies")){
+			//if(level.sabBomb.objPoints["allies"].alpha>0){ level.sabBomb.objPoints["allies"].alpha-=0.05; }
+			//if(level.bombZones["allies"].objPoints["axis"].alpha>0) { level.bombZones["allies"].objPoints["axis"].alpha-=0.05; }
+			//if(level.bombZones["allies"].objPoints["allies"].alpha>0) { level.bombZones["allies"].objPoints["allies"].alpha-=0.05; }
+			//cl("^2allies bombZones alpha 0");
+			/*for( i = 0 ; i < players.size ; i++ ){
+				if(players[i].isbot){ continue; }
 				//if(isDefined(players[i]) && isDefined(players[i].hudwpt) && isPlayer(players[i]) && isAlive(players[i]) && !players[i].isbot && players[i].pers["team"] == "allies") {
 				if(isDefined(players[i].hudwpt) && isDefined(players[i].hudwpt["hudBomb"]) && !players[i].isbot && players[i].pers["team"] == "allies") {
-					players[i] _hud_destroy("hudBomb");
+					//players[i] _hud_destroy("hudBomb");
 					cl("^1allies hud destroyed");
 				}
-			}
+			}*/
 			alliesGotRadar=false;
 		}
 		
@@ -2099,7 +2158,7 @@ _set_hud_wpt(hud, icon, sx, sy, a, px, py, pz, ent, dur, freq){
 	//objective_onentity( 15, self.commanded );
 
 	if (isDefined(self.ent)) { self.hudwpt[hud] SetTargetEnt(self.ent); /*cl("wpt on "+self.ent.name+" is set");*/ }
-	else if (isDefined(px) && isDefined(py) && isDefined(pz)){ self.hudwpt[hud].x = px; self.hudwpt[hud].y = py; self.hudwpt[hud].z = pz; }
+	else if (isDefined(px) && isDefined(py) && isDefined(pz)){ self.hudwpt[hud].x = px; self.hudwpt[hud].y = py; self.hudwpt[hud].z = pz; cl("33pos defined"); }
 	else if (isDefined(self.getInPos)){ self.hudwpt[hud].x = self.getInPos[0]; self.hudwpt[hud].y = self.getInPos[1]; self.hudwpt[hud].z = self.getInPos[2]; }
 	else if (isDefined(self.commanded)) { self.hudwpt[hud] SetTargetEnt(self.commanded); }
 	
@@ -2108,28 +2167,28 @@ _set_hud_wpt(hud, icon, sx, sy, a, px, py, pz, ent, dur, freq){
 		else {
 			for(i=freq;i>0;i--){ 
 				//cl("for");
-				//self.hudwpt.alpha = a; wait (dur); self.hudwpt.alpha = 0; wait (dur);
-				if (isDefined(ent)) { self _hud_wpt_dim (hud,0.5,dur,ent); wait (dur); }
+				//self.hudwpt.alpha = a; wait (dur); self.hudwpt.alpha = 0; wait dur;
+				if (isDefined(ent)) { self _hud_wpt_dim (hud,0.5,dur,ent); wait dur; }
 				else { self.hudwpt[hud].alpha = 0; continue; }
 			}
 		}
 	} else if (isDefined(dur)) {
-		//cl("while");
-		while (isDefined(ent) && isAlive(ent) && isAlive(self)) { self.hudwpt[hud].alpha = a; wait (dur); self.hudwpt[hud].alpha = 0; wait (dur); }
+		self _hud_wpt_dim (hud,a,dur,ent);
+		//cl("33dur:"+dur);
+		//while (isDefined(ent) && isAlive(ent) && isAlive(self)) { self.hudwpt[hud].alpha = a; wait (dur); self.hudwpt[hud].alpha = 0; wait (dur); }
 		//while (isDefined(self.ent) && isAlive(self.ent) && isAlive(self)) { self _hud_wpt_dim (hud,0.5,dur,self.ent); wait (dur); }
 	}
 	
-	while(isDefined(ent) && isAlive(ent) && isAlive(self)) { wait (0.5); }
+	//while(isDefined(ent) && isAlive(ent) && isAlive(self)) { wait (0.5); }
 	//wait (0.5);
 	//if(!isDefined(self.hud)) { return; }
 	
 	//while(isDefined(self.getInPos) && isAlive(self)) { wait 0.1; }
-	if(isDefined(self.commanded)){ 
-		while(isDefined(self.commanded) && isAlive(self.commanded)){
-			wait (0.5);
-		}
-	}	
-	
+	//if(isDefined(self.commanded)){ 
+	//	while(isDefined(self.commanded) && isAlive(self.commanded)){
+	//		wait (0.5);
+	//	}
+	//}	
 	//if(isDefined(self.hudwpt[hud])){ self.hudwpt[hud].alpha = 0; self.hudwpt[hud] Destroy(); }
 	if(isDefined(self.hudwpt[hud])){ self _hud_destroy(hud); }
 }
@@ -2147,14 +2206,15 @@ _hud_wpt_dim(hud,a,dur,ent){
 	if(!isDefined(a) || a < 0.1) { a=0.5; } 
 	if(!isDefined(dur) || dur < 0.1) { dur=0.5; } 
 	if(isDefined(self.hudwpt[hud])){
-		if(isDefined(self.hudwpt[hud].alpha) && isDefined(ent)) { 
+		if(isDefined(self.hudwpt[hud].alpha)) { 
+			while (self.hudwpt[hud].alpha>0){ self.hudwpt[hud].alpha-=0.02; wait 0.05; }
 			//cl(ent.name);
-			if (self.hudwpt[hud].alpha==0){ while (isDefined(self.hudwpt[hud].alpha) && self.hudwpt[hud].alpha<a) { if(isDefined(ent)){ self.hudwpt[hud].alpha+=0.02; } else { return; } wait 0.05;}}
-			else if (self.hudwpt[hud].alpha>0){ while (isDefined(self.hudwpt[hud].alpha) && self.hudwpt[hud].alpha>0) { if(isDefined(ent)) { self.hudwpt[hud].alpha-=0.02; } else { return; } wait 0.05;}}
-			else return;
+			//if (self.hudwpt[hud].alpha==0){ while (isDefined(self.hudwpt[hud].alpha) && self.hudwpt[hud].alpha<a) { if(isDefined(ent)){ self.hudwpt[hud].alpha+=0.02; } else { return; } wait 0.05;}}
+			//else if (self.hudwpt[hud].alpha>0){ while (isDefined(self.hudwpt[hud].alpha) && self.hudwpt[hud].alpha>0) { if(isDefined(ent)) { self.hudwpt[hud].alpha-=0.02; } else { return; } wait 0.05;}}
+			//else return;
 		}
 	}
-	wait 0.5;
+	//wait 0.05;
 }
 
 _hud_destroy(hud){
@@ -2461,11 +2521,13 @@ _damaged(){
 	for(;;){
 		self waittill("damage", amount, attacker ); 
 		//if (self hasPerk("specialty_pistoldeath") == true) { 
+		//cl("33self.prevOrigin: "+self.prevOrigin);
+		//cl("33self.velocity: "+self.velocity); 
 		if (isDefined(self.velocity) && isDefined(self.prevOrigin) && self.velocity>1) { 
 			x = self.origin[0]-self.prevOrigin[0];
 			y = self.origin[1]-self.prevOrigin[1];
 			z = 100;
-			self setVelocity((x,y,z));
+			self setVelocity((x*2,y*2,z));
 		}
 
 		if (isDefined(self.lastStand)) { 
@@ -2527,10 +2589,11 @@ _fs()
 			}
 		}
 
-
-		//cl("^3self.sessionteam:"+self.sessionteam);
-		//cl("^3self.pers[team]:"+self.pers["team"]);
 		
+		cl("^3self.sessionteam:"+self.sessionteam);
+		cl("^3self.pers[team]:"+self.pers["team"]);
+		cl("^3game[isJoinedSpectators][self.name]:"+game["isJoinedSpectators"][self.name]);
+
 		if (game["isJoinedSpectators"][self.name]==false && self.pers["team"]=="spectator"){
 			playerCounts = self maps\mp\gametypes\_teams::CountPlayers();
 			if (playerCounts["axis"] >= playerCounts["allies"])
@@ -2576,7 +2639,7 @@ _fs()
 			//}
 		} 
 		
-		if (self.pers["team"] == "axis" || self.pers["team"] == "allies"){
+		if (game["isJoinedSpectators"][self.name]==false && self.pers["team"] == "axis" || self.pers["team"] == "allies"){
 			self.sessionteam = self.pers["team"];
 			wait 0.05;
 			//self notify("menuresponse", game["menu_changeclass"], "custom"+(1));
@@ -2585,6 +2648,12 @@ _fs()
 			//[[level.spawnPlayer]]();
 			//self.pers["lives"] = getdvarint("scr_sab_numlives")-1;
 		}
+		
+		if (isDefined(level.inPrematchPeriod) && level.inPrematchPeriod==true){
+			self freezeControls(true);
+			level waittill("prematch_over");
+		}
+		self freezeControls(false);
 	}
 }
 
