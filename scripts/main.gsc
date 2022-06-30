@@ -134,7 +134,7 @@ init()
 	level thread _randomize_bomb_pos();
 	level thread _artillery_monitor();
 	level thread _bc();
-	level thread _player_collision(12);
+	//level thread _player_collision(12);
 	
 	//level thread _grenades_monitor();
 	//level thread _projectiles_monitor();
