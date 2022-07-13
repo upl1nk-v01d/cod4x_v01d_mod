@@ -27,7 +27,7 @@ init()
 	
 	if (getDvar("g_gametype") != "sab") { return; }
 	
-	level._maps = StrTok("mp_carentan,14,mp_rasalem,12,mp_efa_lake,10,mp_bo2carrier,12,mp_bog,16,mp_summit,18,mp_backlot,16,mp_harbor_v2,16,mp_sugarcane,12,mp_csgo_assault,12,mp_csgo_inferno,12,mp_csgo_office,12,mp_csgo_overpass,12,mp_csgo_mirage,12,mp_finca,12,mp_csgo_safehouse,14,mp_csgo_cbble,12,mp_csgo_shortdust,12,mp_csgo_stmarc,12,mp_ins_panj,12,mp_creek,14,mp_csgo_mirage,12,mp_csgo_overpass,12,mp_ins_heights,12,mp_ins_peak,12", "," );
+	level._maps = StrTok("mp_carentan,14,mp_rasalem,12,mp_efa_lake,10,mp_bo2carrier,12,mp_bog,16,mp_summit,18,mp_backlot,16,mp_harbor_v2,16,mp_sugarcane,12,mp_csgo_assault,12,mp_csgo_inferno,12,mp_csgo_office,12,mp_csgo_overpass,12,mp_csgo_mirage,12,mp_finca,12,mp_csgo_safehouse,10,mp_csgo_cbble,12,mp_csgo_shortdust,12,mp_csgo_stmarc,12,mp_ins_panj,10,mp_creek,12,mp_csgo_mirage,12,mp_csgo_overpass,12,mp_ins_heights,12,mp_ins_peak,12", "," );
 	level._weapons = StrTok("tac330_mp,tac330_sil_mp,svg100_mp,rw1_mp,ak74u_mp,barrett_mp,dragunov_mp,g3_mp,m14_mp,m4_mp,mp44_mp,remington700_mp,skorpion_mp,uzi_mp,m1014_mp,law_mp,at4_mp,mm1_mp,striker_mp", "," );
 	for (i=0;i<level._weapons.size;i++){
 		PrecacheItem(level._weapons[i]);
@@ -51,7 +51,7 @@ init()
 	level.classRifle = StrTok("m14,m4,m1014,m16,winchester", "," );
 	level.classMG = StrTok("m60e4,saw,rpd,", "," );
 	level.classSMG = StrTok("ak47,g36,ak74u,g3,mp44,skorpion,uzi,mp5,p90,mp44", "," );
-	level.classPistol = StrTok("colt45,beretta,deserteagle,rw1", "," );
+	level.classPistol = StrTok("colt45,usp,beretta,deserteagle,rw1", "," );
 	level.classBoltSniper = StrTok("tac330,m40a3,remington700", "," );
 	
 	
@@ -173,9 +173,13 @@ init()
 }
 
 _player_collision(timer){
-	level waittill("prematch_over");
+	//level waittill("prematch_over");
+	while (isDefined(level.inPrematchPeriod) && level.inPrematchPeriod==true){ wait 1; }
+	players = getentarray( "player", "classname" );
+	//for( i = 0 ; i < players.size ; i++ ){ players[i] setClientDvar( "g_friendlyplayercanblock", 0 ); }
 	setDvar("g_friendlyplayercanblock",0);
 	wait timer;
+	//for( i = 0 ; i < players.size ; i++ ){ players[i] setClientDvar( "g_friendlyplayercanblock", 1 ); }
 	setDvar("g_friendlyplayercanblock",1);
 }
 
@@ -202,6 +206,7 @@ _player_spawn_loop(){
 	//if(self.isbot){ return; }
 	
 	self.bombPing=undefined;
+	self setClientDvar( "v01d_tools_bp", 1 );
 	
 	for(;;){
 		self waittill("spawned_player");
@@ -219,7 +224,7 @@ _player_spawn_loop(){
         self thread _recoil();
         self thread _aim_mod();
         self thread _moving();
-		self thread _law_pickup();
+		//self thread _law_pickup();
 		self thread _mobile_phone();
 		self thread _push();
 		self thread _stopADS();
@@ -248,16 +253,16 @@ _dev_accel_decel(){
 	//if (!getdvarint("developer")>0){ return; }
 	//if(self.isbot){ return; }
 
-	mss=0.1;
 	while(isAlive(self)){
-		while (self ForwardButtonPressed()){ wait 0.05; self setMoveSpeedScale(mss); if(mss<1){ mss+=0.15; }}
-		while (self BackButtonPressed()){ wait 0.05; self setMoveSpeedScale(mss); if(mss<1){ mss+=0.15; }}
-		while (self MoveLeftButtonPressed()){ wait 0.05; self setMoveSpeedScale(mss); if(mss<1){ mss+=0.15; }}
-		while (self MoveRightButtonPressed()){ wait 0.05; self setMoveSpeedScale(mss); if(mss<1){ mss+=0.15; }}
+		mss=0.1;
+		while (self ForwardButtonPressed()){ self setMoveSpeedScale(mss); wait 0.05; if(mss<1){ mss+=0.15; }}
+		while (self BackButtonPressed()){ self setMoveSpeedScale(mss); wait 0.05; if(mss<1){ mss+=0.15; }}
+		while (self MoveLeftButtonPressed()){ self setMoveSpeedScale(mss); wait 0.05; if(mss<1){ mss+=0.15; }}
+		while (self MoveRightButtonPressed()){ self setMoveSpeedScale(mss); wait 0.05; if(mss<1){ mss+=0.15; }}
 		//else { self setMoveSpeedScale(mss); if(mss>0.1){ mss-=0.1; cl("^3"+self.name+" is decel"); }}
 		wait 0.05;
-		mss=0.1;
 		//waittillframeend;
+		self setMoveSpeedScale(mss);
 	}
 }
 
@@ -415,13 +420,15 @@ _bombPing(t){
 	self endon( "game_ended" );
 	if(isDefined(self.bombPing)){ return; }
 	else {
-		self.bombPing=true; self playSound("bombping"); alpha=1; cl("33bombping");
+		self.bombPing=true; self playSound("bombping"); alpha=1;
+		self setClientDvar( "v01d_tools_bp", 0 );
 		bombPos = level.sabBomb.curOrigin;
 		self thread _set_hud_wpt("bombMarker","waypoint_bomb", 8,8,0.5,bombPos[0],bombPos[1],bombPos[2],undefined,2);
 		while(t>0 && isAlive(self)){
 			wait 1;
 			t--;
 		}
+		self setClientDvar( "v01d_tools_bp", 1 );
 		self.bombPing=undefined;
 	}
 }
@@ -525,7 +532,7 @@ _projectiles_monitor(){
 			if(dist<maxDist){
 				//cl("^2"+players[i].blastName);
 				delay = 0.1*(dist/maxDist);
-				players[i] thread _playSoundInSpace("distboom",blastOrigin,delay*2,players[i]);
+				players[i] thread _playSoundInSpace("distboom",blastOrigin,delay,players[i]);
 				if(w == "em1_mp"){ 
 					dist /= 4;
 					maxDist /= 4;
@@ -600,7 +607,7 @@ _grenade_monitor(weap){
 			dist = distance(blastOrigin, players[i].origin);
 			maxDist = 600;
 			delay = 0.3*(dist/maxDist);
-			players[i] thread _playSoundInSpace("distboom",blastOrigin,delay*2,players[i]);
+			players[i] thread _playSoundInSpace("distboom",blastOrigin,delay,players[i]);
 			if(dist<maxDist){
 				//cl("^2"+players[i].blastName);
 				players[i] thread _blast(delay,dist,maxDist,blastOrigin,attacker,self.grenade);
@@ -628,7 +635,7 @@ _bomb_monitor(){
 			dist = distance(blastOrigin, players[i].origin);
 			maxDist = 1200;
 			delay = 0.3*(dist/maxDist);
-			players[i] thread _playSoundInSpace("distboom",blastOrigin,delay*2,players[i]);
+			players[i] thread _playSoundInSpace("distboom",blastOrigin,delay,players[i]);
 			if(dist<maxDist){
 				//cl("^2"+players[i].blastName);
 				players[i].blastName="bomb";
@@ -686,7 +693,7 @@ _artillery_mortarshell(){
 		dist = distance(blastOrigin, players[i].origin);
 		maxDist = 1200;
 		delay = 0.3*(dist/maxDist);
-		players[i] thread _playSoundInSpace("distboom",blastOrigin,delay*2,players[i]);
+		players[i] thread _playSoundInSpace("distboom",blastOrigin,delay,players[i]);
 		if(dist<maxDist){
 			//cl("^3blastOrigin: "+blastOrigin);
 			players[i].blastName="mortars";
@@ -1451,7 +1458,7 @@ _init_bots_dvars(){
 			if(mapname == level._maps[i]){ 
 				setDvar("bots_manage_fill", level._maps[i+1]); 
 				cl ("Hitching map found: " + level._maps[i]);
-				cl ("Decreasing bots count to " + level._maps[i+1]);
+				cl ("Adjusting bots count to " + level._maps[i+1]);
 				return;
 			} 
 			else { setDvar("bots_manage_fill", 12); }
@@ -1769,7 +1776,7 @@ _aim_mod(){
 	k=1;
 
 	for(;;){
-		if(isAlive(self)){
+		if(isAlive(self) && !isDefined(self.buyMenuShow)){
 			if(isDefined(self.aimWobling)){ k=self.aimWobling; }
 			if (s1==0){ offsetY+=0.02; if (offsetY>=0.2) { s1=1; } }
 			if (s1==1) { offsetY-=0.02; if (offsetY<=-0.2) { s1=0; } }	
@@ -2006,7 +2013,7 @@ _moving(){
 			if(self.velocity > 25) {
 				//self iprintln("sprinting "+self.velocity);
 				curView = self getPlayerAngles();
-				self setPlayerAngles((curView[0]+randomFloatRange(-0.5, 0.5), curView[1]+randomFloatRange(-0.5, 0.5), curView[2]+randomFloatRange(-2.5, 2.5))); 
+				self setPlayerAngles((curView[0]+randomFloatRange(-0.5, 0.5), curView[1]+randomFloatRange(-0.5, 0.5), curView[2]+randomFloatRange(-3.5, 3.5))); 
 				wait 0.05;
 				curView = self getPlayerAngles();
 				if(self.aimWobling<2){ self.aimWobling+=0.05; }
@@ -2158,7 +2165,7 @@ _set_hud_wpt(hud, icon, sx, sy, a, px, py, pz, ent, dur, freq){
 	//objective_onentity( 15, self.commanded );
 
 	if (isDefined(self.ent)) { self.hudwpt[hud] SetTargetEnt(self.ent); /*cl("wpt on "+self.ent.name+" is set");*/ }
-	else if (isDefined(px) && isDefined(py) && isDefined(pz)){ self.hudwpt[hud].x = px; self.hudwpt[hud].y = py; self.hudwpt[hud].z = pz; cl("33pos defined"); }
+	else if (isDefined(px) && isDefined(py) && isDefined(pz)){ self.hudwpt[hud].x = px; self.hudwpt[hud].y = py; self.hudwpt[hud].z = pz; }
 	else if (isDefined(self.getInPos)){ self.hudwpt[hud].x = self.getInPos[0]; self.hudwpt[hud].y = self.getInPos[1]; self.hudwpt[hud].z = self.getInPos[2]; }
 	else if (isDefined(self.commanded)) { self.hudwpt[hud] SetTargetEnt(self.commanded); }
 	
@@ -2455,15 +2462,17 @@ _commander_snd(){
 				else
 	          			self playSound("US_mp_cmd_followme");
 			else
-	          		self playSound("t_taunt"+randomIntRange(1, 6));
+	          		self playSound(self.bc);
+	          		//self playSound("t_taunt"+randomIntRange(1, 6));
 	          		//self playSound("t_taunt");
 	          		
 		} else {
 			cl(self.name+" taunted "+self.commanded.name);
 			switch ( self.pers["team"] ) {
 			case "axis":
-	          	self playSound("t_taunt"+randomIntRange(1, 6));
+	          	//self playSound("t_taunt"+randomIntRange(1, 6));
 				//self playSound("t_taunt");
+				self playSound(self.bc);
 				break;
 			case "allies":
 	          	self playSound("ct_taunt"+randomIntRange(1, 10));
@@ -2523,16 +2532,17 @@ _damaged(){
 		//if (self hasPerk("specialty_pistoldeath") == true) { 
 		//cl("33self.prevOrigin: "+self.prevOrigin);
 		//cl("33self.velocity: "+self.velocity); 
-		if (isDefined(self.velocity) && isDefined(self.prevOrigin) && self.velocity>1) { 
-			x = self.origin[0]-self.prevOrigin[0];
-			y = self.origin[1]-self.prevOrigin[1];
+		if (isDefined(self.lastStand) && isDefined(self.velocity) && isDefined(self.prevOrigin)) { 
+			x = self.origin[0]-attacker.origin[0];
+			y = self.origin[1]-attacker.origin[1];
 			z = 100;
-			self setVelocity((x*2,y*2,z));
+			self setVelocity((x,y,z));
+			//cl("33"+self.name+" self.velocity:"+self.velocity);
+			//cl("33"+self.name+" self.origin:"+self.origin);
+			//cl("33"+self.name+" self.prevOrigin:"+self.prevOrigin);
 		}
 
 		if (isDefined(self.lastStand)) { 
-			//iprintln(self.health);
-			
 			self thread _suicide_pd(); 
 			//iprintln(self.name+" has perk specialty_pistoldeath");
 		}
@@ -2625,14 +2635,14 @@ _fs()
 			cl("^2level.tp "+level.tp);
 			if (level.tp<60 && self.pers["lives"]>0) { 
 				if(level.tp<15){ self.pers["lives"]=3; } 
-				//else { self.pers["lives"]=0; }
+				else { self.pers["lives"]=0; }
 				//self iprintln("^2You have "+self.pers["lives"]+" live\n");
 				//self iprintln("^2You have 1 live\n");
 				//if(!getdvarint("bots_main_debug")>0){
 				//	[[level.spawnPlayer]]();
 				//}
 				//self.sessionstate = "playing";
-				cl("^4forcespawned "+self.name);
+				//cl("^4forcespawned "+self.name);
 			} 
 			//else { 
 			//	self.pers["lives"] = getdvarint("scr_sab_numlives")-1; 
