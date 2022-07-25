@@ -111,6 +111,9 @@ init()
 	if (!isDefined(game["botPlayers"])){ game["botPlayers"]=0; }
 	if (!isDefined(game["isConnecting"])){ game["isConnecting"]=[]; }
 	if (!isDefined(game["isJoinedSpectators"])){ game["isJoinedSpectators"]=[]; }
+	if (!isDefined(game["nextMap"])){ game["nextMap"]=""; }
+	if (!isDefined(game["prevMap"])){ game["prevMap"]=""; }
+
 	if (level.waypointCount == 0) {
 		game["waypointless_map"]="on";
 	} else {
@@ -135,6 +138,7 @@ init()
 	level thread _artillery_monitor();
 	level thread _bc();
 	level thread _player_collision(24);
+	level thread _maps_randomizer();
 	
 	//level thread _grenades_monitor();
 	//level thread _projectiles_monitor();
@@ -175,7 +179,7 @@ init()
 _player_collision(timer){
 	//level waittill("prematch_over");
 	while (isDefined(level.inPrematchPeriod) && level.inPrematchPeriod==true){ wait 1; }
-	players = getentarray( "player", "classname" );
+	//players = getentarray( "player", "classname" );
 	//for( i = 0 ; i < players.size ; i++ ){ players[i] setClientDvar( "g_friendlyplayercanblock", 0 ); }
 	setDvar("g_friendlyplayercanblock",0);
 	wait timer;
@@ -186,7 +190,8 @@ _player_collision(timer){
 _player_connecting_loop(){
 	//level endon ( "disconnect" );
 	//level endon( "intermission" );
-	//level endon( "game_ended" );
+	//level endon( "game_ended" );	if (!isDefined(game["nextMap"])){ game["nextMap"]=""; }
+
 	//if (getdvarint("developer")>0){ return; }
 	//if(self.isbot){ return; }
 	
@@ -209,7 +214,8 @@ _player_spawn_loop(){
 	self setClientDvar( "v01d_tools_bp", 1 );
 	
 	for(;;){
-		self waittill("spawned_player");
+		self waittill("spawned_player");	if (!isDefined(game["nextMap"])){ game["nextMap"]=""; }
+
 		//cl("^3"+self.name+" spawned");
 
 		self thread _useSoldier();
@@ -236,12 +242,57 @@ _player_spawn_loop(){
 		//self thread _dev_sound_test();
 		//self thread _dev_hp_test();
 		//self thread _dev_wpt_helpers_add_remove();
-		self thread _dev_accel_decel();
+		//self thread _dev_accel_decel();
 		
 		
 		//if(isDefined(game["botPlayers"])){ setDvar("bots_manage_fill", game["botPlayers"]+1-game["realPlayers"]); }
-		
-		wait 0.1;
+		//self.alpha=0;
+		//wait 20;
+		//self.alpha=1;
+	}
+}
+
+_maps_randomizer(){
+	level endon ( "disconnect" );
+	//level endon( "intermission" );
+	//level endon( "game_ended" );
+	wait 2;
+	//setDvar("scr_sab_scorelimit",2);
+	//setDvar("scr_sab_numlives",1);
+	filename="sv_maps.cfg";
+	if(FS_TestFile(filename)){ 
+		csv = FS_FOpen(filename, "read");
+		line = FS_ReadLine(csv);
+		while (isDefined(line) && line != ""){
+			//cl("^3line: " + line);
+			if (line == "") { continue; }
+			if (isSubStr(line,"map")){ break; }
+			line = FS_ReadLine(csv);
+		}
+		FS_FClose(csv);
+		line = StrRepl(line, "set sv_mapRotation ", "");
+		line = StrRepl(line, "\"", "");
+		line = StrRepl(line, "map ", "");
+		//cl("11"+line);
+		level.mapList = strTok(line," ");
+		//cl("33last map:"+level.mapList[level.mapList.size-1]);
+		n=randomIntRange(0,level.mapList.size);
+		level.nextMap = level.mapList[n];
+		if (game["nextMap"] == game["prevMap"]){ game["nextMap"]=level.nextMap; }
+		cl("22next map: "+game["nextMap"]);
+		//wait 10;
+		level waittill("game_ended");
+		//cl("11_maps_randomizer-game_ended");
+		if(level.teamBased && (maps\mp\gametypes\_globallogic::hitRoundLimit() || maps\mp\gametypes\_globallogic::hitScoreLimit())){
+			//cl("11_maps_randomizer-hitScoreLimit");
+			game["prevMap"]=game["nextMap"];
+			//cl("33_maps_randomizer-waiting for end_killcam");
+			level waittill("end_killcam"); 
+			//cl("33_maps_randomizer-fk ended");			
+			cl("22next map: "+game["nextMap"]);
+			wait getDvarFloat( "scr_intermission_time" )-1;
+			exec("map " + game["nextMap"]);
+		}
 	}
 }
 
@@ -723,6 +774,10 @@ _welcome(tm,ctm)
 	self.ps_ended = true;
 	//self setPerk("specialty_specialgrenade");
 	//self setPerk("specialty_specialgrenade");
+	//self setClientDvar( "ui_uav_client", 1 );
+	//self setClientDvar( "ui_airstrike_client", 1 );
+	//self setClientDvar( "ui_helicopter_client", 1 );
+	//self setClientDvar( "ui_artillery_client", 1 );
 	
 	if (self.isbot) { 
 		wait 0.05;
@@ -1089,7 +1144,7 @@ _killed( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, 
 	//else if (isDefined(eAttacker.firedProjectile)) { sWeapon=eAttacker.firedProjectile; eAttacker.firedProjectile=undefined; }
 	//else { sWeapon="c4_mp"; }
 	
-	if (isDefined(level.bombOwner) && level.bombOwner.name == eAttacker.name) { sWeapon="c4_mp"; }
+	if (isDefined(level.bombOwner) && isDefined(eAttacker) && level.bombOwner.name == eAttacker.name) { sWeapon="c4_mp"; }
 	//cl("^1sWeapon: "+sWeapon);
 
 	if (!isDefined(eAttacker)){
@@ -1137,12 +1192,22 @@ _killed( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, 
 	
 	self StartRagdoll(0);
 	
+	if(!self.isbot && isDefined(eAttacker) && isAlive(eAttacker)){ self thread _linkto(eAttacker,0.3); }
+
 	//self finishPlayerDamage( eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, psOffsetTime );
 	//if(isAlive(self)){
 		self [[level.originalcallbackPlayerKilled]](eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, timeOffset, deathAnimDuration);
 	//}
 	
 	wait (0.10);
+}
+
+_linkto(ent, del){
+	if(!isDefined(del)){ del=0;}
+	wait del;
+	if(isDefined(ent)){
+		self LinkTo(ent, "tag_origin", (0,0,-10), (0,0,0));
+	}
 }
 
 _mobile_phone()
@@ -1338,17 +1403,20 @@ _info(){
 
 	self setClientDvars("pl", "");
 	
-	if(game["waypointless_map"]=="on") { 
+	if(isDefined(level.nextMap)){ 
+		wait 5; self iprintln("^3Next map will be "+game["nextMap"]);
+	}
+	if(game["waypointless_map"]=="on"){ 
 		wait 5; self iprintln("^3This map is waypointless, soon waypoints will be added");
 		wait 5; self iprintln("^3Bots can navigate without waypoints");
 	}
-	
 	wait 5; self iprintln("^3You can regroup teammate by aiming and holding USE key");
 	wait 5; self iprintln("^3You can send commanded teammate by aiming and holding USE key");
 	wait 5; self iprintln("^3Your kill, death & assist points will reset every round");
 	wait 5; self iprintln("^3Reloading partial clips will drop remaining clip bullets");
 	wait 5; self iprintln("^3You can push anybody with USE key");
 	wait 5; self iprintln("^3You can access hardpoints with B button");
+
 }
 
 _disconnected(){
@@ -1538,7 +1606,7 @@ _reload_monitor()
  				}
 			}
 			if(isDefined(self.partial)) { self.partial = undefined; } else { self SetWeaponAmmoClip( weapon, 0 ); }
-			while(c<10) { k-=0.05; self setMoveSpeedScale(k); c++; wait 0.05; }
+			while(c<10 && !self sprintButtonPressed()) { k-=0.05; self setMoveSpeedScale(k); c++; wait 0.05; }
 			while(self GetCurrentWeapon() == weapon && (self GetWeaponAmmoClip(weapon) == ammoclip || self GetWeaponAmmoClip(weapon) == 0)) { wait 0.05; }
 			//cl("^3self GetWeaponAmmoClip(weapon): "+self GetWeaponAmmoClip(self GetCurrentWeapon()));
 			//cl("^3ammoclip: "+ammoclip);
@@ -2214,7 +2282,7 @@ _hud_wpt_dim(hud,a,dur,ent){
 	if(!isDefined(dur) || dur < 0.1) { dur=0.5; } 
 	if(isDefined(self.hudwpt[hud])){
 		if(isDefined(self.hudwpt[hud].alpha)) { 
-			while (self.hudwpt[hud].alpha>0){ self.hudwpt[hud].alpha-=0.02; wait 0.05; }
+			while (isDefined(self.hudwpt[hud].alpha) && self.hudwpt[hud].alpha>0){ self.hudwpt[hud].alpha-=0.02; wait 0.05; }
 			//cl(ent.name);
 			//if (self.hudwpt[hud].alpha==0){ while (isDefined(self.hudwpt[hud].alpha) && self.hudwpt[hud].alpha<a) { if(isDefined(ent)){ self.hudwpt[hud].alpha+=0.02; } else { return; } wait 0.05;}}
 			//else if (self.hudwpt[hud].alpha>0){ while (isDefined(self.hudwpt[hud].alpha) && self.hudwpt[hud].alpha>0) { if(isDefined(ent)) { self.hudwpt[hud].alpha-=0.02; } else { return; } wait 0.05;}}
