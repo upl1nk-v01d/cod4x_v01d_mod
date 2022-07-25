@@ -1103,9 +1103,10 @@ _killed( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, 
 		//if(isDefined(eInflictor.name)){ cl("^5eInflictor.name: "+eInflictor.name); }
 		//if(isDefined(eInflictor.model)){ cl("^5eInflictor.model: "+eInflictor.model); }
 		//if(isDefined(sWeapon)){ cl("^5sWeapon: "+sWeapon); }
-		//if(isDefined(sMeansOfDeath)){ cl("^5sMeansOfDeath: "+sMeansOfDeath); }
+		if(isDefined(sMeansOfDeath)){ cl("^5sMeansOfDeath: "+sMeansOfDeath); }
 		
-		if (sMeansOfDeath == "MOD_PROJECTILE_SPLASH" || sMeansOfDeath == "MOD_GRENADE_SPLASH"){
+		//if (sMeansOfDeath != "MOD_PROJECTILE_SPLASH" || sMeansOfDeath != "MOD_GRENADE_SPLASH"){
+		if (!isSubStr(sMeansOfDeath,"PROJECTILE") || !isSubStr(sMeansOfDeath,"GRENADE")){
 			self setVelocity((x,y,0)); 
 		} else if (eInflictor.classname == "grenade" || eInflictor.classname == "rocket") {
 			if (dist<500){
@@ -1519,14 +1520,14 @@ _init_bots_dvars(){
 		setDvar("bots_manage_fill", 6);
 		return;
 	} else {
-		cl(getDvar( "mapname" ));
+		cl(getDvar("mapname"));
 		//level._maps = StrTok("", "," );
 		for (i=0;i<level._maps.size;i++){
-			mapname = getDvar( "mapname" );
+			mapname = getDvar("mapname");
 			if(mapname == level._maps[i]){ 
 				setDvar("bots_manage_fill", level._maps[i+1]); 
-				cl ("Hitching map found: " + level._maps[i]);
-				cl ("Adjusting bots count to " + level._maps[i+1]);
+				cl ("33Hitching map found: " + level._maps[i]);
+				cl ("33Adjusting bots count to " + level._maps[i+1]);
 			} 
 			//else { setDvar("bots_manage_fill", 12); }
 		}
