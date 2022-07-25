@@ -1527,9 +1527,8 @@ _init_bots_dvars(){
 				setDvar("bots_manage_fill", level._maps[i+1]); 
 				cl ("Hitching map found: " + level._maps[i]);
 				cl ("Adjusting bots count to " + level._maps[i+1]);
-				return;
 			} 
-			else { setDvar("bots_manage_fill", 12); }
+			//else { setDvar("bots_manage_fill", 12); }
 		}
 	}
 	game["botPlayers"]=getDvarInt("bots_manage_fill");
