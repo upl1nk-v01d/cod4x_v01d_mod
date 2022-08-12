@@ -39,6 +39,7 @@ _connected_loop(){
 		level waittill("connected", player);
 		player thread _money_menu();
 		player thread _spawn_loop();
+		player thread _map_datetime_menu();
 		//player thread _keystrokes();
 
 		//wait 0.1;
@@ -324,6 +325,8 @@ _welcome_msg(){
 	self endon( "game_ended" );
 	if (self.isbot){ return; }
 	
+	wait 0.1;
+	
 	if (!isDefined(game["hasReadMOTD"][self.name])){ game["hasReadMOTD"][self.name]=false; }
 	
 	hudWelcome=[]; hudWelcomeBG=[];
@@ -460,6 +463,29 @@ _nav_motd(){
 	}
 }
 
+_map_datetime_menu(){
+	self endon ( "disconnect" );
+	if(self.isbot){ return; }
+	
+	map=[]; dateTime=[];
+	
+	wait 1;
+	for(;;){
+		map[0]=getDvar("mapname");
+		realTime = getRealTime();
+		realDate = TimeToString(realTime, 0, "%F");
+		dateTime[0] = TimeToString(realTime, 0, "%F %T");
+		
+		if(isDefined(dateTime) && isDefined(dateTime)){
+			self _create_menu_text("hudMap",map,"default", 1.6,1.4,(1,1,1),0,"LEFT","CENTER",-420,210,0.5,1);
+			self _create_menu_text("hudDateTime",dateTime,"default", 1.6,1.4,(1,1,1),0,"LEFT","CENTER",-420,224,0.5,1);
+			wait 1;
+			self _destroy_menu("hudMap");
+			self _destroy_menu("hudDateTime");
+		}
+	}
+}
+
 _money_menu(){
 	self endon ( "disconnect" );
 	//self endon ( "death" );
@@ -588,12 +614,54 @@ _buy_menu_show(arr,prev,next,div){
 				self _destroy_menu("hudBuyMenu",arr.size,div);
 			}								//hud,txt,ft,fsz,fsc,color,glow,ax,ay,w,h,a,sort,selector,scolor
 		}
-		wait 0.08;
+		wait 0.05;
 	}
 	//self.hasChosen=undefined;
 	//self _destroy_menu("hudBuyMenu",arr.size,div); 
 	self EnableWeapons();
 	//cl("^3hud destroyed");
+}
+
+_buy_weapons_ammo(weapon){
+	wait 0.3;
+	weapons = self GetWeaponsList();
+	strTok="";
+	
+	for(i=0;i<weapons.size;i++){
+		if(isSubStr(weapons[i],"grenade") || isSubStr(weapons[i],"claymore") || isSubStr(weapons[i],"c4") || isSubStr(weapons[i],"briefcase") || isSubStr(weapons[i],"radar") || isSubStr(weapons[i],"airstrike") || isSubStr(weapons[i],"artillery") || isSubStr(weapons[i],"helicopter")){ continue; }
+		else {
+			ammoCount = self getAmmoCount(weapons[i]);
+			weaponClipSize = WeaponClipSize(weapons[i]);
+			maxWeaponAmmo = weaponMaxAmmo(weapons[i])+weaponClipSize;
+			getWeaponAmmoStock = self getWeaponAmmoStock( weapons[i] );
+			fillAmmo = int(maxWeaponAmmo - ammoCount);
+			clipsToGive = int(fillAmmo / weaponClipSize);
+			
+			//cl("33ammoCount:"+ammoCount);
+			//cl("33maxWeaponAmmo:"+maxWeaponAmmo);
+			//cl("33getWeaponAmmoStock:"+getWeaponAmmoStock);
+			//cl("33fillAmmo:"+fillAmmo);
+			//cl("33clipsToGive:"+clipsToGive);
+			
+			strTok += weapons[i] + ",";
+			strTok += int(fillAmmo*5) + ",";
+			strTok += "ammo_mp,";
+			//self giveMaxAmmo(weapon);
+			//self.hasChosen[0]="ammo_mp";
+			//self.hasChosen[1]="50";
+			//self.hasChosen[2]="ammo_mp";
+			//cl("33self.hasChosen.size:"+self.hasChosen.size);
+		}
+	}
+	return strTok;
+}
+
+_match_weapon_name(arr,name){
+	for(i=0;i<arr.size;i++){
+		if(isSubStr(arr[i],name)){ 
+			return name;
+		}
+	}
 }
 
 _buy_menu_main(){
@@ -625,7 +693,8 @@ _buy_menu_main(){
 	buyMenuAmmo = undefined;
 
 	if(self.pers["team"] == "axis"){
-		buyMenuMain = StrTok("Pistols,SMGs,MGs,Rifles,Snipers,RPGs,GLs,Grenades",",");
+		buyMenuMain = StrTok("Pistols,SMGs,MGs,Rifles,Snipers,RPGs,GLs,Grenades,Ammo",",");
+		buyMenuAmmo = StrTok(self _buy_weapons_ammo(),",");
 		buyMenuPistols = StrTok("Beretta Silenced,138,beretta_silencer_mp,Desert Eagle,230,deserteagle_mp,Desert Eagle Gold,400,deserteaglegold_mp,RW1,450,rw1_mp",",");
 		buyMenuSMGs = StrTok("Uzi,320,uzi_mp,Skorpion,440,skorpion_mp,AK74U,580,ak74u_mp",",");
 		buyMenuMGs = StrTok("SAW,1200,saw_mp,RPD,1300,rpd_mp",",");
@@ -636,11 +705,11 @@ _buy_menu_main(){
 		buyMenuGLs = StrTok("MM1,2400,mm1_mp",",");
 		buyMenuGrenades = StrTok("Frag Grenade,15,frag_grenade_mp",",");
 		//buyMenuGrenades = StrTok("Smoke Grenade,10,smoke_grenade_mp,Flash Grenade,20,flash_grenade_mp,Concussion Grenade,30,concussion_grenade_mp,Frag Grenade,40,frag_grenade_mp",",");
-		//buyMenuAmmo = StrTok("",",");
 	} else if (self.pers["team"] == "allies") {
-		buyMenuMain = StrTok("Pistols,SMGs,MGs,Rifles,Snipers,RPGs,GLs,Grenades,Explosives",",");
+		buyMenuMain = StrTok("Pistols,SMGs,MGs,Rifles,Snipers,RPGs,GLs,Grenades,Explosives,Ammo",",");
+		buyMenuAmmo = StrTok(self _buy_weapons_ammo(),",");
 		buyMenuPistols = StrTok("Colt 45 Silenced,155,colt45_silencer_mp,USP Silenced,167,usp_silencer_mp",",");
-		buyMenuSMGs = StrTok("MP5,550,mp5_silencer_mp,P90,900,p90_silencer_mp",",");
+		buyMenuSMGs = StrTok("MP5,550,mp5_silencer_mp,G36C GL,630,g36c_gl_mp,P90,900,p90_silencer_mp",",");
 		buyMenuMGs = StrTok("M60E4,1600,m60e4_mp",",");
 		buyMenuRifles = StrTok("M16 GL,1200,m16_gl_mp,M21,1650,m21_mp,Striker,1800,striker_mp",",");
 		buyMenuSnipers = StrTok("TAC330,2000,tac330_mp,TAC330 Silenced,2300,tac330_sil_mp",",");
@@ -662,6 +731,7 @@ _buy_menu_main(){
 			for(i=0;i<self.hasChosen.size;i++){
 				//cl("^3isDefined(self.hasChosen)");
 				if (self.hasChosen[i]=="buyMenuMain"){ self _buy_menu_show(buyMenuMain,"buyMenuMain",true,1); }
+				else if (self.hasChosen[i]=="Ammo"){ self _buy_menu_show(buyMenuAmmo,"buyMenuMain",false,3); }
 				else if (self.hasChosen[i]=="Pistols"){ self _buy_menu_show(buyMenuPistols,"buyMenuMain",false,3); }
 				else if (self.hasChosen[i]=="SMGs"){ self _buy_menu_show(buyMenuSMGs,"buyMenuMain",false,3); }
 				else if (self.hasChosen[i]=="MGs"){ self _buy_menu_show(buyMenuMGs,"buyMenuMain",false,3); }
@@ -671,7 +741,6 @@ _buy_menu_main(){
 				else if (self.hasChosen[i]=="GLs"){ self _buy_menu_show(buyMenuGLs,"buyMenuMain",false,3); }
 				else if (self.hasChosen[i]=="Grenades"){ self _buy_menu_show(buyMenuGrenades,"buyMenuMain",false,3); }
 				else if (self.hasChosen[i]=="Explosives"){ self _buy_menu_show(buyMenuExplosives,"buyMenuMain",false,3); }
-				//else if (self.hasChosen[i]=="Ammo"){ self _buy_menu_show(buyMenuAmmo,"buyMenuMain",false,3); }
 			}
 		}
 		while(isDefined(self.buyMenuShow) && isDefined(self.hasChosen) && isAlive(self)){ 

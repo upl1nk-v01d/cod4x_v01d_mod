@@ -27,8 +27,8 @@ init()
 	
 	if (getDvar("g_gametype") != "sab") { return; }
 	
-	level._maps = StrTok("mp_carentan,14,mp_rasalem,12,mp_efa_lake,10,mp_bo2carrier,12,mp_bog,16,mp_summit,18,mp_backlot,16,mp_harbor_v2,16,mp_sugarcane,12,mp_csgo_assault,12,mp_csgo_inferno,12,mp_csgo_office,12,mp_csgo_overpass,12,mp_csgo_mirage,12,mp_finca,12,mp_csgo_safehouse,10,mp_csgo_cbble,12,mp_csgo_shortdust,12,mp_csgo_stmarc,12,mp_ins_panj,10,mp_creek,12,mp_csgo_mirage,12,mp_csgo_overpass,12,mp_ins_heights,12,mp_ins_peak,12", "," );
-	level._weapons = StrTok("tac330_mp,tac330_sil_mp,svg100_mp,rw1_mp,ak74u_mp,barrett_mp,dragunov_mp,g3_mp,m14_mp,m4_mp,mp44_mp,remington700_mp,skorpion_mp,uzi_mp,m1014_mp,law_mp,at4_mp,mm1_mp,striker_mp", "," );
+	level._maps = StrTok("mp_ancient_ultimate,12,mp_carentan,14,mp_rasalem,12,mp_efa_lake,10,mp_bo2carrier,12,mp_bog,16,mp_summit,18,mp_backlot,16,mp_harbor_v2,16,mp_sugarcane,12,mp_csgo_assault,12,mp_csgo_inferno,12,mp_csgo_office,12,mp_csgo_overpass,12,mp_csgo_mirage,12,mp_finca,12,mp_csgo_safehouse,10,mp_csgo_cbble,12,mp_csgo_shortdust,12,mp_csgo_stmarc,12,mp_ins_panj,10,mp_creek,12,mp_csgo_mirage,12,mp_csgo_overpass,12,mp_ins_heights,12,mp_ins_peak,12", "," );
+	level._weapons = StrTok("tac330_mp,tac330_sil_mp,svg100_mp,rw1_mp,ak74u_mp,barrett_mp,dragunov_mp,g3_mp,m14_mp,m21_mp,m4_mp,mp44_mp,remington700_mp,skorpion_mp,uzi_mp,m1014_mp,law_mp,at4_bo_mp,mm1_mp,striker_mp", "," );
 	for (i=0;i<level._weapons.size;i++){
 		PrecacheItem(level._weapons[i]);
 		cl ("Weapon precached: " + level._weapons[i]);
@@ -45,14 +45,14 @@ init()
 	level.classPistol = StrTok("colt45_mp,colt45_silencer_mp,beretta_mp,beretta_silencer_mp,deserteagle_mp,deserteaglegold_mp", "," );
 	*/
 	
-	level.classSniper = StrTok("svg100,barrett,dragunov", "," );
+	level.classSniper = StrTok("svg100,barrett,dragunov,tac330,m21", "," );
 	level.classRPG = StrTok("law,at4,rpg", "," );
 	level.classGL = StrTok("mm1", "," );
-	level.classRifle = StrTok("m14,m4,m1014,m16,winchester", "," );
+	level.classRifle = StrTok("m14,m4,m1014,m16,winchester,g3", "," );
 	level.classMG = StrTok("m60e4,saw,rpd,", "," );
-	level.classSMG = StrTok("ak47,g36,ak74u,g3,mp44,skorpion,uzi,mp5,p90,mp44", "," );
+	level.classSMG = StrTok("ak47,g36,ak74u,mp44,skorpion,uzi,mp5,p90,mp44", "," );
 	level.classPistol = StrTok("colt45,usp,beretta,deserteagle,rw1", "," );
-	level.classBoltSniper = StrTok("tac330,m40a3,remington700", "," );
+	level.classBoltSniper = StrTok("m40a3,remington700", "," );
 	
 	
 	precacheShader("waypoint_bomb");
@@ -97,6 +97,10 @@ init()
 	
 	setDvar("pl","");
 	setDvar("m","");
+	SetDvar("timescale", 1);
+	SetDvar("sl",0);
+	SetDvar("tl",0);
+	SetDvar("nl",0);
 	
 	if (getdvarint("developer")>0) { 
 		setDvar("scr_game_spectatetype", "2"); 
@@ -131,15 +135,19 @@ init()
 	level thread _init_bots_dvars();
 	level thread _dvar_players();
 	level thread _dvar_map_restart();
+	level thread _dvar_sab();
 	level thread _server_send_update();
-	level thread _fast_restart_on_join();
+	//level thread _fast_restart_on_join();
 	level thread _sab_bomb_visibility();
 	level thread _randomize_bomb_pos();
 	level thread _artillery_monitor();
 	level thread _bc();
 	level thread _player_collision(24);
 	level thread _maps_randomizer();
-	
+	level thread _slowMo();
+	level thread _get_team_score();
+	//level thread _teamWatcher();
+	level thread _dev_waittillframeend_test();
 	//level thread _grenades_monitor();
 	//level thread _projectiles_monitor();
 	
@@ -156,7 +164,7 @@ init()
 		if (!player.isbot) { player thread _player_info(1,player.name); }
 		if(!isDefined(game["isJoinedSpectators"][player.name])){ game["isJoinedSpectators"][player.name]=false; }
         
-        player thread _welcome();			
+        player thread _welcome();
         player thread _info();
 		player thread _player_spawn_loop();
 		player thread _disconnected();
@@ -167,6 +175,7 @@ init()
 		player thread _grenade_owner();
 		player thread _projectiles_owner();
 		player thread _menu_response();
+		player thread _suicide(30);
 
 		//tm++;  ctm++;
 		//if (tm > 13) { tm=1; }
@@ -174,6 +183,17 @@ init()
 		
 		//if(isDefined(game["botPlayers"])){ setDvar("bots_manage_fill", game["botPlayers"]+1-game["realPlayers"]); }
     }
+}
+
+_waittillframesend(c){
+	level endon("disconnect");
+	for(;;){
+		if(c > 0){ 
+			//cl("33waittillframeend start");
+			for(i=0;i<c;i++){ waittillframeend; }
+			//cl("33waittillframeend end");
+		}
+	}
 }
 
 _player_collision(timer){
@@ -236,20 +256,64 @@ _player_spawn_loop(){
 		self thread _stopADS();
 		self thread _cg_cmds();
 		self thread _use_disable_weapons();
+		self thread _movement_accel_decel();
 		
 		//self thread _dev_coords();
 		//self thread _dev_weapon_test();
 		//self thread _dev_sound_test();
 		//self thread _dev_hp_test();
 		//self thread _dev_wpt_helpers_add_remove();
-		//self thread _dev_accel_decel();
-		
+		//self thread _dev_timescale();		
 		
 		//if(isDefined(game["botPlayers"])){ setDvar("bots_manage_fill", game["botPlayers"]+1-game["realPlayers"]); }
 		//self.alpha=0;
 		//wait 20;
 		//self.alpha=1;
 	}
+}
+
+_cg_cmds(){
+	if(self.isbot){ return; }
+	self setClientDvar("cg_blood", 0); 
+	self setClientDvar("cg_friendlyNameFadeIn", 100000);
+	self setClientDvar("cg_enemyNameFadeIn", 100000);
+	self setClientDvar("cg_centertime", 0);
+	self setClientDvar("r_filmUseTweaks", 0);
+	self setClientDvar("r_filmTweakEnable", 1);
+	self setClientDvar("r_filmTweakDarkTint", "1 1 1");
+	self setClientDvar("r_filmTweakLightTint", "1 1 1");
+	self setClientDvar("r_filmTweakDesaturation", 0.4);
+	self setClientDvar("r_glowTweakEnable", 1);
+	self setClientDvar("r_glowUseTweaks", 1);
+	self setClientDvar("r_glowTweakBloomDesaturation", 1);
+	//self setClientDvar("r_dof_tweak", 1);
+	//self setClientDvar("ui_uav_client", 1); 
+	self setClientDvar("m_pitch",0.022);
+	self setClientDvar("m_yaw",0.022);
+	self setClientDvar("stopSpeed",100);
+	self setClientDvar("ui_showmap",1);
+	//self setClientDvar("ui_uav_axis",1);
+	//self setClientDvar("ui_uav_allies",1);
+}
+
+getClientDvar(dvar){
+	self endon ( "disconnect" );
+	self endon ( "death" );
+	self endon( "intermission" );
+	self endon( "game_ended" );
+
+    self setClientDvar("getting_dvar",dvar);
+    self openMenu(game["menu_clientdvar"]);   
+    
+    for(;;)
+    {
+        self waittill("menuresponse", menu, response);
+        if(menu==game["menu_clientdvar"])
+        {
+        	cl("^4response:"+response);
+            return response;
+        }
+    }
 }
 
 _maps_randomizer(){
@@ -284,36 +348,55 @@ _maps_randomizer(){
 		level waittill("game_ended");
 		//cl("11_maps_randomizer-game_ended");
 		if(level.teamBased && (maps\mp\gametypes\_globallogic::hitRoundLimit() || maps\mp\gametypes\_globallogic::hitScoreLimit())){
-			//cl("11_maps_randomizer-hitScoreLimit");
+			cl("33_maps_randomizer-hitScoreLimit");
 			game["prevMap"]=game["nextMap"];
-			//cl("33_maps_randomizer-waiting for end_killcam");
+			cl("33_maps_randomizer-waiting for end_killcam");
 			level waittill("end_killcam"); 
-			//cl("33_maps_randomizer-fk ended");			
+			cl("33_maps_randomizer-fk ended");			
 			cl("22next map: "+game["nextMap"]);
-			wait getDvarFloat( "scr_intermission_time" )-1;
+			wait getDvarFloat( "scr_intermission_time" )-1.5;
 			exec("map " + game["nextMap"]);
 		}
 	}
 }
 
-_dev_accel_decel(){
+_dev_timescale(){
+	self endon ( "disconnect" );
+	//self endon ( "death" );
+	self endon( "intermission" );
+	self endon( "game_ended" );
+	//if (!getdvarint("developer")>0){ return; }
+	if(self.isbot){ return; }
+
+	while(isAlive(self)){
+		//m_pitch = self getUserInfo("setu m_pitch 1");
+		//cl("33"+self.name+" m_pitch: "+m_pitch);
+		self setClientDvar("m_pitch",0.022);
+		self setClientDvar("m_yaw",0.022);
+		SetDvar("timescale", 0.3);
+		wait 1;
+	}
+}
+
+_movement_accel_decel(){
 	self endon ( "disconnect" );
 	//self endon ( "death" );
 	self endon( "intermission" );
 	self endon( "game_ended" );
 	//if (!getdvarint("developer")>0){ return; }
 	//if(self.isbot){ return; }
-
+	c=0.3;
 	while(isAlive(self)){
 		mss=0.1;
-		while (self ForwardButtonPressed()){ self setMoveSpeedScale(mss); wait 0.05; if(mss<1){ mss+=0.15; }}
-		while (self BackButtonPressed()){ self setMoveSpeedScale(mss); wait 0.05; if(mss<1){ mss+=0.15; }}
-		while (self MoveLeftButtonPressed()){ self setMoveSpeedScale(mss); wait 0.05; if(mss<1){ mss+=0.15; }}
-		while (self MoveRightButtonPressed()){ self setMoveSpeedScale(mss); wait 0.05; if(mss<1){ mss+=0.15; }}
+		self setMoveSpeedScale(mss);
+		while (self ForwardButtonPressed() || self BackButtonPressed() || self MoveLeftButtonPressed() || self MoveRightButtonPressed()){ self setMoveSpeedScale(mss); wait 0.05; if(mss<1){ mss+=0.10; }}
+		//while (self ForwardButtonPressed()){ self setMoveSpeedScale(mss); wait 0.05; if(mss<1){ mss+=0.10; }}
+		//while (self BackButtonPressed()){ self setMoveSpeedScale(mss); wait 0.05; if(mss<1){ mss+=0.10; }}
+		//while (self MoveLeftButtonPressed()){ self setMoveSpeedScale(mss); wait 0.05; if(mss<1){ mss+=0.10; }}
+		//while (self MoveRightButtonPressed()){ self setMoveSpeedScale(mss); wait 0.05; if(mss<1){ mss+=0.10; }}
 		//else { self setMoveSpeedScale(mss); if(mss>0.1){ mss-=0.1; cl("^3"+self.name+" is decel"); }}
 		wait 0.05;
 		//waittillframeend;
-		self setMoveSpeedScale(mss);
 	}
 }
 
@@ -338,44 +421,6 @@ _use_disable_weapons(){
 	}
 }
 
-_cg_cmds(){
-	if(self.isbot){ return; }
-	self setClientDvar("cg_blood", 0); 
-	self setClientDvar("cg_friendlyNameFadeIn", 100000);
-	self setClientDvar("cg_enemyNameFadeIn", 100000);
-	self setClientDvar("cg_centertime", 0);
-	self setClientDvar("r_filmUseTweaks", 0);
-	self setClientDvar("r_filmTweakEnable", 1);
-	self setClientDvar("r_filmTweakDarkTint", "1 1 1");
-	self setClientDvar("r_filmTweakLightTint", "1 1 1");
-	self setClientDvar("r_filmTweakDesaturation", 0.4);
-	self setClientDvar("r_glowTweakEnable", 1);
-	self setClientDvar("r_glowUseTweaks", 1);
-	self setClientDvar("r_glowTweakBloomDesaturation", 1);
-	//self setClientDvar("r_dof_tweak", 1);
-	//self setClientDvar("ui_uav_client", 1); 
-}
-
-getClientDvar(dvar){
-	self endon ( "disconnect" );
-	self endon ( "death" );
-	self endon( "intermission" );
-	self endon( "game_ended" );
-
-    self setClientDvar("getting_dvar",dvar);
-    self openMenu(game["menu_clientdvar"]);   
-    
-    for(;;)
-    {
-        self waittill("menuresponse", menu, response);
-        if(menu==game["menu_clientdvar"])
-        {
-        	cl("^4response:"+response);
-            return response;
-        }
-    }
-}
-
 _menu_response()
 {
 	self endon ( "disconnect" );
@@ -392,16 +437,18 @@ _menu_response()
 		//cl("^3"+self.name+": response:"+response);
 		if(response == "axis" || response == "allies" || response == "autoassign")
 		{
-			game["isJoinedSpectators"][self.name]=false; 
 			self notify("hasReadWelcomeMsg");
 			self notify("hasPressedFButton");
 			game["hasReadMOTD"][self.name]=true;
+			game["isJoinedSpectators"][self.name]=false; 
 			self suicide();
 			self thread _fs();
 			//self notify("menuresponse", game["menu_changeclass"], "custom"+(1));
 			wait 0.05;
 			self closeMenu();
 			self closeInGameMenu();
+			self setClientDvar("m_pitch",0.022);
+			self setClientDvar("m_yaw",0.022);
 		}
 		
 		if(response == "spectator"){ 
@@ -409,6 +456,8 @@ _menu_response()
 			game["isJoinedSpectators"][self.name]=true; 
 			//self suicide();
 			self [[level.spectator]]();
+			self setClientDvar("m_pitch",0.022);
+			self setClientDvar("m_yaw",0.022);
 		}
 		
 		if(isSubStr(response, "rc_ct_") && isAlive(self)){
@@ -542,26 +591,26 @@ _projectiles_owner(){
 	for(;;){
 		self waittill( "weapon_fired" );
 		//self thread _flash("blur",2,0,1,0.1); //type,amp,dur,t1,t2
-		w = self GetCurrentWeapon();
-		self.firedProjectile=w;
+		wname = self GetCurrentWeapon();
+		self.firedProjectile=wname;
 		//self.grenade=w;
-		if(w == "rpg_mp" || w == "law_mp" || w == "at4_mp" || w == "em1_mp"){
-			//cl("client fired "+ w);
+		if(wname == "rpg_mp" || wname == "law_mp" || wname == "at4_mp" || wname == "em1_mp"){
+			//cl(self.name+" fired "+ wname);
 			projectiles = getentarray( "rocket", "classname" );
 			self.projectile = projectiles[projectiles.size-1];
 			self.blastName = "rocket";
-			if(w == "em1_mp"){ 
+			if(wname == "em1_mp"){ 
 				//self.projectile playLoopSound("em1_el_loop"); 
 				self.blastName = "electric";
 				self.projectile playSound("em1_el_zap"); 
 			}
-			self thread _projectiles_monitor();
+			self thread _projectiles_monitor(self.projectile,wname);
 		}
 		wait 0.05;
 	}
 }
 
-_projectiles_monitor(){
+_projectiles_monitor(weap,wname){
 	//if(isDefined(self.projectile)) { cl(self.name+" has projectile: "+self.projectile.size); }
 	
 	blastOrigin = undefined;
@@ -569,8 +618,12 @@ _projectiles_monitor(){
 	attacker = self;
 	w = attacker GetCurrentWeapon();
 	
-	while(isDefined(self.projectile)){ blastOrigin = self.projectile.origin; wait 0.05; }
+	while(isDefined(weap)){ blastOrigin = weap.origin; wait 0.05; }
 	//cl("projectile ended");
+	//weap waittill( "explode", blastOrigin );
+	//cl("^1grenade owner released: "+name);
+	//cl("^1projectile exploded by "+attacker.name);
+	//cl("^1"+wname+" projectile exploded by "+attacker.name);
 	
 	if (isDefined(blastOrigin)) {
 		//cl("^2"+origin);
@@ -587,9 +640,9 @@ _projectiles_monitor(){
 				if(w == "em1_mp"){ 
 					dist /= 4;
 					maxDist /= 4;
-					if(isDefined(self.projectile)){ self.projectile playSound("em1_el_zap"); }
+					if(isDefined(weap)){ weap playSound("em1_el_zap"); }
 				}
-				players[i] thread _blast(delay,dist,maxDist,blastOrigin,attacker,self.projectile);
+				players[i] thread _blast(delay,dist,maxDist,blastOrigin,attacker,weap);
 				//players[i] setVelocity(0,0,400);
 			}
 		}
@@ -646,8 +699,10 @@ _grenade_monitor(weap){
 	attacker = weap.owner;
 	blastOrigin = undefined;
 	//cl("^1grenade owner: "+name);
-	while(isDefined(weap)){ blastOrigin = weap.origin; wait 0.1; }
+	//while(isDefined(weap)){ blastOrigin = weap.origin; wait 0.1; }
+	weap waittill( "explode", blastOrigin );
 	//cl("^1grenade owner released: "+name);
+	//cl("^1grenade exploded by "+attacker.name);
 	
 	if (isDefined(blastOrigin)) {
 		//cl("^2"+origin);
@@ -820,7 +875,6 @@ _welcome(tm,ctm)
     wait 1;
     if (self.pers["lives"] > 0 && self.pers["team"] != "spectator" ) { self iprintln("^2You have " + (self.pers["lives"]+1) + " lives\n"); }
 	
-	self thread _suicide();
 	//wait 2; self openMenu( game["menu_eog_unlock"] );
 }
 
@@ -1011,10 +1065,10 @@ _chk_players(opts)
 	playersCount=0;
 	playersCountAxis=0;
 	playersCountAllies=0;
-	for( i = 0 ; i < players.size ; i++ ){
-		if(isDefined(opts)){
-			if(opts == "alive"){ 
-				if(isAlive(players[i])) { 
+	if(isDefined(opts)){
+		if(opts == "alive"){ 
+			for( i = 0 ; i < players.size ; i++ ){
+				if(players[i].pers["lives"]>0) { 
 					playersCount++;
 					if(isDefined(players[i].pers["team"]) && (players[i].pers["team"] == "axis")){
 						playersCountAxis++;
@@ -1024,65 +1078,84 @@ _chk_players(opts)
 					}
 				}
 			}
-			else if(opts == "real"){
-				for( i = 0 ; i < players.size ; i++ ){
-					if(!players[i].isbot){
-						playersCount++;
-					}
+		}
+		else if(opts == "real"){
+			for( i = 0 ; i < players.size ; i++ ){
+				if(!players[i].isbot && players[i].pers["team"] != "spectator"){
+					playersCount++;
 				}
-				game["realPlayers"]=playersCount;
-				level.realPlayers=game["realPlayers"];
-				//cl("realPlayers: "+game["realPlayers"]);
 			}
+			game["realPlayers"]=playersCount;
+			//level.realPlayers=game["realPlayers"];
+			//cl("realPlayers: "+game["realPlayers"]);
 		}
 	}
+
 	players["all"] = playersCount;
 	players["axis"] = playersCountAxis;
 	players["allies"] = playersCountAllies;
 	return players;
 }
 
-_tiebreaker(){
+_teamWatcher(){
+	level endon("disconnect");
 	level endon("game_ended");
-	for (;;){
-		while (!level.inOvertime) { wait 1; }
-		cl("^5watching alive players");
-		while (level.inOvertime)  { 
-			alivePlayers=level _chk_players("alive");
-			//cl("alive axis:"+alivePlayers["axis"]);
-			//cl("alive allies:"+alivePlayers["allies"]);
-			if(alivePlayers["axis"]<1){
-				wait 1;
-				[[level._setTeamScore]]( "allies", [[level._getTeamScore]]( "allies" ) + 1 );
-				thread maps\mp\gametypes\_finalkillcam::endGame( "allies", game["strings"]["axis_eliminated"] );
-				thread maps\mp\gametypes\_globallogic::endGame( "allies", game["strings"]["axis_eliminated"] );
-				while (alivePlayers["axis"]<1) { wait 1; }
-			} else if(alivePlayers["allies"]<1){
-				wait 1;
-				[[level._setTeamScore]]( "axis", [[level._getTeamScore]]( "axis" ) + 1 );
-				thread maps\mp\gametypes\_finalkillcam::endGame( "axis", game["strings"]["allies_eliminated"] );
-				thread maps\mp\gametypes\_globallogic::endGame( "axis", game["strings"]["allies_eliminated"] );
-				while (alivePlayers["allies"]<1) { wait 1; }
-			}
-			wait 1;
+	
+	//level waittill("game_ended");
+	cl("11_teamWatcher");
+	//while(level.playerLives["axis"]>0 && level.playerLives["allies"]>0){ wait 0.5; }
+	while(level._teamEliminated != true){ wait 0.5; }
+	if(level.playerLives["axis"]<1){ [[level._setTeamScore]]( "allies", [[level._getTeamScore]]( "allies" ) + 1 ); } 
+	else if(level.playerLives["allies"]<1){	[[level._setTeamScore]]( "axis", [[level._getTeamScore]]( "axis" ) + 1 ); }
+}
+
+_tiebreaker(){
+	level endon("disconnect");
+	level endon("game_ended");
+	while (!level.inOvertime) { wait 1; }
+	cl("^5watching alive players");
+	while (level.inOvertime)  { 
+		//alivePlayers=_chk_players("alive");
+		//cl("11alive axis:"+alivePlayers["axis"]);
+		//cl("55alive allies:"+alivePlayers["allies"]);
+		//while (level.playerLives["allies"]>0 && level.playerLives["axis"]>0){ wait 0.5; }
+		//level.noOneIsAlive=true;
+		if(level.playerLives["axis"]<1){
+		//if(alivePlayers["axis"]<1){
+			[[level._setTeamScore]]( "allies", [[level._getTeamScore]]( "allies" ) + 1 );
+			thread maps\mp\gametypes\_finalkillcam::endGame( "allies", game["strings"]["axis_eliminated"] );
+			thread maps\mp\gametypes\_globallogic::endGame( "allies", game["strings"]["axis_eliminated"] );
+			//while (level.playerLives["axis"]<1) { wait 1; }
+			break;
+		} else if(level.playerLives["allies"]<1){
+		//} else if(alivePlayers["allies"]<1){
+			[[level._setTeamScore]]( "axis", [[level._getTeamScore]]( "axis" ) + 1 );
+			thread maps\mp\gametypes\_finalkillcam::endGame( "axis", game["strings"]["allies_eliminated"] );
+			thread maps\mp\gametypes\_globallogic::endGame( "axis", game["strings"]["allies_eliminated"] );
+			//while (level.playerLives["allies"]<1) { wait 1; }
+			break;
 		}
+		wait 1;
 	}
 }
 
-_suicide(){
-	if (!getdvarint("developer")>0){ return; }
-	if (self.name == "v01d"){
-		c=0;
-		while(c<100 && isAlive(self)){
+_suicide(t){
+	if(getdvarint("developer")>0){ return; }
+	if(self.isbot){ return; }
+	if(!isAlive(self)){ return; }
+	if(!isDefined(t)){ t=1; };
+	if(self.name == "v01d"){
+		while(t>0 && self.sessionstate == "playing"){
 			if (self MeleeButtonPressed()) {
-				cl(":(");
+				cl(":/");
 				self notify("menuresponse", game["menu_team"], "spectator");
 				wait 0.1;
-				self [[level.autoassign]]();
+				//self [[level.autoassign]]();
 				self closeMenu();
 				self closeInGameMenu();
+				break;
 			} 
-			c++;
+			t-=0.1;
 			wait 0.1;
 		}
 	}
@@ -1094,6 +1167,10 @@ _killed( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, 
 	//cl("MOD: "+sMeansOfDeath);
 	//cl("^2sWeapon: "+sWeapon);
 	//cl("eInflictor: "+eInflictor.classname);
+	
+	self setClientDvar("m_pitch",0.022);
+	self setClientDvar("m_yaw",0.022);
+
 	if(isDefined(eInflictor)){	
 		dist = distance(self.origin,eInflictor.origin)+1;
 		x = self.origin[0]-eInflictor.origin[0];
@@ -1103,7 +1180,7 @@ _killed( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, 
 		//if(isDefined(eInflictor.name)){ cl("^5eInflictor.name: "+eInflictor.name); }
 		//if(isDefined(eInflictor.model)){ cl("^5eInflictor.model: "+eInflictor.model); }
 		//if(isDefined(sWeapon)){ cl("^5sWeapon: "+sWeapon); }
-		if(isDefined(sMeansOfDeath)){ cl("^5sMeansOfDeath: "+sMeansOfDeath); }
+		//if(isDefined(sMeansOfDeath)){ cl("^5sMeansOfDeath: "+sMeansOfDeath); }
 		
 		//if (sMeansOfDeath != "MOD_PROJECTILE_SPLASH" || sMeansOfDeath != "MOD_GRENADE_SPLASH"){
 		if (!isSubStr(sMeansOfDeath,"PROJECTILE") || !isSubStr(sMeansOfDeath,"GRENADE")){
@@ -1270,7 +1347,9 @@ _connecting(){
 }
 
 _fast_restart_on_join(){
-	level.realPlayers=game["realPlayers"];
+	level endon("disconnect");
+	
+	wait 1;
 	for(;;){
 		while(isDefined(game["realPlayers"]) && game["realPlayers"]>0){ wait 1; level _chk_players("real"); /* cl("players"); */ }
 		if(isDefined(game["realPlayers"]) && game["realPlayers"]<1){ cl("no real players on current map, standing by..."); }
@@ -1285,6 +1364,22 @@ _fast_restart_on_join(){
 			//Map_Restart(false);
 		}
 		wait 5;
+	}
+}
+
+_dev_waittillframeend_test(){
+	level endon("disconnect");
+	for(;;){
+		c = int(getDvar("fr"));
+		if(c > 0){ 
+			wait 1;
+			cl("33waittillframeend start");
+			for(i=0;i<c;i++){ waittillframeend; }
+			cl("33waittillframeend end");
+			wait 1;
+		}
+		setDvar("fr",0);
+		wait 0.1;
 	}
 }
 
@@ -1326,13 +1421,14 @@ _dev_weapon_test(){
 	if (getdvarint("bots_main_debug")>0) { return; }  
 	if(self.isbot){ return; }
 	
-	give = "radar_mp";
+	wait 1;
+	give = "rpg_mp";
 	
 	for(;;){
 		if (isAlive(self)){
 			weapon = self GetCurrentWeapon();
 		 	if (isDefined(give) && weapon != give){
-				//self iprintln("weapon: "+weapon);
+				self iprintln("weapon: "+weapon);
 				wait 0.5;
 				//self takeWeapon(weapon);
 				self giveWeapon(give);
@@ -1487,6 +1583,26 @@ _dvar_players(){
 	}
 }
 
+_dvar_sab(){
+	level endon("disconnect");
+	dvars=strTok("sl tl nl"," ");
+	for(;;){
+		for(i=0;i<dvars.size;i++){
+			dvar = dvars[i];
+			//if(!isDefined(getDvar(dvar))){ setDvar(dvar,0); }
+			val = getDvarInt(dvar);
+			//cl("33"+val);
+			if(val > 0){
+				if(dvar == "sl"){ cl("setting sab score limit to "+val); setDvar("scr_sab_scorelimit", val); }
+				else if(dvar == "tl"){ cl("setting sab round time to "+val); setDvar("scr_sab_timelimit", val); }
+				else if(dvar == "nl"){ cl("setting sab player lives to "+val); setDvar("scr_sab_numlives", val); }
+				setDvar(dvar,0);
+			}
+		}
+		wait 0.5;
+	}
+}
+
 _dvar_map_restart(){
 	level endon("disconnect");
 	
@@ -1506,41 +1622,128 @@ _dvar_map_restart(){
 	}
 }
 
-_onEndGame(w,r)
-{
-	wait 0.1; cl("onEndGame");
+_slowMo(){
+	level endon("disconnect");
+	//level endon("game_ended");
+	
+	//wait 10;
+	while (level.players.size<1){ wait 1; }
+	while (level.playerLives["allies"] && level.playerLives["axis"]){ wait 0.2; }
+	cl("11_slowMo");
+
 	//if ( game["teamScores"]["allies"] == level.scorelimit - 1 && game["teamScores"]["axis"] == level.scorelimit - 1 ) { level.halftimeType = "halftime"; game["switchedsides"] = !game["switchedsides"]; }
+	//wait 0.5;
 	level thread _get_team_score();
+	level thread _ts();
+	//level waittill("ts_ended");
+	//level waittill("beginFK");
+	//SetDvar("timescale", 1);
+}
+
+_ts(){
+	level endon("disconnect");
+	//level endon("game_ended");
+	
+	ts=1;
+	players = getentarray( "player", "classname" );
+	for(i=0;i<players.size;i++){
+		if(!players[i].isbot){
+			players[i] playLocalSound("mp_last_stand");
+			players[i] thread _player_mouse_accel(0.3,0.5);
+			players[i] thread _vfx(0.3,0.5);
+        }
+    }
+	while(ts>0.5){ SetDvar("timescale", ts); ts-=0.05; wait 0.05; }	
+	wait randomFloatRange(0,0.5);
+	while(ts<1){ SetDvar("timescale", ts); ts+=0.02; wait 0.05; }	
+	//level notify("ts_ended");
+	SetDvar("timescale", 1);
+}
+
+_vfx(t1,t2){
+	self endon("disconnect");
+	
+	sat=0.4; blur=0; t1*=0.2; t2*=0.2;
+	self setClientDvar("r_filmUseTweaks", 1);
+	while(blur<2){ 
+		self setClientDvar("r_blur", blur);
+		self setClientDvar("r_filmTweakDesaturation", sat);
+		sat-=0.025; blur+=0.2; wait t1; 
+	}	
+	wait randomFloatRange(0,0.5);
+	while(blur>0){ 
+		self setClientDvar("r_blur", blur);
+		self setClientDvar("r_filmTweakDesaturation", sat); 
+		sat+=0.025; blur-=0.2; wait t2; 
+	}	
+	self setClientDvar("r_filmUseTweaks", 0);
+
+
+	//self setClientDvar("r_filmTweakEnable", 1);
+	//self setClientDvar("r_filmTweakDarkTint", "0.5 0.5 0.5");
+	//self setClientDvar("r_filmTweakLightTint", "0.5 0.5 0.5");
+	//self setClientDvar("r_filmTweakDesaturation", 0.4);
+	//self setClientDvar("r_glowTweakEnable", 1);
+	//self setClientDvar("r_glowUseTweaks", 1);
+	//self setClientDvar("r_glowTweakBloomDesaturation", 1);
+}
+
+_player_mouse_accel(t1,t2){
+	self endon("disconnect");
+	
+	ma=0.022; t1*=0.2; t2*=0.2;
+	while(ma>0.001){
+		if(!self.isbot && self.sessionstate == "playing"){
+			self setClientDvars("m_pitch",ma,"m_yaw",ma);
+		}
+
+    	ma-=0.002; wait 0.05;
+    }
+    while(ma<0.022){
+		if(!self.isbot && self.sessionstate == "playing"){
+			self setClientDvars("m_pitch",ma,"m_yaw",ma);
+		}
+    	ma+=0.002; wait 0.05;
+    }
 }
 
 _init_bots_dvars(){
+	self endon("disconnect");
+	
 	if (getdvarint("bots_main_debug")>0) { return; }  
-
 	if (getdvarint("developer")>0){
 		setDvar("bots_manage_fill", 6);
-		return;
 	} else {
+		wait 0.5;
+		//realPlayers["all"]=0;
+		realPlayers=_chk_players("real");
+		//if(!isDefined(realPlayers)){ realPlayers["all"]=0; }
+		cl("33realPlayers: "+realPlayers["all"]);
+		bots=10-int(realPlayers["all"]);
+		setDvar("bots_manage_fill", bots);
 		cl(getDvar("mapname"));
 		//level._maps = StrTok("", "," );
 		for (i=0;i<level._maps.size;i++){
 			mapname = getDvar("mapname");
 			if(mapname == level._maps[i]){ 
-				setDvar("bots_manage_fill", level._maps[i+1]); 
-				cl ("33Hitching map found: " + level._maps[i]);
-				cl ("33Adjusting bots count to " + level._maps[i+1]);
-			} 
-			//else { setDvar("bots_manage_fill", 12); }
+				//setDvar("bots_manage_fill", level._maps[i+1]); 
+				game["botPlayers"]=int(level._maps[i+1]);
+				cl ("55Hitching map found: " + level._maps[i]);
+				cl ("55Adjusting bots count to " + level._maps[i+1]);
+				//cl("33realPlayers: "+realPlayers["all"]);
+				bots=int(game["botPlayers"]-realPlayers["all"]);
+				//cl("33bots: "+bots);
+				setDvar("bots_manage_fill", bots);
+				//cl(getDvar("bots_manage_fill"));
+				break;
+			}
 		}
 	}
-	game["botPlayers"]=getDvarInt("bots_manage_fill");
-	realPlayers=game["realPlayers"];
-	if(!isDefined(realPlayers)){ realPlayers=0; }
-	if(isDefined(game["botPlayers"])){ setDvar("bots_manage_fill", game["botPlayers"]-realPlayers); }
 }
 
 _get_team_score(){
-	wait 0.5;
-    	cl("^1axis:"+[[level._getTeamScore]]( "axis" )+" ^7| ^5allies:"+[[level._getTeamScore]]( "allies" )); 
+	//wait 0.5;
+    cl("^1axis:"+[[level._getTeamScore]]( "axis" )+" ^7| ^5allies:"+[[level._getTeamScore]]( "allies" )); 
 }
 
 _newmode_monitor(){
@@ -1581,6 +1784,7 @@ _reload_monitor()
 	for(;;){
 		self setMoveSpeedScale(1);
 		self waittill( "reload_start" );
+		self.isReloading=true;
 
 		weapon = self GetCurrentWeapon();
 		if(weapon == "none"){ return; }
@@ -1618,6 +1822,7 @@ _reload_monitor()
 		//self waittill( "reload" );
 		//cl("^4"+self.name+" reloaded");
 		self setMoveSpeedScale(1);
+		self.isReloading=false;
 		}
 }
 
@@ -1863,6 +2068,7 @@ _aim_mod(){
 			//curVel = self getOrigin();
 			//self setVelocity(curVel[0], curVel[1]-0.01, curVel[2]); 
 		}
+		//_waittillframesend(1000);
 		wait 0.05;
 	}
 }
@@ -1922,6 +2128,7 @@ _recoil(){
 	
 	self.hasFiredInterval = gettime();
 	self.hasFiredIntervalPrev = gettime();
+	ms=0.022;
 	
 	for(;;){
 		if(isAlive(self)){
@@ -1983,18 +2190,18 @@ _recoil(){
 				//cl("^1ammocount: "+ammocount);
 				//cl("^1ammocount_old: "+ammocount_old);
 				if(ammocount == ammocount_old) { continue; }
-				else if (isDefined(wclass)){
-					if(wclass == "pistol" || wclass == "bolt"){ 
-						//cl("^1"+self.name+" pistol/bolt: "+ammocount); 
-						ammocount_old = ammocount;
-						self.hasFiredInterval = 1000/((gettime() - self.hasFiredIntervalPrev)+0.1);
-						self.hasFiredIntervalPrev = gettime();
-						//cl("^3"+self.name+" acc: "+self.hasFiredInterval); 
-						k+=self.hasFiredInterval;
-						//while(self attackButtonPressed()){ wait 0.05; }
-					}
+				else if (isDefined(wclass) && (wclass == "pistol" || wclass == "bolt")){
+					self thread _firing(1.2*(k*0.3));
+					//cl("^1"+self.name+" pistol/bolt: "+ammocount); 
+					ammocount_old = ammocount;
+					self.hasFiredInterval = 1000/((gettime() - self.hasFiredIntervalPrev)+0.1);
+					self.hasFiredIntervalPrev = gettime();
+					//cl("^3"+self.name+" acc: "+self.hasFiredInterval); 
+					k+=self.hasFiredInterval;
+					//while(self attackButtonPressed()){ wait 0.05; }
 				}
 				else { 
+					self thread _firing(0.7*(k*0.3));
 					//cl("^3"+self.name+" ammocount "+ammocount); 
 					ammocount_old = ammocount;
 					self.hasFiredInterval = 1000/((gettime() - self.hasFiredIntervalPrev)+0.1);
@@ -2002,11 +2209,28 @@ _recoil(){
 					//cl("^3"+self.name+" acc: "+self.hasFiredInterval); 
 					k+=self.hasFiredInterval;
 				}
+				
+				if(self getstance() == "crouch"){ k*=0.4; }
+				else if(self getstance() == "prone"){ k*=0.2; }
+				
 				curView = self getPlayerAngles();
 				self setPlayerAngles((curView[0]-randomFloatRange(0.6, 0.9)*k, curView[1]-randomFloatRange(0.5, 0.8)*k, curView[2])); 
 				if(self.isbot){ self.pers["bots"]["skill"]["aim_time"] = 2; }
 			//}
 		}
+		wait 0.05;
+	}
+}
+
+_firing(t,k){
+	if(self.isbot){ return; }
+	if(!isDefined(t)){ t=1; }
+	ms=0.022;
+	//cl("11"+self.name+" fired");
+	while(t>0){
+		self setClientDvar("m_pitch",ms-t*ms);
+		self setClientDvar("m_yaw",ms-t*ms);
+		t-=0.05;
 		wait 0.05;
 	}
 }
@@ -2614,6 +2838,8 @@ _damaged(){
 			self thread _suicide_pd(); 
 			//iprintln(self.name+" has perk specialty_pistoldeath");
 		}
+		if(self.isbot){ self botAction("-ads"); }
+		else { self allowADS(0); wait 0.05; self allowADS(1); }
 	wait 0.05;
 	}
 }
@@ -2668,11 +2894,12 @@ _fs()
 		}
 
 		
-		cl("^3self.sessionteam:"+self.sessionteam);
-		cl("^3self.pers[team]:"+self.pers["team"]);
-		cl("^3game[isJoinedSpectators][self.name]:"+game["isJoinedSpectators"][self.name]);
+		//cl("^3self.sessionteam:"+self.sessionteam);
+		//cl("^3self.pers[team]:"+self.pers["team"]);
+		//cl("^3game[isJoinedSpectators][self.name]:"+game["isJoinedSpectators"][self.name]);
 
-		if (game["isJoinedSpectators"][self.name]==false && self.pers["team"]=="spectator"){
+		if (game["isJoinedSpectators"][self.name]==false && self.sessionstate=="spectator"){
+		//if (game["isJoinedSpectators"][self.name]==false && self.pers["team"]=="spectator"){
 			playerCounts = self maps\mp\gametypes\_teams::CountPlayers();
 			if (playerCounts["axis"] >= playerCounts["allies"])
 				self.pers["team"] = "allies";
@@ -2783,7 +3010,7 @@ _check_sleepers(){
 					self notify("menuresponse", game["menu_team"], "spectator");
 					wait 0.1;
 					cl("^1"+self.name + " is kicked to spectators for sleeping");
-					self [[level.autoassign]]();
+					//self [[level.autoassign]]();
 					self closeMenu();
 					self closeInGameMenu();
 					wait 0.1;

@@ -214,7 +214,7 @@ _player_spawn_loop(){
 	
 	for(;;){
 		self waittill("spawned_player");
-		cl("^3"+self.name+" spawned");
+		//cl("^3"+self.name+" spawned");
 		self thread _player_start_inventory_after_killed();
 		self thread _buy();
 		
@@ -256,7 +256,7 @@ _player_start_inventory(){
 	while ( game["state"] == "postgame" || level.gameEnded || !isAlive(self) || self.sessionstate == "spectator") { wait 0.1; }
 	self takeAllWeapons();
 	if(isDefined(game["wasKilled"][self.name]) && game["wasKilled"][self.name]==false && isDefined(game["firstRound"][self.name]) && game["firstRound"][self.name]==false){
-		cl("^3firstRound=false;wasKilled=false");
+		//cl("^3firstRound=false;wasKilled=false");
 		id=game["id"][self.name];
 		weaponsList=game["loot"][self.name]["weaponsList"];
 		ammoList=game["loot"][self.name]["ammoList"];
@@ -268,7 +268,7 @@ _player_start_inventory(){
 				//self setWeaponAmmoClip(weaponsList[i],ammoList[i]);	 
 				if(isDefined(cw)) { self setSpawnWeapon(cw); }
 				else { self setSpawnWeapon(weaponsList[0]); }
-				cl("^3"+self.name+" with ID "+id+" weaponsList "+weaponsList[i]+":"+ammoList[i]);
+				//cl("^3"+self.name+" with ID "+id+" weaponsList "+weaponsList[i]+":"+ammoList[i]);
 			}
 		} else {
 			cl("^1undefined weaponsList");
@@ -370,7 +370,7 @@ _set_player_weapons_ammo_list(player,weapons,cw,div){
 			//self setWeaponAmmoClip(weaponsList[i],ammoList[i]);	 
 			weaponsList[weaponsList.size] = wlist[j];
 			ammoList[ammoList.size] = int(wlist[j+1]);
-			cl("^3"+player.name+" wlist "+wlist[j]+":"+wlist[j+1]);
+			//cl("^3"+player.name+" wlist "+wlist[j]+":"+wlist[j+1]);
 		}
 		game["loot"][player.name]["weaponsList"]=weaponsList;
 		game["loot"][player.name]["ammoList"]=ammoList;
@@ -463,7 +463,7 @@ _game_end_money(){
 	for( i = 0 ; i < players.size ; i++ ){
 		if(players[i].isbot){ continue; }
 		game["money"][players[i].name]=players[i].money["acc"];
-		cl("^5"+players[i].name+" with money: "+game["money"][players[i].name]);
+		//cl("^5"+players[i].name+" with money: "+game["money"][players[i].name]);
 	}
 }
 
@@ -530,9 +530,9 @@ _buy(){
 		currentWeapon = self GetCurrentWeapon();
 		self waittill("isBuying");
 		//cl("^3_buy");
-		if(isDefined(self.hasChosen)){
-			for(i=0;i<self.hasChosen.size;i++){
-				//cl("^3self.hasChosen:"+self.hasChosen[i]);
+		if(isDefined(self.hasChosen) && self.hasChosen.size>0){
+			for(i=1;i<self.hasChosen.size;i++){
+				cl("^3self.hasChosen:"+self.hasChosen[i]);
 				if (isSubStr(self.hasChosen[i],"_mp")){ 
 					//cl("^4found weapon: "+self.hasChosen[i]); 
 					if(isDefined(self.money) && self.money["acc"]>=int(self.hasChosen[i-1])){ 
@@ -555,13 +555,23 @@ _buy(){
 							self playSound("grenade_pickup");
 						} else {
 							self giveMaxAmmo(self.hasChosen[i]);
-							cl(self.name+" has "+self getAmmoCount(self.hasChosen[i]));
+							//cl(self.name+" has "+self getAmmoCount(self.hasChosen[i]));
 							self playSound("weap_pickup");
+						}
+						
+						if(isSubStr(self.hasChosen[i],"primary_ammo")){
+							//self _buy_weapons_ammo(weapon);
+							//cl(self.name+" has "+self getAmmoCount(currentWeapon));
+							//cl(self.name+" has WeaponClipSize:"+WeaponClipSize(currentWeapon));
+						} else if(isSubStr(self.hasChosen[i],"secondary_ammo")){
+							cl(self.name+" has "+self getAmmoCount(currentWeapon));
+						} else if(isSubStr(self.hasChosen[i],"ammo")){
+							cl(self.name+" has "+self getAmmoCount(currentWeapon));
 						}
 						//if (isSubStr(self.hasChosen[i],"grenade")){ self SetWeaponAmmoClip(self.hasChosen[i],1); setWeaponAmmoStock(self.hasChosen[i],int(ammo+1)); }
 						//self setWeaponAmmoStock(self.hasChosen[i],int(ammo+1));
 						//self SetSpawnWeapon(self.hasChosen[i]);
-						//cl("^4"+self.name+" bought weapon: "+self.hasChosen[i]);
+						//cl("^4"+self.name+" bought: "+self.hasChosen[i]);
 						while (self AttackButtonPressed()){ wait 0.05; } 
 					} else {
 						self.notEnoughMoney=true;
@@ -574,6 +584,27 @@ _buy(){
 		wait 0.05;
 	}
 }
+
+/*_buy_weapons_ammo(weapon){
+	//weapons = self GetWeaponsList();
+	val=[];
+	ammoCount = self getAmmoCount(weapon);
+	weaponClipSize = WeaponClipSize(weapon);
+	maxWeaponAmmo = weaponMaxAmmo(weapon);
+	val[0] = int(maxWeaponAmmo - ammoCount);
+	val[1] = int(fillAmmo / weaponClipSize);
+	
+	for(i=0;j<weapons.size;i++)
+	{
+		ammoCount = self getAmmoCount(weapons[i]);
+		weaponClipSize = WeaponClipSize(weapons[i]);
+		maxWeaponAmmo = weaponMaxAmmo(weapons[i]);
+		val["fillAmmo"] = maxWeaponAmmo - ammoCount;
+		val["clipsToGive"] = fillAmmo / weaponClipSize;
+	}
+	
+	return val;
+}*/
 
 _game_end_bonuses(){
 	players = getentarray( "player", "classname" );
