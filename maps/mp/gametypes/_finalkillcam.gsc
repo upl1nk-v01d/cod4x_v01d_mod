@@ -1,6 +1,7 @@
 #include maps\mp\_utility;
 #include maps\mp\gametypes\_hud_util;
 #include common_scripts\utility;
+#include scripts\cl;
 
 init()
 {
@@ -13,6 +14,9 @@ init()
     level.doFK["allies"] = false;
     
     level.slowmotstart = undefined;
+    
+    level.fckTime=gettime();
+    level.fckTimePassed=0;
     
     OnPlayerConnect();
 }
@@ -241,8 +245,12 @@ CreateFKMenu( victim , attacker)
 onPlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psOffsetTime, deathAnimDuration)
 {
     //if(attacker != self){
-        level.showFinalKillcam = true;
-        
+        level.showFinalKillcam=true;
+
+        level.fckTimePassed=(gettime()-level.fckTime)/1000;
+        //cl("33level.fckTimePassed:"+level.fckTimePassed);
+        level.fckTime=gettime();
+
         team = attacker.team;
         if (!isDefined(team)) return;
         
@@ -270,7 +278,9 @@ onPlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHit
 
 endGame( winner, endReasonText )
 {
-    //print("endGame thread\n");
+	level.stopScore=true;
+	wait 2;
+    if(level.fckTimePassed>45){ level.showFinalKillcam = false; }
 
 	// return if already ending via host quit or victory
 	if ( game["state"] == "postgame" || level.gameEnded )
@@ -287,8 +297,8 @@ endGame( winner, endReasonText )
 	level.inGracePeriod = false;
 	level notify ( "game_ended" );
     
-    if ( isdefined( winner ) && level.gametype == "sd" )
-		[[level._setTeamScore]]( winner, [[level._getTeamScore]]( winner ) + 1 );
+    //if ( isdefined( winner ) && level.gametype == "sd" )
+	//	[[level._setTeamScore]]( winner, [[level._getTeamScore]]( winner ) + 1 );
 	
 	setGameEndTime( 0 ); // stop/hide the timers
 	
@@ -323,13 +333,13 @@ endGame( winner, endReasonText )
 		
 		player setClientDvars( "cg_everyoneHearsEveryone", 1 );
 
-		if( level.rankedMatch )
+		/*if( level.rankedMatch )
 		{
 			if ( isDefined( player.setPromotion ) )
 				player setClientDvar( "ui_lobbypopup", "promotion" );
 			else
 				player setClientDvar( "ui_lobbypopup", "summary" );
-		}
+		}*/
 	}   
 
     // end round
@@ -613,7 +623,7 @@ endGame( winner, endReasonText )
 		player = players[index];
 		//iPrintLnBold( "opening eog summary!" );
 		//player.sessionstate = "dead";
-		player openMenu( game["menu_eog_unlock"] );
+		//player openMenu( game["menu_eog_unlock"] );
 	}
 	
 	thread timeLimitClock_Intermission( getDvarFloat( "scr_intermission_time" ) );
@@ -666,13 +676,13 @@ startFK( winner )
         player notify("beginFK", winner);
     }
     
-    slowMotion();
+    //slowMotion();
 
 }
 
 slowMotion()
 {
-   /* while(!isDefined(level.slowmostart))
+   while(!isDefined(level.slowmostart))
         wait 0.05;
     
     wait level.slowmostart;
@@ -685,5 +695,5 @@ slowMotion()
     
     SetDvar("timescale", "1");
     for(i=0;i<level.players.size;i++)
-        level.players[i] setclientdvar("timescale", "1");*/
+        level.players[i] setclientdvar("timescale", "1");
 }

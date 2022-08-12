@@ -33,6 +33,7 @@ main()
 	level.teamBased = true;
 	level.overrideTeamScore = true;
 	level._teamEliminated = false;
+	level.stopScore=false;
 
 	maps\mp\gametypes\_globallogic::registerRoundSwitchDvar( level.gameType, 0, 0, 9 );
 	maps\mp\gametypes\_globallogic::registerTimeLimitDvar( level.gameType, 10, 0, 1440 );
@@ -260,6 +261,9 @@ onOvertime()
 
 onDeadEvent( team )
 {
+	if ( level.stopScore )
+		return;
+	
 	if ( level.bombExploded )
 		return;
 		
@@ -276,6 +280,7 @@ onDeadEvent( team )
 			//thread maps\mp\gametypes\_globallogic::endGame( "tie", game["strings"]["tie"] );
 			thread maps\mp\gametypes\_finalkillcam::endGame( "tie", game["strings"]["tie"]  );
 		}
+		//print("--all--\n");
 	}
 	else if ( level.bombPlanted )
 	{
@@ -287,7 +292,7 @@ onDeadEvent( team )
 			
 		level._teamEliminated = true;
 		[[level._setTeamScore]]( level.bombPlantedBy, [[level._getTeamScore]]( level.bombPlantedBy ) + 1 );
-		//print("--bombPlantedBy--\n");
+		print("--bombPlantedBy--\n");
 		//thread maps\mp\gametypes\_globallogic::endGame( level.bombPlantedBy, game["strings"][level.otherTeam[level.bombPlantedBy]+"_eliminated"] );
 		thread maps\mp\gametypes\_finalkillcam::endGame( level.bombPlantedBy, game["strings"][level.otherTeam[level.bombPlantedBy]+"_eliminated"] );
 	}
@@ -295,7 +300,7 @@ onDeadEvent( team )
 	{
 		level._teamEliminated = true;
 		[[level._setTeamScore]]( level.otherTeam[team], [[level._getTeamScore]]( level.otherTeam[team] ) + 1 );
-		//print("--otherTeam--\n");
+		print("--otherTeam--\n");
 		//thread maps\mp\gametypes\_globallogic::endGame( level.otherTeam[team], game["strings"][team+"_eliminated"] );
 		thread maps\mp\gametypes\_finalkillcam::endGame( level.otherTeam[team], game["strings"][team+"_eliminated"] );
 	}
@@ -388,7 +393,7 @@ sabotage()
 	level.sabBomb maps\mp\gametypes\_gameobjects::set2DIcon( "friendly", "compass_waypoint_bomb" );
 	level.sabBomb maps\mp\gametypes\_gameobjects::set3DIcon( "friendly", "waypoint_bomb" );
 	level.sabBomb maps\mp\gametypes\_gameobjects::setCarryIcon( "hud_suitcase_bomb" );
-	level.sabBomb maps\mp\gametypes\_gameobjects::setVisibleTeam( "any" );
+	//level.sabBomb maps\mp\gametypes\_gameobjects::setVisibleTeam( "any" );
 	level.sabBomb.objIDPingEnemy = true;
 	level.sabBomb.onPickup = ::onPickup;
 	level.sabBomb.onDrop = ::onDrop;
@@ -509,14 +514,14 @@ onPickup( player )
 	}
 	
 	self maps\mp\gametypes\_gameobjects::setOwnerTeam( team );
-	self maps\mp\gametypes\_gameobjects::setVisibleTeam( "any" );
+	//self maps\mp\gametypes\_gameobjects::setVisibleTeam( "any" );
 	self maps\mp\gametypes\_gameobjects::set2DIcon( "enemy", "compass_waypoint_target" );
 	self maps\mp\gametypes\_gameobjects::set3DIcon( "enemy", "waypoint_kill" );
 	self maps\mp\gametypes\_gameobjects::set2DIcon( "friendly", "compass_waypoint_defend" );
 	self maps\mp\gametypes\_gameobjects::set3DIcon( "friendly", "waypoint_defend" );
 		
-	level.bombZones[team] maps\mp\gametypes\_gameobjects::setVisibleTeam( "none" );
-	level.bombZones[otherTeam] maps\mp\gametypes\_gameobjects::setVisibleTeam( "any" );
+	//level.bombZones[team] maps\mp\gametypes\_gameobjects::setVisibleTeam( "none" );
+	//level.bombZones[otherTeam] maps\mp\gametypes\_gameobjects::setVisibleTeam( "any" );
 }
 
 
@@ -564,14 +569,14 @@ abandonmentThink( delay )
 	//playSoundOnPlayers( game["bomb_dropped_sound"], otherTeam );
 
 	self maps\mp\gametypes\_gameobjects::setOwnerTeam( "neutral" );
-	self maps\mp\gametypes\_gameobjects::setVisibleTeam( "any" );
+	//self maps\mp\gametypes\_gameobjects::setVisibleTeam( "any" );
 	self maps\mp\gametypes\_gameobjects::set2DIcon( "enemy", "compass_waypoint_bomb" );
 	self maps\mp\gametypes\_gameobjects::set3DIcon( "enemy", "waypoint_bomb" );
 	self maps\mp\gametypes\_gameobjects::set2DIcon( "friendly", "compass_waypoint_bomb" );
 	self maps\mp\gametypes\_gameobjects::set3DIcon( "friendly", "waypoint_bomb" );
 
-	level.bombZones["allies"] maps\mp\gametypes\_gameobjects::setVisibleTeam( "none" );
-	level.bombZones["axis"] maps\mp\gametypes\_gameobjects::setVisibleTeam( "none" );		
+	//level.bombZones["allies"] maps\mp\gametypes\_gameobjects::setVisibleTeam( "none" );
+	//level.bombZones["axis"] maps\mp\gametypes\_gameobjects::setVisibleTeam( "none" );		
 }
 
 
@@ -602,7 +607,7 @@ onUse( player )
 //		self.keyObject maps\mp\gametypes\_gameobjects::disableObject();
 		level.sabBomb.autoResetTime = undefined;
 		level.sabBomb maps\mp\gametypes\_gameobjects::allowCarry( "none" );
-		level.sabBomb maps\mp\gametypes\_gameobjects::setVisibleTeam( "none" );
+		//level.sabBomb maps\mp\gametypes\_gameobjects::setVisibleTeam( "none" );
 		level.sabBomb maps\mp\gametypes\_gameobjects::setDropped();
 		self.useWeapon = "briefcase_bomb_defuse_mp";
 		
@@ -742,7 +747,7 @@ resetBombsite()
 	self maps\mp\gametypes\_gameobjects::set3DIcon( "friendly", "waypoint_defend" );
 	self maps\mp\gametypes\_gameobjects::set2DIcon( "enemy", "compass_waypoint_target" );
 	self maps\mp\gametypes\_gameobjects::set3DIcon( "enemy", "waypoint_target" );
-	self maps\mp\gametypes\_gameobjects::setVisibleTeam( "none" );
+	//self maps\mp\gametypes\_gameobjects::setVisibleTeam( "none" );
 	self.useWeapon = "briefcase_bomb_mp";
 }
 
@@ -757,7 +762,7 @@ setUpForDefusing()
 	self maps\mp\gametypes\_gameobjects::set3DIcon( "friendly", "waypoint_defuse" );
 	self maps\mp\gametypes\_gameobjects::set2DIcon( "enemy", "compass_waypoint_defend" );
 	self maps\mp\gametypes\_gameobjects::set3DIcon( "enemy", "waypoint_defend" );
-	self maps\mp\gametypes\_gameobjects::setVisibleTeam( "any" );
+	//self maps\mp\gametypes\_gameobjects::setVisibleTeam( "any" );
 }
 
 
