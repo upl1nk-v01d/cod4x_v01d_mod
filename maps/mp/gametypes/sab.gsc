@@ -702,7 +702,7 @@ bombPlanted( destroyedObj, team )
 	if ( isDefined( destroyedObj.exploderIndex ) )
 		exploder( destroyedObj.exploderIndex );
 	
-	if (level._teamEliminated == false){
+	if (level._teamEliminated == false && level.stopScore==false){
 		[[level._setTeamScore]]( team, [[level._getTeamScore]]( team ) + 1 );
 	} else {
 		print("-- not scoring winning team twice-- \n");
