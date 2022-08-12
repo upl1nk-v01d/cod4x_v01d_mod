@@ -441,7 +441,7 @@ _menu_response()
 			self notify("hasReadWelcomeMsg");
 			self notify("hasPressedFButton");
 			game["hasReadMOTD"][self.name]=true;
-			//game["isJoinedSpectators"][self.name]=false; 
+			game["isJoinedSpectators"][self.name]=false;
 			self suicide();
 			self thread _fs();
 			//self notify("menuresponse", game["menu_changeclass"], "custom"+(1));
@@ -453,6 +453,7 @@ _menu_response()
 		}
 		
 		if(response == "spectator"){ 
+			self.pers["lives"]=0;
 			if(isDefined(game["wasKilled"])){ game["wasKilled"][self.name]=true; }
 			game["isJoinedSpectators"][self.name]=true; 
 			//self suicide();
@@ -1335,6 +1336,7 @@ _connecting(){
 	if (!self.isbot) { 
 		if(!isDefined(game["isConnecting"])){ return; }
 		name = self.name;
+		game["isJoinedSpectators"][self.name]=true;
 		if(!isDefined(game["isConnecting"][name])){ game["isConnecting"][name]=false; }
 		if(game["isConnecting"][name]!=true){ cl("^3"+name+" connecting"); }
 		game["realPlayers"]++;
@@ -2901,9 +2903,8 @@ _fs()
 		//cl("^3self.pers[team]:"+self.pers["team"]);
 		//cl("^3game[isJoinedSpectators][self.name]:"+game["isJoinedSpectators"][self.name]);
 
-		if (game["isJoinedSpectators"][self.name]==true){
+		if (game["isJoinedSpectators"][self.name]==false){
 		//if (game["isJoinedSpectators"][self.name]==false && self.pers["team"]=="spectator"){
-			game["isJoinedSpectators"][self.name]=false;
 			playerCounts = self maps\mp\gametypes\_teams::CountPlayers();
 			if (playerCounts["axis"] >= playerCounts["allies"])
 				self.pers["team"] = "allies";
@@ -2938,22 +2939,15 @@ _fs()
 				//self iprintln("^2You have "+self.pers["lives"]+" live\n");
 				//self iprintln("^2You have 1 live\n");
 				//if(!getdvarint("bots_main_debug")>0){
-				//	[[level.spawnPlayer]]();
+					//[[level.spawnPlayer]]();
 				//}
-				//self.sessionstate = "playing";
-				//cl("^4forcespawned "+self.name);
+				self.sessionstate = "playing";
+				cl("^4forcespawned "+self.name);
 			} 
 			//else { 
 			//	self.pers["lives"] = getdvarint("scr_sab_numlives")-1; 
 			//}
-		} else if (game["isJoinedSpectators"][self.name]==false && self.pers["team"] == "axis" || self.pers["team"] == "allies"){
-			self.sessionteam = self.pers["team"];
-			wait 0.05;
-			//self notify("menuresponse", game["menu_changeclass"], "custom"+(1));
-			self [[level.class]]("custom1");
-			//self.sessionstate = "playing";
-			//[[level.spawnPlayer]]();
-			//self.pers["lives"] = getdvarint("scr_sab_numlives")-1;
+		//} else if (game["isJoinedSpectators"][self.name]==false && self.pers["team"] == "axis" || self.pers["team"] == "allies"){
 		}
 		
 		if (isDefined(level.inPrematchPeriod) && level.inPrematchPeriod==true){
