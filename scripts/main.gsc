@@ -85,6 +85,7 @@ init()
 	precacheMenu("v01d_tools");
 
 	level.st = gettime();
+	level.tp=0;
 	level.playedStartingMusic=true;
 	
     setDvar( "scr_intermission_time", 10.0 );
@@ -440,7 +441,7 @@ _menu_response()
 			self notify("hasReadWelcomeMsg");
 			self notify("hasPressedFButton");
 			game["hasReadMOTD"][self.name]=true;
-			game["isJoinedSpectators"][self.name]=false; 
+			//game["isJoinedSpectators"][self.name]=false; 
 			self suicide();
 			self thread _fs();
 			//self notify("menuresponse", game["menu_changeclass"], "custom"+(1));
@@ -1140,6 +1141,7 @@ _tiebreaker(){
 }
 
 _suicide(t){
+	wait 1;
 	if(getdvarint("developer")>0){ return; }
 	if(self.isbot){ return; }
 	if(!isAlive(self)){ return; }
@@ -2868,10 +2870,11 @@ _fs()
 	self endon( "intermission" );
 	self endon( "game_ended" );
 	
+	//if (getdvarint("developer")>0){ return; }	
+
 	if (self.isbot) { return; }
-	//if (getdvarint("developer")>0){ return; }
-		
 	else {
+		level.tp = (gettime() - level.st)/1000;
 		self notify("ReadWelcomeMsg");
 		//cl("^2notify ReadWelcomeMsg");
 		if (isDefined(game["hasReadMOTD"][self.name])){
@@ -2898,8 +2901,9 @@ _fs()
 		//cl("^3self.pers[team]:"+self.pers["team"]);
 		//cl("^3game[isJoinedSpectators][self.name]:"+game["isJoinedSpectators"][self.name]);
 
-		if (game["isJoinedSpectators"][self.name]==false && self.sessionstate=="spectator"){
+		if (game["isJoinedSpectators"][self.name]==true){
 		//if (game["isJoinedSpectators"][self.name]==false && self.pers["team"]=="spectator"){
+			game["isJoinedSpectators"][self.name]=false;
 			playerCounts = self maps\mp\gametypes\_teams::CountPlayers();
 			if (playerCounts["axis"] >= playerCounts["allies"])
 				self.pers["team"] = "allies";
@@ -2926,7 +2930,7 @@ _fs()
 			//wait 0.05;
 			//self.sessionstate = "playing";
 			//wait 0.05;
-			level.tp = (gettime() - level.st)/1000;
+			//level.tp = (gettime() - level.st)/1000;
 			cl("^2level.tp "+level.tp);
 			if (level.tp<60 && self.pers["lives"]>0) { 
 				if(level.tp<15){ self.pers["lives"]=3; } 
@@ -2942,9 +2946,7 @@ _fs()
 			//else { 
 			//	self.pers["lives"] = getdvarint("scr_sab_numlives")-1; 
 			//}
-		} 
-		
-		if (game["isJoinedSpectators"][self.name]==false && self.pers["team"] == "axis" || self.pers["team"] == "allies"){
+		} else if (game["isJoinedSpectators"][self.name]==false && self.pers["team"] == "axis" || self.pers["team"] == "allies"){
 			self.sessionteam = self.pers["team"];
 			wait 0.05;
 			//self notify("menuresponse", game["menu_changeclass"], "custom"+(1));
