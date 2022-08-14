@@ -233,6 +233,7 @@ _player_spawn_loop(){
 	
 	self.bombPing=undefined;
 	self setClientDvar( "v01d_tools_bp", 1 );
+	self unLink();
 	
 	for(;;){
 		self waittill("spawned_player");	if (!isDefined(game["nextMap"])){ game["nextMap"]=""; }
@@ -1336,7 +1337,7 @@ _connecting(){
 	if (!self.isbot) { 
 		if(!isDefined(game["isConnecting"])){ return; }
 		name = self.name;
-		game["isJoinedSpectators"][self.name]=true;
+		if(!isDefined(game["isJoinedSpectators"][self.name])){ game["isJoinedSpectators"][self.name]=true; }
 		if(!isDefined(game["isConnecting"][name])){ game["isConnecting"][name]=false; }
 		if(game["isConnecting"][name]!=true){ cl("^3"+name+" connecting"); }
 		game["realPlayers"]++;
@@ -2876,13 +2877,13 @@ _fs()
 
 	if (self.isbot) { return; }
 	else {
-		level.tp = (gettime() - level.st)/1000;
 		self notify("ReadWelcomeMsg");
 		//cl("^2notify ReadWelcomeMsg");
 		if (isDefined(game["hasReadMOTD"][self.name])){
 			if (game["hasReadMOTD"][self.name]==false){					
 				//cl("^3waittill hasReadWelcomeMsg");
 				self waittill("hasReadWelcomeMsg");
+				//game["isJoinedSpectators"][self.name]=false;
 			}
 		}
 
@@ -2893,7 +2894,7 @@ _fs()
 				//print ("--" + level._foundSleepers[i] + "--\n");
 				if (self.name == level._foundSleepers[i]){
 					print ("--found sleeper: " + level._foundSleepers[i] + "--\n");
-					return;
+					//return;
 				}
 			}
 		}
@@ -2903,13 +2904,14 @@ _fs()
 		//cl("^3self.pers[team]:"+self.pers["team"]);
 		//cl("^3game[isJoinedSpectators][self.name]:"+game["isJoinedSpectators"][self.name]);
 
-		if (game["isJoinedSpectators"][self.name]==false){
+		if (game["isJoinedSpectators"][self.name]==true){
 		//if (game["isJoinedSpectators"][self.name]==false && self.pers["team"]=="spectator"){
-			playerCounts = self maps\mp\gametypes\_teams::CountPlayers();
-			if (playerCounts["axis"] >= playerCounts["allies"])
-				self.pers["team"] = "allies";
-			else 
-				self.pers["team"] = "axis";
+			game["isJoinedSpectators"][self.name]=false;
+			//playerCounts = self maps\mp\gametypes\_teams::CountPlayers();
+			//if (playerCounts["axis"] >= playerCounts["allies"])
+			//	self.pers["team"] = "allies";
+			//else 
+			//	self.pers["team"] = "axis";
 			
 			self.sessionteam = self.pers["team"];
 			//self setclientdvar("g_scriptMainMenu", game["menu_class_"+self.pers["team"]]);
@@ -2925,28 +2927,33 @@ _fs()
 			//self notify("menuresponse", game["menu_changeclass"], "custom"+(1));
 			//self closeMenu();
 			//self closeInGameMenu();
-			self [[level.class]]("custom1");
+			//self [[level.class]]("custom1");
 			//wait 0.05;
 			//[[level.spawnPlayer]]();
 			//wait 0.05;
 			//self.sessionstate = "playing";
 			//wait 0.05;
 			//level.tp = (gettime() - level.st)/1000;
+			self [[level.class]]("custom1");
+			level.tp = (gettime() - level.st)/1000;
 			cl("^2level.tp "+level.tp);
-			if (level.tp<60 && self.pers["lives"]>0) { 
-				if(level.tp<15){ self.pers["lives"]=3; } 
-				else { self.pers["lives"]=0; }
+			if (self.hasSpawned) { 
+				self.pers["lives"]=3; 
 				//self iprintln("^2You have "+self.pers["lives"]+" live\n");
 				//self iprintln("^2You have 1 live\n");
 				//if(!getdvarint("bots_main_debug")>0){
 					//[[level.spawnPlayer]]();
 				//}
-				self.sessionstate = "playing";
-				cl("^4forcespawned "+self.name);
+				//self.sessionstate = "playing";
+				//self thread [[level.spawnClient]]();
+				//self thread [[level.spawnPlayer]]();
 			} 
-			//else { 
+			else { 
+				self thread [[level.spawnPlayer]]();
+				self.pers["lives"]=1;
+				cl("^4forcespawned "+self.name);
 			//	self.pers["lives"] = getdvarint("scr_sab_numlives")-1; 
-			//}
+			}
 		//} else if (game["isJoinedSpectators"][self.name]==false && self.pers["team"] == "axis" || self.pers["team"] == "allies"){
 		}
 		
