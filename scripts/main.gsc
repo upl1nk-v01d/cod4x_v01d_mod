@@ -96,12 +96,12 @@ init()
 	setDvar("bots_main_menu", false);
 	//setDvar("bots_play_fire",0);
 	
-	setDvar("pl","");
-	setDvar("m","");
+	setDvar("pl",""); //in terminal argument a = show all players, r = real players, b = bot players
+	setDvar("m",""); //in terminal argument i = show current map and team score, f = fast restart, r = brutal restart
 	SetDvar("timescale", 1);
-	SetDvar("sl",0);
-	SetDvar("tl",0);
-	SetDvar("nl",0);
+	SetDvar("sl",0); //set dvar scr_sab_scorelimit to args val
+	SetDvar("tl",0); //set dvar scr_sab_timelimit of round to args val
+	SetDvar("nl",0); //set dvar scr_sab_numlives of player to args val
 	
 	if (getdvarint("developer")>0) { 
 		setDvar("scr_game_spectatetype", "2"); 
@@ -118,6 +118,7 @@ init()
 	if (!isDefined(game["isJoinedSpectators"])){ game["isJoinedSpectators"]=[]; }
 	if (!isDefined(game["nextMap"])){ game["nextMap"]=""; }
 	if (!isDefined(game["prevMap"])){ game["prevMap"]=""; }
+	if (!isDefined(game["mapList"])){ game["mapList"]=[]; }
 
 	if (level.waypointCount == 0) {
 		game["waypointless_map"]="on";
@@ -163,7 +164,7 @@ init()
         
         level waittill("connected", player);
 		if (!player.isbot) { player thread _player_info(1,player.name); }
-		if(!isDefined(game["isJoinedSpectators"][player.name])){ game["isJoinedSpectators"][player.name]=false; }
+		if(!isDefined(game["isJoinedSpectators"][player.name])){ game["isJoinedSpectators"][player.name]=true; }
         
         player thread _welcome();
         player thread _info();
@@ -236,7 +237,7 @@ _player_spawn_loop(){
 	self unLink();
 	
 	for(;;){
-		self waittill("spawned_player");	if (!isDefined(game["nextMap"])){ game["nextMap"]=""; }
+		self waittill("spawned_player");	
 
 		//cl("^3"+self.name+" spawned");
 
@@ -326,7 +327,8 @@ _maps_randomizer(){
 	//setDvar("scr_sab_scorelimit",2);
 	//setDvar("scr_sab_numlives",1);
 	filename="sv_maps.cfg";
-	if(FS_TestFile(filename)){ 
+			
+	if(FS_TestFile(filename) && game["mapList"].size<1){ 
 		csv = FS_FOpen(filename, "read");
 		line = FS_ReadLine(csv);
 		while (isDefined(line) && line != ""){
@@ -340,7 +342,10 @@ _maps_randomizer(){
 		line = StrRepl(line, "\"", "");
 		line = StrRepl(line, "map ", "");
 		//cl("11"+line);
-		level.mapList = strTok(line," ");
+		game["mapList"] = strTok(line," ");
+	}
+	level.mapList = game["mapList"];
+	if(isDefined(level.mapList)){
 		//cl("33last map:"+level.mapList[level.mapList.size-1]);
 		n=randomIntRange(0,level.mapList.size);
 		level.nextMap = level.mapList[n];
@@ -358,25 +363,8 @@ _maps_randomizer(){
 			cl("22next map: "+game["nextMap"]);
 			wait getDvarFloat( "scr_intermission_time" )-1.5;
 			exec("map " + game["nextMap"]);
+			game["nextMap"]="";
 		}
-	}
-}
-
-_dev_timescale(){
-	self endon ( "disconnect" );
-	//self endon ( "death" );
-	self endon( "intermission" );
-	self endon( "game_ended" );
-	//if (!getdvarint("developer")>0){ return; }
-	if(self.isbot){ return; }
-
-	while(isAlive(self)){
-		//m_pitch = self getUserInfo("setu m_pitch 1");
-		//cl("33"+self.name+" m_pitch: "+m_pitch);
-		self setClientDvar("m_pitch",0.022);
-		self setClientDvar("m_yaw",0.022);
-		SetDvar("timescale", 0.3);
-		wait 1;
 	}
 }
 
@@ -443,6 +431,7 @@ _menu_response()
 			self notify("hasPressedFButton");
 			game["hasReadMOTD"][self.name]=true;
 			game["isJoinedSpectators"][self.name]=false;
+			//cl("33game[isJoinedSpectators][self.name]: " + game["isJoinedSpectators"][self.name]);
 			self suicide();
 			self thread _fs();
 			//self notify("menuresponse", game["menu_changeclass"], "custom"+(1));
@@ -457,6 +446,7 @@ _menu_response()
 			self.pers["lives"]=0;
 			if(isDefined(game["wasKilled"])){ game["wasKilled"][self.name]=true; }
 			game["isJoinedSpectators"][self.name]=true; 
+			//cl("33game[isJoinedSpectators][self.name]: " + game["isJoinedSpectators"][self.name]);
 			//self suicide();
 			self [[level.spectator]]();
 			self setClientDvar("m_pitch",0.022);
@@ -1127,14 +1117,14 @@ _tiebreaker(){
 		//if(alivePlayers["axis"]<1){
 			[[level._setTeamScore]]( "allies", [[level._getTeamScore]]( "allies" ) + 1 );
 			thread maps\mp\gametypes\_finalkillcam::endGame( "allies", game["strings"]["axis_eliminated"] );
-			thread maps\mp\gametypes\_globallogic::endGame( "allies", game["strings"]["axis_eliminated"] );
+			//thread maps\mp\gametypes\_globallogic::endGame( "allies", game["strings"]["axis_eliminated"] );
 			//while (level.playerLives["axis"]<1) { wait 1; }
 			break;
 		} else if(level.playerLives["allies"]<1){
 		//} else if(alivePlayers["allies"]<1){
 			[[level._setTeamScore]]( "axis", [[level._getTeamScore]]( "axis" ) + 1 );
 			thread maps\mp\gametypes\_finalkillcam::endGame( "axis", game["strings"]["allies_eliminated"] );
-			thread maps\mp\gametypes\_globallogic::endGame( "axis", game["strings"]["allies_eliminated"] );
+			//thread maps\mp\gametypes\_globallogic::endGame( "axis", game["strings"]["allies_eliminated"] );
 			//while (level.playerLives["allies"]<1) { wait 1; }
 			break;
 		}
@@ -1369,6 +1359,24 @@ _fast_restart_on_join(){
 			//Map_Restart(false);
 		}
 		wait 5;
+	}
+}
+
+_dev_timescale(){
+	self endon ( "disconnect" );
+	//self endon ( "death" );
+	self endon( "intermission" );
+	self endon( "game_ended" );
+	//if (!getdvarint("developer")>0){ return; }
+	if(self.isbot){ return; }
+
+	while(isAlive(self)){
+		//m_pitch = self getUserInfo("setu m_pitch 1");
+		//cl("33"+self.name+" m_pitch: "+m_pitch);
+		self setClientDvar("m_pitch",0.022);
+		self setClientDvar("m_yaw",0.022);
+		SetDvar("timescale", 0.3);
+		wait 1;
 	}
 }
 
@@ -1633,7 +1641,7 @@ _slowMo(){
 	
 	//wait 10;
 	while (level.players.size<1){ wait 1; }
-	while (level.playerLives["allies"] && level.playerLives["axis"]){ wait 0.2; }
+	while (level.playerLives["allies"]>0 && level.playerLives["axis"]>0){ wait 0.2; }
 	cl("11_slowMo");
 
 	//if ( game["teamScores"]["allies"] == level.scorelimit - 1 && game["teamScores"]["axis"] == level.scorelimit - 1 ) { level.halftimeType = "halftime"; game["switchedsides"] = !game["switchedsides"]; }
@@ -2883,7 +2891,9 @@ _fs()
 			if (game["hasReadMOTD"][self.name]==false){					
 				//cl("^3waittill hasReadWelcomeMsg");
 				self waittill("hasReadWelcomeMsg");
-				//game["isJoinedSpectators"][self.name]=false;
+				[[level.autoassign]]();
+				self [[level.class]]("custom1");
+				game["isJoinedSpectators"][self.name]=false;
 			}
 		}
 
@@ -2899,62 +2909,24 @@ _fs()
 			}
 		}
 
-		
 		//cl("^3self.sessionteam:"+self.sessionteam);
 		//cl("^3self.pers[team]:"+self.pers["team"]);
 		//cl("^3game[isJoinedSpectators][self.name]:"+game["isJoinedSpectators"][self.name]);
+		
+		level.tp = (gettime() - level.st)/1000;
+		cl("^2level.tp "+level.tp);
 
-		if (game["isJoinedSpectators"][self.name]==true){
-		//if (game["isJoinedSpectators"][self.name]==false && self.pers["team"]=="spectator"){
-			game["isJoinedSpectators"][self.name]=false;
-			//playerCounts = self maps\mp\gametypes\_teams::CountPlayers();
-			//if (playerCounts["axis"] >= playerCounts["allies"])
-			//	self.pers["team"] = "allies";
-			//else 
-			//	self.pers["team"] = "axis";
-			
-			self.sessionteam = self.pers["team"];
-			//self setclientdvar("g_scriptMainMenu", game["menu_class_"+self.pers["team"]]);
-			//self notify("menuresponse", game["menu_team"], self.pers["team"]);
-			//self.class = "undefined";
-			//self.waitingToSpawn = true;
-			[[level.autoassign]]();
-			wait 0.05;
-			//if (getdvarint("developer")>0){
-			//	wait 0.5;
-			//}
-			//self notify("menuresponse", game["menu_changeclass"], "custom"+(randomInt(5)+1));
-			//self notify("menuresponse", game["menu_changeclass"], "custom"+(1));
-			//self closeMenu();
-			//self closeInGameMenu();
-			//self [[level.class]]("custom1");
-			//wait 0.05;
-			//[[level.spawnPlayer]]();
-			//wait 0.05;
-			//self.sessionstate = "playing";
-			//wait 0.05;
-			//level.tp = (gettime() - level.st)/1000;
-			self [[level.class]]("custom1");
-			level.tp = (gettime() - level.st)/1000;
-			cl("^2level.tp "+level.tp);
-			if (self.hasSpawned) { 
-				self.pers["lives"]=3; 
-				//self iprintln("^2You have "+self.pers["lives"]+" live\n");
-				//self iprintln("^2You have 1 live\n");
-				//if(!getdvarint("bots_main_debug")>0){
-					//[[level.spawnPlayer]]();
-				//}
-				//self.sessionstate = "playing";
-				//self thread [[level.spawnClient]]();
-				//self thread [[level.spawnPlayer]]();
-			} 
-			else { 
-				self thread [[level.spawnPlayer]]();
-				self.pers["lives"]=1;
+		if (game["isJoinedSpectators"][self.name]==false && self.pers["team"]!="spectator"){
+			if(level.tp<60){ 
+				self.pers["lives"]=getDvarInt("scr_sab_numlives")+1;
+				if(level.tp<30){ self.pers["lives"]=getDvarInt("scr_sab_numlives")+1; }
+				else { self.pers["lives"]=1; }
+				self.pers["team"]=self.sessionteam;
+				self [[level.class]]("custom1");
+				self.sessionstate = "playing";
+				self notify("player_spawned");
 				cl("^4forcespawned "+self.name);
-			//	self.pers["lives"] = getdvarint("scr_sab_numlives")-1; 
 			}
-		//} else if (game["isJoinedSpectators"][self.name]==false && self.pers["team"] == "axis" || self.pers["team"] == "allies"){
 		}
 		
 		if (isDefined(level.inPrematchPeriod) && level.inPrematchPeriod==true){
