@@ -7,6 +7,7 @@ init()
 	// attachments are now shown here, they are per weapon settings instead
 	
 	// generating weaponIDs array
+	level.claymoreActivateDelay=10;
 	level.weaponIDs = [];
 	max_weapon_num = 149;
 	attachment_num = 150;
@@ -719,12 +720,14 @@ watchClaymores()
 		if ( weapname == "claymore" || weapname == "claymore_mp" )
 		{
 			self.claymorearray[self.claymorearray.size] = claymore;
+			claymore.trigger = claymore.origin;
+			claymore.activated = false;
 			claymore.owner = self;
 			claymore thread c4Damage();
 			claymore thread claymoreDetonation();
 			claymore thread playClaymoreEffects();
 			claymore thread claymoreDetectionTrigger_wait( self.pers["team"] );
-			claymore maps\mp\_entityheadicons::setEntityHeadIcon(self.pers["team"], (0,0,20));
+			//claymore maps\mp\_entityheadicons::setEntityHeadIcon(self.pers["team"], (0,0,20));
 			
 			/#
 			if ( getdvarint("scr_claymoredebug") )
@@ -801,17 +804,21 @@ claymoreDetonation()
 	damagearea = spawn("trigger_radius", self.origin + (0,0,0-level.claymoreDetonateRadius), 0, level.claymoreDetonateRadius, level.claymoreDetonateRadius*2);
 	self thread deleteOnDeath( damagearea );
 	
+	wait level.claymoreActivateDelay;
+	self.activated = true;
+	self playsound ("claymore_activated");
+	
 	while(1)
 	{
 		damagearea waittill("trigger", player);
 		
-		if ( getdvarint("scr_claymoredebug") != 1 )
+		/*if ( getdvarint("scr_claymoredebug") != 1 )
 		{
 			if ( isdefined( self.owner ) && player == self.owner )
 				continue;
 			if ( !friendlyFireCheck( self.owner, player, 0 ) )
 				continue;
-		}
+		}*/
 		if ( lengthsquared( player getVelocity() ) < 10 )
 			continue;
 		
@@ -1271,6 +1278,8 @@ showHeadIcon( trigger )
 playClaymoreEffects()
 {
 	self endon("death");
+	
+	wait level.claymoreActivateDelay;
 	
 	while(1)
 	{

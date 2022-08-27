@@ -1,3 +1,4 @@
+//
 init()
 {
 	game["menu_team"] = "team_marinesopfor";

@@ -17,6 +17,7 @@ init()
     
     level.fckTime=gettime();
     level.fckTimePassed=0;
+    level.stopScore=false;
     
     OnPlayerConnect();
 }

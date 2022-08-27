@@ -23,13 +23,6 @@ CodeCallback_StartGameType()
 		
 		//level thread scripts\finalkillcam::init();
 		level thread scripts\main::init();
-		level thread scripts\bots_nav::init();
-		level thread scripts\bots_aim_ext::init();
-		level thread scripts\bots_fire_ext::init();
-		level thread scripts\chopper_ext::init();
-		level thread scripts\tactical::init();
-		level thread scripts\money::init();
-		level thread scripts\menus::init();
 	}
 }
 

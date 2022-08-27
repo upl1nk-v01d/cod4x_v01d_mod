@@ -532,16 +532,16 @@ matchStartTimer()
 	visionSetNaked( "mpIntro", 0 );
 	
 	matchStartText = createServerFontString( "objective", 1.5 );
-	matchStartText setPoint( "CENTER", "CENTER", 0, -20 );
-	matchStartText.sort = 1001;
+	matchStartText setPoint( "CENTER", "CENTER", 0, 200 );
+	matchStartText.sort = 0;
 	matchStartText setText( game["strings"]["waiting_for_teams"] );
 	matchStartText.foreground = false;
 	matchStartText.hidewheninmenu = true;
 	
 	matchStartTimer = createServerTimer( "objective", 1.4 );
-	matchStartTimer setPoint( "CENTER", "CENTER", 0, 0 );
+	matchStartTimer setPoint( "CENTER", "CENTER", 0, 220 );
 	matchStartTimer setTimer( level.prematchPeriod );
-	matchStartTimer.sort = 1001;
+	matchStartTimer.sort = 0;
 	matchStartTimer.foreground = false;
 	matchStartTimer.hideWhenInMenu = true;
 	
@@ -609,7 +609,7 @@ spawnPlayer()
 
 	if ( !self.wasAliveAtMatchStart )
 	{
-		acceptablePassedTime = 20;
+		acceptablePassedTime = 120;
 		if ( level.timeLimit > 0 && acceptablePassedTime < level.timeLimit * 60 / 4 )
 			acceptablePassedTime = level.timeLimit * 60 / 4;
 		
@@ -4783,8 +4783,8 @@ Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDi
 		self.lastStandParams = undefined;
 	}
 
-	if( isHeadShot( sWeapon, sHitLoc, sMeansOfDeath ) )
-		sMeansOfDeath = "MOD_HEAD_SHOT";
+	//if( isHeadShot( sWeapon, sHitLoc, sMeansOfDeath ) )
+	//	sMeansOfDeath = "MOD_HEAD_SHOT";
 	
 	if( attacker.classname == "script_vehicle" && isDefined( attacker.owner ) )
 		attacker = attacker.owner;

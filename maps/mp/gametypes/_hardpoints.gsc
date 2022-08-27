@@ -12,10 +12,10 @@ init()
 	precacheItem( "artillery_mp" );	
 	precacheModel("projectile_hellfire_missile");
 	
-	makeDvarServerInfo( "ui_uav_allies", 0 );
-	makeDvarServerInfo( "ui_uav_axis", 0 );
-	setDvar( "ui_uav_allies", 0 );
-	setDvar( "ui_uav_axis", 0 );
+	makeDvarServerInfo( "ui_uav_allies", 1 );
+	makeDvarServerInfo( "ui_uav_axis", 1 );
+	setDvar( "ui_uav_allies", 1 );
+	setDvar( "ui_uav_axis", 1 );
 	setDvar( "ui_uav_client", 0 );
 	
 	setDvar( "arty_shell_num", "int", 35, 10, 100 ); // Number of artillery shells
@@ -43,7 +43,8 @@ init()
 	//level.hardpointHints["artillery_mp_not_available"] = &"MP_AIRSTRIKE_NOT_AVAILABLE";
 	level.hardpointHints["artillery_mp_not_available"] = "ARTILLERY IS NOT AVAILABLE";
 
-	level.hardpointInforms["radar_mp"] = "mp_killstreak_radar";
+	//level.hardpointInforms["radar_mp"] = "mp_killstreak_radar"; intelligence_pickup
+	level.hardpointInforms["radar_mp"] = "mp_killstreak_radar"; 
 	level.hardpointInforms["airstrike_mp"] = "mp_killstreak_jet";
 	level.hardpointInforms["helicopter_mp"] = "mp_killstreak_heli";
 	level.hardpointInforms["artillery_mp"] = "mp_killstreak_jet";
@@ -61,16 +62,16 @@ init()
 
 	precacheString( &"MP_KILLSTREAK_N" );
 	
-	level.hardpointHints["radar_mp"] = "RADAR IS READY";
+	level.hardpointHints["radar_mp"] = "RADAR JAMMER IS READY";
 	level.hardpointHints["airstrike_mp"] = "AIRSTRIKE IS READY";
 	level.hardpointHints["helicopter_mp"] = "HELICOPTER IS READY";
 	level.hardpointHints["artillery_mp"] = "ARTILLERY IS READY";
-	level.additionalHintText = "Press B to access Tools";	
-	precacheString(&"RADAR IS READY");
+	level.additionalHintText = "Press 6 or B to access Tools";	
+	precacheString(&"RADAR JAMMER IS READY");
 	precacheString(&"AIRSTRIKE IS READY");
 	precacheString(&"HELICOPTER IS READY");
 	precacheString(&"ARTILLERY IS READY");
-	precacheString(&"Press B to access Tools");
+	precacheString(&"Press 6 or B to access Tools");
 
 	precacheLocationSelector( "map_artillery_selector" );
 
@@ -875,14 +876,21 @@ giveHardpointItemForStreak()
 
 	if ( !getDvarInt( "scr_game_forceuav" ) )
 	{
-		if ( streak == 2 )
+		if ( streak == 2 ){
 			self giveHardpoint( "radar_mp", streak );
-		else if ( streak == 4 )
-			self giveHardpoint( "airstrike_mp", streak );
-		else if ( streak == 6 )
+			self setClientDvar( "ui_uav_client", 1 );
+		}
+		else if ( streak == 4 ){
+			self giveHardpoint( "airstrike_mp", streak ); 
+			self setClientDvar( "ui_airstrike_client", 1 );
+		}
+		else if ( streak == 6 ){
 			self giveHardpoint( "helicopter_mp", streak );
+			self setClientDvar( "ui_helicopter_client", 1 );
+		}
 		else if ( streak == 8 ){
 			self giveHardpoint( "artillery_mp", streak );
+			self setClientDvar( "ui_artillery_client", 1 );
 			streak = 0;
 			self.cur_kill_streak = streak;
 		}
@@ -957,7 +965,7 @@ hardpointNotify( hardpointType, streakVal )
 		//notifyData.titleLabel = &"MP_KILLSTREAK_N";
 		notifyData.titleText = level.hardpointHints[hardpointType];
 		notifyData.notifyText = level.additionalHintText;
-		//notifyData.notifyText = "Press B to access Tools";
+		//notifyData.notifyText = "Press 6 or B to access Tools";
 		notifyData.sound = level.hardpointInforms[hardpointType];
 		self maps\mp\gametypes\_hud_message::notifyMessage( notifyData );
 	//}
@@ -1097,6 +1105,7 @@ triggerHardPoint( hardpointType )
 	if ( hardpointType == "radar_mp" )
 	{
 		self thread useRadarItem();
+		self setClientDvar( "ui_uav_client", 0 );
 	}
 	else if ( hardpointType == "airstrike_mp" )
 	{
@@ -1110,6 +1119,8 @@ triggerHardPoint( hardpointType )
 		
 		if ( !isDefined( result ) || !result )
 			return false;
+			
+		self setClientDvar( "ui_airstrike_client", 0 );
 	}
 	else if ( hardpointType == "artillery_mp" )
 	{
@@ -1123,6 +1134,8 @@ triggerHardPoint( hardpointType )
 		
 		if ( !isDefined( result ) || !result )
 			return false;
+			
+		self setClientDvar( "ui_artillery_client", 0 );
 	}
 	else if ( hardpointType == "helicopter_mp" )
 	{
@@ -1163,6 +1176,7 @@ triggerHardPoint( hardpointType )
 		}
 		
 		thread maps\mp\_helicopter::heli_think( self, startnode, self.pers["team"] );
+		self setClientDvar( "ui_helicopter_client", 0 );
 	}
 	
 	return true;
@@ -1193,18 +1207,26 @@ UAVAcquiredPrintAndSound( team, otherteam, callingPlayer, numseconds )
 		level.players[0] playLocalSound( soundFriendly );
 	}
 	else
-	{
-		maps\mp\gametypes\_globallogic::leaderDialog( "uav_online", team );
-		maps\mp\gametypes\_globallogic::leaderDialog( "enemy_uav_online", otherTeam );
+	{ 
+		//maps\mp\gametypes\_globallogic::leaderDialog( "mp_killstreak_radar", team );
+		//maps\mp\gametypes\_globallogic::leaderDialog( "mp_killstreak_radar", otherTeam );
+		//maps\mp\gametypes\_globallogic::leaderDialog( "uav_online", team );
+		//maps\mp\gametypes\_globallogic::leaderDialog( "enemy_uav_online", otherTeam );
 		for ( i = 0; i < level.players.size; i++ )
 		{
 			player = level.players[i];
 			playerteam = player.pers["team"];
 			if ( isdefined( playerteam ) )
 			{
-				//if ( playerteam == team )
+				if ( playerteam == team ){
+					player playLocalSound("intelligence_pickup");
+					player iprintln("^5You temporary blocked enemy's UAV");
+				}
 				//	player iprintln( &"MP_WAR_RADAR_ACQUIRED", callingPlayer, numseconds );
-				//else if ( playerteam == otherteam )
+				else if ( playerteam == otherteam ){
+					player playLocalSound("mp_killstreak_radar");
+					player iprintln("^1Your UAV temporary has been blocked");
+				}
 				//	player iprintln( &"MP_WAR_RADAR_ACQUIRED_ENEMY", numseconds  );
 			}
 		}
@@ -1227,6 +1249,7 @@ useRadarItem()
 
 		level notify( "radar_timer_kill_" + team );
 		self thread useTeamUAV( team, otherteam );
+		//self setClientDvar( "ui_uav_client", 0 );
 	}
 	else
 	{
@@ -1244,11 +1267,11 @@ useTeamUAV( team, otherteam )
 	level endon("game_ended");
 	level endon("radar_timer_kill_" + team);
 	
-	setTeamRadarWrapper( team, true );
+	setTeamRadarWrapper( otherteam, true );
 	
 	wait level.radarViewTime;
 	
-	setTeamRadarWrapper( team, false );
+	setTeamRadarWrapper( otherteam, false );
 	
 	//printAndSoundOnEveryone( team, otherteam, &"MP_WAR_RADAR_EXPIRED", &"MP_WAR_RADAR_EXPIRED_ENEMY", undefined, undefined, "" );
 }
@@ -1276,9 +1299,9 @@ setTeamRadarWrapper( team, value )
 {
 	setTeamRadar( team, value );
 	
-	dvarval = 0;
+	dvarval = 1;
 	if ( value )
-		dvarval = 1;
+		dvarval = 0;
 	setDvar( "ui_uav_" + team, dvarval );
 	
 	level notify( "radar_status_change", team );
@@ -1307,6 +1330,7 @@ selectAirstrikeLocation()
 	}*/
 
 	self thread finishAirstrikeUsage( location, ::useAirstrike );
+	//self setClientDvar( "ui_airstrike_client", 0 );
 	return true;
 }
 
