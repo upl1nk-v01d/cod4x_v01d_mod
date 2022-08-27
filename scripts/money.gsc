@@ -17,7 +17,7 @@ init()
 	
 	level.onEndGame = ::_onEndGame;
 	level.playersData = [];
-	level.moneyMultiplier = 3;
+	level.moneyMultiplier = 1;
 	
 	level thread _game_start_weapons();
 	level thread _game_store_update_data();
@@ -505,13 +505,13 @@ _kills(){
 		//cl("^3killed true");
 		if(isPlayer(attacker) && !attacker.isbot){
 			if(attacker.pers["team"]==self.team){
-				attacker.money["acc"] -= 10 * level.moneyMultiplier;
+				attacker.money["acc"] -= 100 * level.moneyMultiplier;
 				//game["money"][attacker.name]=attacker.money["acc"];
 				//cl("^1attacker "+attacker.name+" has money: "+attacker.money["acc"]);
 				//cl("^1"+attacker.name+" has money: "+game["money"][attacker.name]);
 			}
 			else {
-				attacker.money["acc"] += 1 * level.moneyMultiplier;
+				attacker.money["acc"] += 100 * level.moneyMultiplier;
 			}
 		}
 	}

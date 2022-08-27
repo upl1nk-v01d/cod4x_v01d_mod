@@ -208,6 +208,7 @@ selectLocation()
 	self thread finishUsage( location );
 	level.artilleryBarrage = true;
 	self.pers[ "lastArtyUse" ] = getTime();
+	//self setClientDvar( "ui_artillery_client", 0 );
 	return true;
 }
 

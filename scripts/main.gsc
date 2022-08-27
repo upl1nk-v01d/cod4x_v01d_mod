@@ -23,12 +23,20 @@ _template(){
 init()
 {
 
+	level thread scripts\bots_nav::init();
+	level thread scripts\bots_aim_ext::init();
+	level thread scripts\bots_fire_ext::init();
+	level thread scripts\chopper_ext::init();
+	level thread scripts\tactical::init();
+	level thread scripts\money::init();
+	level thread scripts\menus::init();
+
 	//if (!getdvarint("developer")>0) { return; }
 	
 	if (getDvar("g_gametype") != "sab") { return; }
 	
 	level._maps = StrTok("mp_ancient_ultimate,12,mp_carentan,14,mp_rasalem,12,mp_efa_lake,10,mp_bo2carrier,12,mp_bog,16,mp_summit,18,mp_backlot,16,mp_harbor_v2,16,mp_sugarcane,12,mp_csgo_assault,12,mp_csgo_inferno,12,mp_csgo_office,12,mp_csgo_overpass,12,mp_csgo_mirage,12,mp_finca,12,mp_csgo_safehouse,10,mp_csgo_cbble,12,mp_csgo_shortdust,12,mp_csgo_stmarc,12,mp_ins_panj,10,mp_creek,12,mp_csgo_mirage,12,mp_csgo_overpass,12,mp_ins_heights,12,mp_ins_peak,12", "," );
-	level._weapons = StrTok("tac330_mp,tac330_sil_mp,svg100_mp,rw1_mp,ak74u_mp,barrett_mp,dragunov_mp,g3_mp,m14_mp,m21_mp,m4_mp,mp44_mp,remington700_mp,skorpion_mp,uzi_mp,m1014_mp,law_mp,at4_bo_mp,mm1_mp,striker_mp", "," );
+	level._weapons = StrTok("knife_mp,tac330_mp,tac330_sil_mp,svg100_mp,rw1_mp,ak74u_mp,barrett_mp,dragunov_mp,g3_mp,m14_mp,m21_mp,m4_mp,mp44_mp,remington700_mp,skorpion_mp,uzi_mp,m1014_mp,law_mp,at4_bo_mp,mm1_mp,striker_mp", "," );
 	for (i=0;i<level._weapons.size;i++){
 		PrecacheItem(level._weapons[i]);
 		cl ("Weapon precached: " + level._weapons[i]);
@@ -149,9 +157,16 @@ init()
 	level thread _slowMo();
 	level thread _get_team_score();
 	//level thread _teamWatcher();
-	level thread _dev_waittillframeend_test();
+	//level thread _dev_waittillframeend_test();
 	//level thread _grenades_monitor();
 	//level thread _projectiles_monitor();
+	
+	level thread _t1();
+	level thread _t2();
+	//level thread _t2();
+	//level thread _t3();
+	//level thread _t4();
+	//level thread _t5();
 	
 	if(!isDefined(game["_t_m_static"])){game["_t_m_static"] = randomIntRange(1, 15);}
 	if(!isDefined(game["_ct_m_static"])){game["_ct_m_static"] = randomIntRange(1, 5);}
@@ -178,6 +193,7 @@ init()
 		player thread _projectiles_owner();
 		player thread _menu_response();
 		player thread _suicide(30);
+		player thread _hp_weapons_list();
 
 		//tm++;  ctm++;
 		//if (tm > 13) { tm=1; }
@@ -187,16 +203,56 @@ init()
     }
 }
 
-_waittillframesend(c){
-	level endon("disconnect");
-	for(;;){
-		if(c > 0){ 
-			//cl("33waittillframeend start");
-			for(i=0;i<c;i++){ waittillframeend; }
-			//cl("33waittillframeend end");
-		}
+_t1(){
+	wait 0.05;
+	while (1){
+		level notify("timers");
+		wait 0.05;
 	}
 }
+
+_t2(){
+	wait 0.075;
+	while (1){
+		level notify("timers");
+		wait 0.05;
+	}
+}
+
+/*
+_t2(){
+	wait 0.06;
+	while (1){
+		level notify("timers");
+		wait 0.05;
+	}
+}
+
+
+_t3(){
+	wait 0.07;
+	while (1){
+		level notify("timers");
+		wait 0.05;
+	}
+}
+
+_t4(){
+	wait 0.08;
+	while (1){
+		level notify("timers");
+		wait 0.05;
+	}
+}
+
+_t5(){
+	wait 0.09;
+	while (1){
+		level notify("timers");
+		wait 0.05;
+	}
+}
+*/
 
 _player_collision(timer){
 	//level waittill("prematch_over");
@@ -260,6 +316,8 @@ _player_spawn_loop(){
 		self thread _cg_cmds();
 		self thread _use_disable_weapons();
 		self thread _movement_accel_decel();
+		//self thread _give_knife(0.5);
+		self thread _claymore_pickup();
 		
 		//self thread _dev_coords();
 		//self thread _dev_weapon_test();
@@ -267,12 +325,133 @@ _player_spawn_loop(){
 		//self thread _dev_hp_test();
 		//self thread _dev_wpt_helpers_add_remove();
 		//self thread _dev_timescale();		
+		//self thread _dev_tag_angles();		
 		
 		//if(isDefined(game["botPlayers"])){ setDvar("bots_manage_fill", game["botPlayers"]+1-game["realPlayers"]); }
 		//self.alpha=0;
 		//wait 20;
 		//self.alpha=1;
 	}
+}
+
+_waittillframesend(c){
+	level endon("disconnect");
+	for(;;){
+		if(c > 0){ 
+			//cl("33waittillframeend start");
+			for(i=0;i<c;i++){ waittillframeend; }
+			//cl("33waittillframeend end");
+		}
+	}
+}
+
+_claymore_pickup(){
+	self endon ( "disconnect" );
+	self endon ( "death" );
+	self endon( "intermission" );
+	self endon( "game_ended" );
+	//if (!getdvarint("developer")>0){ return; }
+	if(self.isbot){ return; }
+	
+	for(;;){
+		c=20;
+		while ( !self UseButtonPressed() ){	wait 0.05; }
+		if(self.pers["team"] != "spectator"){
+			while ( self UseButtonPressed() && c>0){ c--; wait 0.05; }
+			if (c>0){ cl("11not picked up"); wait 0.2; }
+			else if(c<=0){
+			//if (self.pers["team"] != "spectator") {
+				delete=false; change=false; 
+				myAngles = self GetPlayerAngles();
+				startPos = self getEye();
+				startPosForward = startPos + anglesToForward((myAngles[0],myAngles[1],0))*1200;
+				trace = bulletTrace(startPos,startPosForward,true,self);
+				pos = trace["position"];
+				//ent = trace["entity"];
+				if(isDefined(pos)){
+					closest = 2147483647; nr=undefined; dist=undefined;
+					for(i=0;i<self.claymorearray.size;i++){
+						if(isDefined(self.claymorearray[i].origin)){
+							dist = distance(pos,self.claymorearray[i].origin); 
+						}
+						if(isDefined(dist) && dist<32){ nr=i; }
+					}
+					if(isDefined(nr)){ 
+						//self.claymorearray[nr] notify("death");
+						self.claymorearray[nr] delete();
+						wait 0.05;
+						self.claymorearray = _arr_remove(self.claymorearray,self.claymorearray[nr]);
+						self GiveWeapon("claymore_mp");
+						self SetWeaponAmmoClip("claymore_mp",(self getAmmoCount("claymore_mp"))+1);
+						self SwitchToWeapon("claymore_mp");
+						self playSound("weap_pickup");
+						//cl("55claymore arr size:"+self.claymorearray.size); 
+						//cl("55closest claymore nr:"+nr); 
+						//cl("55getAmmoCount:"+self getAmmoCount("claymore_mp")); 
+						wait 0.5;
+					}
+				}	
+			}
+		}
+	//while( self UseButtonPressed() ){ wait 0.05; }
+	wait 0.05;
+	}
+}
+
+_hp_weapons_list(){
+	wait 0.5;
+	weaponsList = self GetWeaponsList();
+	for(i=0;i<weaponsList.size;i++){
+		//cl("33"+weaponsList[i]);
+		if (isSubStr(weaponsList[i], "radar_mp") && self getAmmoCount(weaponsList[i]>0)){ self setClientDvar( "ui_uav_client", 1 ); }
+		if (isSubStr(weaponsList[i], "airstrike_mp") && self getAmmoCount(weaponsList[i]>0)){ self setClientDvar( "ui_airstrike_client", 1 ); }
+		if (isSubStr(weaponsList[i], "helicopter_mp") && self getAmmoCount(weaponsList[i]>0)){ self setClientDvar( "ui_helicopter_client", 1 ); }
+		if (isSubStr(weaponsList[i], "artillery_mp") && self getAmmoCount(weaponsList[i]>0)){ self setClientDvar( "ui_artillery_client", 1 ); }
+	}
+}
+
+_dev_tag_angles(){
+	self endon ( "disconnect" );
+	if(self.isbot){ return; }
+	
+	wait 0.5;
+
+	cl("33"+self.model);
+	ent = GetEnt(self.model,"model");
+	//ent = GetEntArray(self.model,"model");
+	//ent = self getEntityNumber();
+	self waittill("death");
+	self freezeControls(true);
+	
+	while(1){
+	//while(self.sessionteam != "spectator"){
+		
+		level waittill("timers");
+		cl("33"+self.model);
+		headAngles = self GetTagAngles("j_head");
+		headOrigin = self GetTagOrigin("j_head");
+		self SetPlayerAngles((headAngles[0],headAngles[1],headAngles[2]) - (headAngles[0],self.angles[1]+45,self.angles[2]));
+		//self SetOrigin(self.origin - headOrigin);
+		//cl("33ent"+ent[0].origin[1]);
+		cl("33ang"+headAngles[1]);
+		cl("33org:"+headOrigin[1]);
+		level.tp = (gettime() - level.st)/1000;
+		cl("^2level.tp "+level.tp);
+		//self linkTo(self, "j_head", (0,0,0), (0,0,0));
+		//wait 0.05;
+		//self unlink();
+	}
+}
+
+_give_knife(delay){
+	self endon ( "disconnect" );
+	self endon ( "death" );
+	self endon( "intermission" );
+	self endon( "game_ended" );
+	if(self.isbot){ return; }
+	
+	wait delay;
+	self GiveWeapon("knife_mp");
 }
 
 _cg_cmds(){
@@ -297,6 +476,7 @@ _cg_cmds(){
 	self setClientDvar("ui_showmap",1);
 	//self setClientDvar("ui_uav_axis",1);
 	//self setClientDvar("ui_uav_allies",1);
+	self setClientDvar("perk_weapReloadMultiplier", 0.1);
 }
 
 getClientDvar(dvar){
@@ -427,13 +607,15 @@ _menu_response()
 		//cl("^3"+self.name+": response:"+response);
 		if(response == "axis" || response == "allies" || response == "autoassign")
 		{
-			self notify("hasReadWelcomeMsg");
-			self notify("hasPressedFButton");
+			//self notify("hasReadWelcomeMsg");
 			game["hasReadMOTD"][self.name]=true;
 			game["isJoinedSpectators"][self.name]=false;
 			//cl("33game[isJoinedSpectators][self.name]: " + game["isJoinedSpectators"][self.name]);
 			self suicide();
 			self thread _fs();
+			self notify("hasReadWelcomeMsg");
+			self notify("hasReadMOTD");
+			self notify("hasPressedFButton");
 			//self notify("menuresponse", game["menu_changeclass"], "custom"+(1));
 			wait 0.05;
 			self closeMenu();
@@ -447,7 +629,7 @@ _menu_response()
 			if(isDefined(game["wasKilled"])){ game["wasKilled"][self.name]=true; }
 			game["isJoinedSpectators"][self.name]=true; 
 			//cl("33game[isJoinedSpectators][self.name]: " + game["isJoinedSpectators"][self.name]);
-			//self suicide();
+			self suicide();
 			self [[level.spectator]]();
 			self setClientDvar("m_pitch",0.022);
 			self setClientDvar("m_yaw",0.022);
@@ -866,8 +1048,8 @@ _welcome(tm,ctm)
 
     
     wait 1;
-    if (self.pers["lives"] > 0 && self.pers["team"] != "spectator" ) { self iprintln("^2You have " + (self.pers["lives"]+1) + " lives\n"); }
-	
+    if (self.pers["lives"] > 0 && self.pers["team"] != "spectator" ) { self iprintln("^2You have " + (self.pers["lives"]+1) + " lives\n"); }	
+
 	//wait 2; self openMenu( game["menu_eog_unlock"] );
 }
 
@@ -1107,7 +1289,7 @@ _tiebreaker(){
 	level endon("game_ended");
 	while (!level.inOvertime) { wait 1; }
 	cl("^5watching alive players");
-	while (level.inOvertime)  { 
+	while (level.inOvertime && !level.stopScore)  { 
 		//alivePlayers=_chk_players("alive");
 		//cl("11alive axis:"+alivePlayers["axis"]);
 		//cl("55alive allies:"+alivePlayers["allies"]);
@@ -1216,7 +1398,7 @@ _killed( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, 
 	//else if (isDefined(eAttacker.firedProjectile)) { sWeapon=eAttacker.firedProjectile; eAttacker.firedProjectile=undefined; }
 	//else { sWeapon="c4_mp"; }
 	
-	if (isDefined(level.bombOwner) && isDefined(eAttacker) && level.bombOwner.name == eAttacker.name) { sWeapon="c4_mp"; }
+	//if (isDefined(level.bombOwner) && isDefined(eAttacker) && level.bombOwner.name == eAttacker.name) { sWeapon="c4_mp"; }
 	//cl("^1sWeapon: "+sWeapon);
 
 	if (!isDefined(eAttacker)){
@@ -1233,13 +1415,14 @@ _killed( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, 
 		//cl(eInflictor.name); //
 		//cl("^2"+vDir); //
 		
-		if( isPlayer(eAttacker) && sMeansOfDeath == "MOD_MELEE" ) //
+		if(isPlayer(eAttacker) && sMeansOfDeath == "MOD_MELEE") //
 		{	
 			cl("knifed");
 			if (!level.inOvertime == true) { 
 				eAttacker.pers["lives"]+=1;
 				if (eAttacker.team != self.team) { eAttacker iprintln("^2You earned 1 life!"); }
 			}
+			if(isDefined(game["money"][eAttacker.name])){ game["money"][eAttacker.name] += 100; }
 			ks = "knife";	
 			//ks = ks + randomIntRange(1, 7);
 			thread _sfx ( ks );
@@ -1435,7 +1618,7 @@ _dev_weapon_test(){
 	if(self.isbot){ return; }
 	
 	wait 1;
-	give = "rpg_mp";
+	give = "claymore_mp";
 	
 	for(;;){
 		if (isAlive(self)){
@@ -1446,6 +1629,7 @@ _dev_weapon_test(){
 				//self takeWeapon(weapon);
 				self giveWeapon(give);
 				self giveMaxAmmo(give);
+				//self SetActionSlot( 1, "", give );
 
 				//self setActionSlot(4,"weapon",give);
 				//self switchToWeapon("airstrike_mp");
@@ -1624,6 +1808,7 @@ _dvar_map_restart(){
 		m=getDvar("mapname");
 		if(dvar != ""){
 			if(dvar == "r"){ cl("restarting map "+m); exec("map " + m); }
+			if(dvar == "rt"){ cl("rotating map "+game["nextMap"]); exec("map " + game["nextMap"]); }
 			else if(dvar == "f"){ cl("fast restarting map"); Map_Restart(false); }
 			else if(dvar == "i"){ 
 				cl("current map: "+getDvar("mapname")); 
@@ -2062,6 +2247,7 @@ _aim_mod(){
 	k=1;
 
 	for(;;){
+		//level waittill("timers");
 		if(isAlive(self) && !isDefined(self.buyMenuShow)){
 			if(isDefined(self.aimWobling)){ k=self.aimWobling; }
 			if (s1==0){ offsetY+=0.02; if (offsetY>=0.2) { s1=1; } }
@@ -2312,7 +2498,7 @@ _moving(){
 	for(;;){
 		if(isAlive(self)){
 			self.prevOrigin = self.origin; 
-			wait 0.3;
+			wait 0.1;
 			self.velocity = distance( self.origin, self.prevOrigin ); 
 			//self iprintln("velocity: "+self.velocity);
 			if(self.velocity > 25) {
@@ -2885,15 +3071,14 @@ _fs()
 
 	if (self.isbot) { return; }
 	else {
-		self notify("ReadWelcomeMsg");
+		self waittill("hasReadWelcomeMsg");
+		//cl("33game[hasReadMOTD][self.name]=="+game["hasReadMOTD"][self.name]);
 		//cl("^2notify ReadWelcomeMsg");
 		if (isDefined(game["hasReadMOTD"][self.name])){
 			if (game["hasReadMOTD"][self.name]==false){					
-				//cl("^3waittill hasReadWelcomeMsg");
-				self waittill("hasReadWelcomeMsg");
-				[[level.autoassign]]();
-				self [[level.class]]("custom1");
-				game["isJoinedSpectators"][self.name]=false;
+				//cl("33waittill hasReadWelcomeMsg");
+				self waittill("hasReadMOTD");
+				self [[level.autoassign]]();
 			}
 		}
 
@@ -2915,17 +3100,24 @@ _fs()
 		
 		level.tp = (gettime() - level.st)/1000;
 		cl("^2level.tp "+level.tp);
-
-		if (game["isJoinedSpectators"][self.name]==false && self.pers["team"]!="spectator"){
+		//game["isJoinedSpectators"][self.name]=false;
+		
+		//if (game["isJoinedSpectators"][self.name]==false && self.pers["team"]!="spectator"){
+		if (self.pers["team"]!="spectator"){
+			self [[level.class]]("custom1");
 			if(level.tp<60){ 
-				self.pers["lives"]=getDvarInt("scr_sab_numlives")+1;
-				if(level.tp<30){ self.pers["lives"]=getDvarInt("scr_sab_numlives")+1; }
-				else { self.pers["lives"]=1; }
 				self.pers["team"]=self.sessionteam;
-				self [[level.class]]("custom1");
-				self.sessionstate = "playing";
-				self notify("player_spawned");
+				self.pers["lives"]=getDvarInt("scr_sab_numlives");
+				if(level.tp<30){ self.pers["lives"]=getDvarInt("scr_sab_numlives"); }
+				else { self.pers["lives"]=1;  self [[level.spawnPlayer]](); }
+				//self.sessionstate = "playing";
+				//self notify("spawned");
+				//self notify("player_spawned");
 				cl("^4forcespawned "+self.name);
+			} else {
+				//self.sessionstate = "spectator";
+				//self notify("player_spawned");
+				self suicide();
 			}
 		}
 		
@@ -3019,10 +3211,12 @@ _changeBotWeapon(){
 	if (randomFloatRange(0.1, 2.0) < 1.3){
 		self takeAllWeapons(); 
 		i=randomIntRange(0,level._weapons.size);
-		self GiveWeapon( level._weapons[i] );
-		self setSpawnWeapon(level._weapons[i]);
-		self giveMaxAmmo(level._weapons[i]);
-		//cl(self.name + " the " + level._weapons[i] + " is given"); 
+		if(level._weapons[i] != "knife_mp"){
+			self GiveWeapon( level._weapons[i] );
+			self setSpawnWeapon(level._weapons[i]);
+			self giveMaxAmmo(level._weapons[i]);
+			//cl(self.name + " the " + level._weapons[i] + " is given"); 
+		}
 	}
 
 }
