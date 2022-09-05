@@ -268,7 +268,7 @@ dropWeaponForDeath( attacker )
 	
 	self.droppedDeathWeapon = true;
 
-	item ItemWeaponSetAmmo( randomIntRange(0,clipAmmo), int(stockAmmo/10) );
+	item ItemWeaponSetAmmo( randomIntRange(0,clipAmmo), int(stockAmmo/10)+1 );
 	item itemRemoveAmmoFromAltModes();
 	
 	item.owner = self;
@@ -363,11 +363,11 @@ dropOffhand()
 {
 	grenadeTypes = [];
 	// no dropping of primary grenades.
-	//grenadeTypes[grenadeTypes.size] = "frag_grenade_mp";
+	grenadeTypes[grenadeTypes.size] = "frag_grenade_mp";
 	// no dropping of secondary grenades.
 	//grenadeTypes[grenadeTypes.size] = "smoke_grenade_mp";
-	//grenadeTypes[grenadeTypes.size] = "flash_grenade_mp";
-	//grenadeTypes[grenadeTypes.size] = "concussion_grenade_mp";
+	grenadeTypes[grenadeTypes.size] = "flash_grenade_mp";
+	grenadeTypes[grenadeTypes.size] = "concussion_grenade_mp";
 
 	for ( index = 0; index < grenadeTypes.size; index++ )
 	{

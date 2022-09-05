@@ -503,7 +503,9 @@ onPickup( player )
 	// recovered the bomb before abandonment timer elapsed
 	if ( team == self maps\mp\gametypes\_gameobjects::getOwnerTeam() )
 	{
-		printOnTeamArg( &"MP_EXPLOSIVES_RECOVERED_BY", team, player );
+		//printOnTeamArg( &"MP_EXPLOSIVES_RECOVERED_BY", team, player );
+		if(team == "axis"){ iPrintLn( "^1Explosiver recovered by ", player ); }
+		if(team == "allies"){ iPrintLn( "^4Explosiver recovered by ", player ); }
 		//playSoundOnPlayers( game["bomb_recovered_sound"], team );
 	}
 	else
@@ -511,6 +513,8 @@ onPickup( player )
 		printOnTeamArg( &"MP_EXPLOSIVES_RECOVERED_BY", team, player );
 //		printOnTeamArg( &"MP_EXPLOSIVES_RECOVERED_BY", otherTeam, &"MP_THE_ENEMY" );
 		//playSoundOnPlayers( game["bomb_recovered_sound"] );
+		if(team == "axis"){ iPrintLn( "^1Explosiver recovered by ", player ); }
+		if(team == "allies"){ iPrintLn( "^4Explosiver recovered by ", player ); }
 	}
 	
 	self maps\mp\gametypes\_gameobjects::setOwnerTeam( team );
@@ -595,7 +599,8 @@ onUse( player )
 			printBoldOnTeamArg( &"MP_EXPLOSIVES_PLANTED_BY", team, player );
 			printBoldOnTeam( &"MP_EXPLOSIVES_PLANTED", otherTeam );
 		}
-		iPrintLn( &"MP_EXPLOSIVES_PLANTED_BY", player );
+		if(team == "axis"){ iPrintLn( "^1Explosives planted by ", player ); }
+		if(team == "allies"){ iPrintLn( "^4Explosives planted by ", player ); }
 		maps\mp\gametypes\_globallogic::leaderDialog( "bomb_planted" );
 
 		maps\mp\gametypes\_globallogic::givePlayerScore( "plant", player );
@@ -618,7 +623,9 @@ onUse( player )
 		player notify ( "bomb_defused" );
 		player logString( "bomb defused" );
 		if ( !level.hardcoreMode )
-			iPrintLn( &"MP_EXPLOSIVES_DEFUSED_BY", player );
+			//iPrintLn( &"MP_EXPLOSIVES_DEFUSED_BY", player );
+			if(team == "axis"){ iPrintLn( "^1Explosives defused by ", player ); }
+			if(team == "allies"){ iPrintLn( "^4Explosives defused by ", player ); }
 		maps\mp\gametypes\_globallogic::leaderDialog( "bomb_defused" );
 
 		maps\mp\gametypes\_globallogic::givePlayerScore( "defuse", player );
@@ -643,7 +650,10 @@ onUse( player )
 
 onCantUse( player )
 {
-	player iPrintLnBold( &"MP_CANT_PLANT_WITHOUT_BOMB" );
+	//player iPrintLnBold( &"MP_CANT_PLANT_WITHOUT_BOMB" );
+	if(player.team == "axis"){ iPrintLn( "^1Cannot plant without bomb", player ); }
+	if(player.team == "allies"){ iPrintLn( "^4Cannot plant without bomb", player ); }
+	//player iPrintLnBold( &"MP_CANT_PLANT_WITHOUT_BOMB" );
 }
 
 
@@ -689,9 +699,9 @@ bombPlanted( destroyedObj, team )
 	level.bombExploded = true;	
 	
 	if ( isdefined( level.bombowner ) )
-		destroyedObj.visuals[0] radiusDamage( explosionOrigin, 512, 200, 20, level.bombowner );
+		destroyedObj.visuals[0] radiusDamage( explosionOrigin, 512, 400, 50, level.bombowner );
 	else
-	destroyedObj.visuals[0] radiusDamage( explosionOrigin, 512, 200, 20 );
+	destroyedObj.visuals[0] radiusDamage( explosionOrigin, 512, 400, 50 );
 	
 	rot = randomfloat(360);
 	explosionEffect = spawnFx( level._effect["bombexplosion"], explosionOrigin + (0,0,50), (0,0,1), (cos(rot),sin(rot),0) );
