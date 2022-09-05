@@ -395,8 +395,8 @@ _welcome_msg(){
 				if(r<1){ r+=0.1;g+=0.1;b+=0.1;a+=0.1; }
 				if(w<400){ w+=30; }
 				if(h<300){ h+=20; }
-				level waittill("timers");
-				//wait 0.05;
+				//level waittill("timers");
+				wait 0.05;
 				//self _destroy_menu(self.money["hudWelcomeBG"]);
 				self _destroy_menu("hudWelcome");
 				self _destroy_bg("hudWelcomeBG");
@@ -417,8 +417,8 @@ _welcome_msg(){
 					if(w>1){ w-=30; }
 					if(h>1){ h-=20; }
 				}
-				level waittill("timers");
-				//wait 0.05;
+				//level waittill("timers");
+				wait 0.05;
 				//self _destroy_menu(self.money["hudWelcomeBG"]);
 				self _destroy_menu("hudWelcome");
 				self _destroy_bg("hudWelcomeBG");
@@ -429,6 +429,7 @@ _welcome_msg(){
 	}
 	self notify("hasReadMOTD");
 	cl("22hasReadMOTD");
+	while(level.inPrematchPeriod){ wait 0.1; }
 	self freezeControls(false);
 }
 
@@ -440,7 +441,7 @@ _accept(){
 	//if (!getdvarint("developer")>0){ return; }
 	if(self.isbot){ return; }
 	self waittill("readyToPressAccept");
-	while (!self JumpButtonPressed()){ wait 0.05; }
+	while (!game["hasReadMOTD"][self.name] && !self JumpButtonPressed()){ wait 0.05; }
 	self notify("hasPressedFButton");
 	game["hasReadMOTD"][self.name]=true;
 	self playLocalSound("mp_last_stand");
@@ -559,9 +560,6 @@ _buy_menu_show(arr,prev,next,div){
 	//cl("^3_buy_menu_show div:"+div);
 	while(!isDefined(self.money)) { wait 0.5; }
 		
-	self setClientDvar("m_pitch",0.002);
-	self setClientDvar("m_yaw",0.002);
-
 	if(isAlive(self) && isDefined(self.buyMenuShow)){
 		sw=0; selector=1; selected=1;
 		curView = self getPlayerAngles();
@@ -576,8 +574,8 @@ _buy_menu_show(arr,prev,next,div){
 			if(isDefined(self.spawnStartOrigin) && distance(self.spawnStartOrigin,self.origin)>=16){ self.buyMenuShow=undefined; }
 			if(AttackButtonPressed==false){
 				if(selector>0 && selector<=size) {
-					if(pitch>curView[0]+1 || self LeanLeftButtonPressed()) { selector--; pitch=curView[0]; }
-					else if(pitch<curView[0]-1 || self LeanRightButtonPressed()) { selector++; pitch=curView[0]; }
+					if(pitch>curView[0]+5 || self LeanLeftButtonPressed()) { selector--; pitch=curView[0]; }
+					else if(pitch<curView[0]-5 || self LeanRightButtonPressed()) { selector++; pitch=curView[0]; }
 					//self playLocalSound( "mouse_click" );
 				}
 				if (selector<1) { selector=int(size); } 
@@ -640,8 +638,6 @@ _buy_menu_show(arr,prev,next,div){
 	//self.hasChosen=undefined;
 	//self _destroy_menu("hudBuyMenu",arr.size,div); 
 	self EnableWeapons();
-	self setClientDvar("m_pitch",0.002);
-	self setClientDvar("m_yaw",0.002);
 	//cl("^3hud destroyed");
 }
 
@@ -727,6 +723,7 @@ _buy_menu_main(){
 		//buyMenuRPGs = StrTok("RPG,2300,rpg_mp,LAW,2500,law_mp,AT4,2600,at4_mp",",");
 		buyMenuGLs = StrTok("MM1,2400,mm1_mp",",");
 		buyMenuGrenades = StrTok("Frag Grenade,15,frag_grenade_mp",",");
+		buyMenuExplosives = StrTok("Claymore,100,claymore_mp,C4,400,c4_mp",",");
 		//buyMenuGrenades = StrTok("Smoke Grenade,10,smoke_grenade_mp,Flash Grenade,20,flash_grenade_mp,Concussion Grenade,30,concussion_grenade_mp,Frag Grenade,40,frag_grenade_mp",",");
 	} else if (self.pers["team"] == "allies") {
 		buyMenuMain = StrTok("Pistols,SMGs,MGs,Rifles,Snipers,RPGs,GLs,Grenades,Explosives,Ammo",",");
@@ -740,7 +737,7 @@ _buy_menu_main(){
 		buyMenuRPGs = StrTok("LAW,2200,law_mp,AT4,3200,at4_mp",",");
 		buyMenuGLs = StrTok("MM1,3000,mm1_mp",",");
 		buyMenuGrenades = StrTok("Concussion Grenade,20,concussion_grenade_mp,Frag Grenade,35,frag_grenade_mp",",");
-		buyMenuExplosives = StrTok("Claymore,100,claymore_mp",",");
+		buyMenuExplosives = StrTok("Claymore,100,claymore_mp,C4,400,c4_mp",",");
 	}
 	while(!isAlive(self) || self.sessionstate == "spectator"){ wait 0.1; }
 	//cl("^3self.spawnStartOrigin");
@@ -748,7 +745,7 @@ _buy_menu_main(){
 	wait 0.3;
 	self.spawnStartOrigin=self.origin;
 	self.hasChosen[0]="buyMenuMain";
-	while(isAlive(self) && distance(self.spawnStartOrigin,self.origin)<32){
+	while(!level.gameEnded && !level.slowMo && isAlive(self) && distance(self.spawnStartOrigin,self.origin)<32){
 		//if(!isDefined(self.hasChosen)){ self _buy_menu_show(buyMenuMain); cl("^3self.buyMenuMain"); }
 		if(isDefined(self.hasChosen)){
 			for(i=0;i<self.hasChosen.size;i++){
@@ -767,14 +764,14 @@ _buy_menu_main(){
 			}
 		}
 		while(isDefined(self.buyMenuShow) && isDefined(self.hasChosen) && isAlive(self)){ 
-			if(distance(self.spawnStartOrigin,self.origin)>=16){ self.buyMenuShow=undefined; }
+			if(distance(self.spawnStartOrigin,self.origin)>=16){ 
+				self.buyMenuShow=undefined; 
+			}
 			//cl("^3self.spawnStartOrigin");
 			wait 0.05; 
 		}
 		//cl("^3self.buyMenuShowNext");
 		wait 0.1;
 		//while(isAlive(self) && self UseButtonPressed()){ wait 0.05; }
-		self setClientDvar("m_pitch",0.022);
-		self setClientDvar("m_yaw",0.022);
 	}
 }

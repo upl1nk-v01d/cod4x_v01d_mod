@@ -268,7 +268,13 @@ _player_start_inventory(){
 				//self setWeaponAmmoClip(weaponsList[i],ammoList[i]);	 
 				if(isDefined(cw)) { self setSpawnWeapon(cw); }
 				else { self setSpawnWeapon(weaponsList[0]); }
-				//cl("^3"+self.name+" with ID "+id+" weaponsList "+weaponsList[i]+":"+ammoList[i]);
+				if(weaponsList[i] == "c4_mp"){ self.haveC4=ammoList[i]; }
+				if(weaponsList[i] == "claymore_mp"){ self.haveClaymores=ammoList[i]; }
+				if(weaponsList[i] == "frag_grenade_mp"){ self.haveFragGrenades=ammoList[i]; }
+				if(weaponsList[i] == "concussion_grenade_mp"){ self.haveConcussionGrenades=ammoList[i]; }
+				if(weaponsList[i] == "flash_grenade_mp"){ self.haveFlashGrenades=ammoList[i]; }
+				if(weaponsList[i] == "smoke_grenade_mp"){ self.haveSmokeGrenades=ammoList[i]; }	
+				cl("^3"+self.name+" with ID "+id+", weapon:"+weaponsList[i]+", ammo:"+ammoList[i]);
 			}
 		} else {
 			cl("^1undefined weaponsList");
@@ -393,7 +399,7 @@ _game_start_weapons(){
 	//if (!getdvarint("developer")>0){ return; }
 	//if(self.isbot){ return; }
 	
-	while ( game["state"] == "postgame" || level.gameEnded) { wait 0.1; }
+	while (game["state"] == "postgame" || level.gameEnded) { wait 0.1; }
 	//wait 0.2;
 	players = getentarray( "player", "classname" );
 	for( i = 0 ; i < players.size ; i++ ){
@@ -411,6 +417,8 @@ _game_start_weapons(){
 		} else {
 			weapon="colt45_mp";
 			//self takeAllWeapons();
+			if(self.pers["team"] == "axis"){ weapon="beretta_mp"; }
+			if(self.pers["team"] == "allies"){ weapon="colt45_mp"; }
 			self giveWeapon(weapon);
 			self SetSpawnWeapon(weapon);
 		}
@@ -550,13 +558,38 @@ _buy(){
 						self.money["acc"]-=int(self.hasChosen[i-1]);
 						self giveWeapon(self.hasChosen[i]);
 						ammo = self getAmmoCount(self.hasChosen[i]);
-						if (isSubStr(self.hasChosen[i],"grenade")){ 
-							self SetWeaponAmmoClip(self.hasChosen[i],1); 
-							self playSound("grenade_pickup");
-						} else {
-							self giveMaxAmmo(self.hasChosen[i]);
-							//cl(self.name+" has "+self getAmmoCount(self.hasChosen[i]));
-							self playSound("weap_pickup");
+						maxAmmo = weaponMaxAmmo(self.hasChosen[i]);
+						if(ammo >= maxAmmo){ cl("33max ammo reached to "+self.hasChosen[i]); }
+						else {
+							if (isSubStr(self.hasChosen[i],"claymore")){ 
+								self.haveClaymores+=1;
+								self SetWeaponAmmoClip(self.hasChosen[i],self.haveClaymores); 
+								self playSound("grenade_pickup");
+							} else if (isSubStr(self.hasChosen[i],"c4")){ 
+								self.haveC4+=1;
+								self SetWeaponAmmoClip(self.hasChosen[i],self.haveC4); 
+								self playSound("grenade_pickup");
+							} else if (isSubStr(self.hasChosen[i],"frag_grenade")){ 
+								self.haveFragGrenades+=1;
+								self SetWeaponAmmoClip(self.hasChosen[i],self.haveFragGrenades); 
+								self playSound("grenade_pickup");
+							} else if (isSubStr(self.hasChosen[i],"concussion_grenade")){ 
+								self.haveConcussionGrenades+=1;
+								self SetWeaponAmmoClip(self.hasChosen[i],self.haveConcussionGrenades); 
+								self playSound("grenade_pickup");
+							} else if (isSubStr(self.hasChosen[i],"flash_grenade")){ 
+								self.haveFlashGrenades+=1;
+								self SetWeaponAmmoClip(self.hasChosen[i],self.haveFlashGrenades); 
+								self playSound("grenade_pickup");
+							} else if (isSubStr(self.hasChosen[i],"smoke_grenade")){ 
+								self.haveSmokeGrenades+=1;
+								self SetWeaponAmmoClip(self.hasChosen[i],self.haveSmokeGrenades); 
+								self playSound("grenade_pickup");
+							} else {
+								self giveMaxAmmo(self.hasChosen[i]);
+								//cl(self.name+" has "+self getAmmoCount(self.hasChosen[i]));
+								self playSound("weap_pickup");
+							}
 						}
 						
 						if(isSubStr(self.hasChosen[i],"primary_ammo")){
@@ -571,7 +604,8 @@ _buy(){
 						//if (isSubStr(self.hasChosen[i],"grenade")){ self SetWeaponAmmoClip(self.hasChosen[i],1); setWeaponAmmoStock(self.hasChosen[i],int(ammo+1)); }
 						//self setWeaponAmmoStock(self.hasChosen[i],int(ammo+1));
 						//self SetSpawnWeapon(self.hasChosen[i]);
-						//cl("^4"+self.name+" bought: "+self.hasChosen[i]);
+						cl("33"+self.name+" bought: "+self.hasChosen[i]);
+						cl("33"+self.name+" has ammo "+self getAmmoCount(self.hasChosen[i]));
 						while (self AttackButtonPressed()){ wait 0.05; } 
 					} else {
 						self.notEnoughMoney=true;
