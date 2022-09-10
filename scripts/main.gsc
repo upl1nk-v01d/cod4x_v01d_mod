@@ -316,8 +316,10 @@ _player_spawn_loop(){
 		self thread _cg_cmds();
 		self thread _use_disable_weapons();
 		self thread _movement_accel_decel();
-		//self thread _give_knife(0.5);
+		self thread _give_knife(0.5);
+		self thread _knife_hit();
 		self thread _explosives_pickup();
+		self thread _bot_explosives_pickup();
 		
 		//self thread _dev_coords();
 		//self thread _dev_weapon_test();
@@ -368,7 +370,7 @@ _explosives_pickup(){
 	self endon( "game_ended" );
 	//if (!getdvarint("developer")>0){ return; }
 	
-	wait 0.1;
+	wait 0.3;
 	self.haveC4=self getAmmoCount("c4_mp");
 	self.haveClaymores=self getAmmoCount("claymore_mp");
 	self.haveFragGrenades=self getAmmoCount("frag_grenade_mp");
@@ -381,7 +383,7 @@ _explosives_pickup(){
 	if(!isDefined(self.haveConcussionGrenades)){ self.haveConcussionGrenades=0; }
 	if(!isDefined(self.haveFlashGrenades)){ self.haveFlashGrenades=0; }
 	if(!isDefined(self.haveSmokeGrenades)){ self.haveSmokeGrenades=0; }
-		
+	
 	if(self.isbot){ return; }
 	
 	wait 0.5;
@@ -439,12 +441,83 @@ _explosives_pickup(){
 			}
 			if (c>0 && pickedUp==false){ 
 				self.inUse = false;
-				cl("11not picked up"); 
+				//cl("11not picked up"); 
 				c=20; wait 0.2;
 			}
 		}
-	while( self UseButtonPressed() ){ wait 0.05; }
-	wait 0.05;
+		while( self UseButtonPressed() ){ wait 0.05; }
+		wait 0.05;
+	}
+}
+
+_bot_explosives_pickup(){
+	self endon ( "disconnect" );
+	self endon ( "death" );
+	self endon( "intermission" );
+	self endon( "game_ended" );
+	//if (!getdvarint("developer")>0){ return; }
+	
+	if(!self.isbot){ return; }
+	
+	wait 0.5; delay=0.5; pickedUp=false;
+	//cl("33self.haveClaymores:"+self.haveClaymores);
+	//cl("33clays max ammo:"+weaponMaxAmmo("claymore_mp"));
+	//cl("33getAmmoCount:"+self getAmmoCount("claymore_mp")); 
+
+	//self SetWeaponAmmoClip("claymore_mp",self.haveClaymores);
+	for(;;){
+		c=20;
+		if(self.pers["team"] != "spectator"){
+			//pickedUp=false;
+			botAngles = self GetPlayerAngles();
+			startPos = self getEye();
+			startPosForward = startPos + anglesToForward((botAngles[0],botAngles[1],0))*1200;
+			trace = bulletTrace(startPos,startPosForward,true,self);
+			pos = trace["position"];
+			//ent = trace["entity"];
+			if(isDefined(pos)){
+				//cl("33c:"+c);
+				delay=0.05;
+				closest = 2147483647; nr=undefined; dist=undefined;
+				for(i=0;i<self.claymorearray.size;i++){
+					if(isDefined(self.claymorearray[i].origin)){
+						dist = distance(pos,self.claymorearray[i].origin); 
+					}
+					if(isDefined(dist) && dist<32){ 
+						nr=i; 
+						if(c>=20){ self thread _progress_bar(1000,0,1); }
+					}
+				}
+				if(isDefined(nr) && c<=0){ 
+					//self.claymorearray[nr] notify("death");
+					self.claymorearray[nr] delete();
+					wait 0.05;
+					self.claymorearray = _arr_remove(self.claymorearray,self.claymorearray[nr]);
+					self.inUse = false;
+					self GiveWeapon("claymore_mp");
+					self SwitchToWeapon("claymore_mp");
+					self playSound("weap_pickup");
+					wait 0.1;
+					//self.haveClaymores+=1;
+					//self SetWeaponAmmoClip("claymore_mp",self.haveClaymores);
+					//self SetWeaponAmmoStock("claymore_mp",self.haveClaymores);
+					//cl("55claymore arr size:"+self.claymorearray.size); 
+					//cl("55closest claymore nr:"+nr); 
+					//cl("55getAmmoCount:"+self getAmmoCount("claymore_mp")); 
+					pickedUp=true;
+					c=20;
+					delay=0.5;
+					wait 0.5;
+				}
+			}	
+			c--; wait 0.05; 
+		}
+		if (c>0 && pickedUp==false){ 
+			self.inUse = false;
+			//cl("11bot not picking up explosive"); 
+			c=20; wait 0.2;
+		}
+		wait delay;
 	}
 }
 
@@ -506,8 +579,69 @@ _give_knife(delay){
 	self endon( "game_ended" );
 	if(self.isbot){ return; }
 	
-	wait delay;
-	self GiveWeapon("knife_mp");
+	if(!isDefined(delay)){ delay=1; }
+	wait 1;
+	//self takeAllWeapons();
+	while(1){
+		wait delay;
+		giveKnife=true;
+		weaponsList = self GetWeaponsList();
+		ammoList=[];
+		cw=self GetCurrentWeapon();
+		//cl("44"+cw);
+		if(isDefined(weaponsList)){
+			for(i=0;i<weaponsList.size;i++){
+				//if(weaponsList[i]==cw){ break; }
+				ammoList[i] = self getAmmoCount(weaponsList[i]);
+				if(ammoList[i]>0 && cw != "knife_mp"){ self takeWeapon("knife_mp"); giveKnife=false; break; }
+			}
+			if(giveKnife || cw == "none"){
+				self GiveWeapon("knife_mp");
+				self SwitchToWeapon("knife_mp"); 
+				//cl("33switched"); 
+				while(self GetCurrentWeapon()=="knife_mp"){ 
+					wait 0.3; 
+					//cl("33"+self GetCurrentWeapon()); 
+				}
+				giveKnife=false;
+			}
+		}
+	}
+}
+
+_knife_hit(){
+	self endon ( "disconnect" );
+	self endon ( "death" );
+	self endon( "intermission" );
+	self endon( "game_ended" );
+	if(self.isbot){ return; }
+
+	for(;;){
+		if(isAlive(self)){
+			self waittill("weapon_fired");
+			//cl("11fired");
+			wait 0.2;
+			weapon = self GetCurrentWeapon();
+			if(weapon != "knife_mp"){ return; }
+			angles = self GetPlayerAngles();
+			startPos = self getEye();
+			startPosForward = startPos + anglesToForward( ( angles[0], angles[1], 0 ) ) * 64;
+			trace = bulletTrace( startPos, startPosForward, true, self );
+			ent = trace["entity"];
+			
+			if(isDefined(ent) && ent.classname == "player"){
+				dist=distance(self.origin,ent.origin);
+				x = ent.origin[0]-self.origin[0];
+				y = ent.origin[1]-self.origin[1];
+				z = ent.origin[2]-self.origin[2];
+				ent setVelocity((x*(64/(dist+1)),y*(64/(dist+1)),100));
+				ent FinishPlayerDamage(self, self, 150, 0, "MOD_MELEE", "knife_mp",(0,0,0),(0,0,0),"j_torso",0);
+				cl("11"+self.name+" knifed "+ent.name);
+			}
+			wait 0.5;
+		}
+		wait 0.05;
+	}
 }
 
 _cg_cmds(){
@@ -1524,7 +1658,7 @@ _killed( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, 
 	
 	self StartRagdoll(0);
 	
-	if(!self.isbot && isDefined(eAttacker) && isAlive(eAttacker)){ self thread _linkto(eAttacker,0.3); }
+	if(!self.isbot && isDefined(eAttacker) && isAlive(eAttacker)){ self thread _linkto(eAttacker,0.3, 3); }
 
 	//self finishPlayerDamage( eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, psOffsetTime );
 	//if(isAlive(self)){
@@ -1534,12 +1668,14 @@ _killed( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, 
 	wait (0.10);
 }
 
-_linkto(ent, del){
+_linkto(ent, del, dur){
 	if(!isDefined(del)){ del=0;}
 	wait del;
 	if(isDefined(ent)){
 		self LinkTo(ent, "tag_origin", (0,0,-10), (0,0,0));
 	}
+	wait dur;
+	self unlink();
 }
 
 _unlink_veh(){
@@ -1897,7 +2033,7 @@ _dvar_map_restart(){
 		m=getDvar("mapname");
 		if(dvar != ""){
 			if(dvar == "r"){ cl("restarting map "+m); exec("map " + m); }
-			if(dvar == "rt"){ cl("rotating map "+game["nextMap"]); exec("map " + game["nextMap"]); }
+			if(dvar == "rr"){ cl("rotating map "+game["nextMap"]); exec("map " + game["nextMap"]); }
 			else if(dvar == "f"){ cl("fast restarting map"); Map_Restart(false); }
 			else if(dvar == "i"){ 
 				cl("current map: "+getDvar("mapname")); 

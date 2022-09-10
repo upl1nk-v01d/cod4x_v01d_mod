@@ -255,6 +255,21 @@ _player_start_inventory(){
 	//cl("^3pre start inv");
 	while ( game["state"] == "postgame" || level.gameEnded || !isAlive(self) || self.sessionstate == "spectator") { wait 0.1; }
 	self takeAllWeapons();
+	self.haveC4=0;
+	self.haveClaymores=0;
+	self.haveFragGrenades=0;
+	self.haveConcussionGrenades=0;
+	self.haveFlashGrenades=0;
+	self.haveSmokeGrenades=0;
+	self SetWeaponAmmoClip("frag_grenade_mp",0);
+	self SetWeaponAmmoClip("concussion_grenade_mp",0);
+	self SetWeaponAmmoClip("flash_grenade_mp",0);
+	self SetWeaponAmmoClip("smoke_grenade_mp",0);
+	self SetWeaponAmmoStock("frag_grenade_mp",0);
+	self SetWeaponAmmoStock("concussion_grenade_mp",0);
+	self SetWeaponAmmoStock("flash_grenade_mp",0);
+	self SetWeaponAmmoStock("smoke_grenade_mp",0);
+
 	if(isDefined(game["wasKilled"][self.name]) && game["wasKilled"][self.name]==false && isDefined(game["firstRound"][self.name]) && game["firstRound"][self.name]==false){
 		//cl("^3firstRound=false;wasKilled=false");
 		id=game["id"][self.name];
@@ -327,6 +342,17 @@ _player_start_inventory_after_killed(){
 		if(self.pers["team"] == "axis"){ weapon="beretta_mp"; }
 		if(self.pers["team"] == "allies"){ weapon="colt45_mp"; }
 		self takeAllWeapons();
+		self.haveC4=0;
+		self.haveClaymores=0;
+		self.haveFragGrenades=0;
+		self.haveConcussionGrenades=0;
+		self.haveFlashGrenades=0;
+		self.haveSmokeGrenades=0;
+		self SetWeaponAmmoClip("frag_grenade_mp",0);
+		self SetWeaponAmmoClip("concussion_grenade_mp",0);
+		self SetWeaponAmmoClip("flash_grenade_mp",0);
+		self SetWeaponAmmoClip("smoke_grenade_mp",0);
+	
 		self giveWeapon(weapon);
 		self SetSpawnWeapon(weapon);
 		wait 0.2;

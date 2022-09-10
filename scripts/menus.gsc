@@ -745,7 +745,7 @@ _buy_menu_main(){
 	wait 0.3;
 	self.spawnStartOrigin=self.origin;
 	self.hasChosen[0]="buyMenuMain";
-	while(!level.gameEnded && !level.slowMo && isAlive(self) && distance(self.spawnStartOrigin,self.origin)<32){
+	while(!level.gameEnded && !level.slowMo && isAlive(self) && !isDefined(self.lastStand) && distance(self.spawnStartOrigin,self.origin)<32){
 		//if(!isDefined(self.hasChosen)){ self _buy_menu_show(buyMenuMain); cl("^3self.buyMenuMain"); }
 		if(isDefined(self.hasChosen)){
 			for(i=0;i<self.hasChosen.size;i++){
