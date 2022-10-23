@@ -110,6 +110,8 @@ init()
 	SetDvar("sl",0); //set dvar scr_sab_scorelimit to args val
 	SetDvar("tl",0); //set dvar scr_sab_timelimit of round to args val
 	SetDvar("nl",0); //set dvar scr_sab_numlives of player to args val
+	SetDvar("ab",""); //add 1 bot to desired team
+	SetDvar("kb",""); //kick 1 bot from desired team
 	
 	if (getdvarint("developer")>0) { 
 		setDvar("scr_game_spectatetype", "2"); 
@@ -161,6 +163,8 @@ init()
 	//level thread _grenades_monitor();
 	//level thread _projectiles_monitor();
 	level thread _bomb_exploded();
+	level thread _bot_balance_manage();
+	level thread _dvar_add_remove_bots();
 	
 	level thread _t1();
 	level thread _t2();
@@ -255,6 +259,18 @@ _t5(){
 }
 */
 
+_bot_balance_manage(){
+	axisScore = [[level._getTeamScore]]( "axis" );
+	alliesScore = [[level._getTeamScore]]( "allies" );
+	if(axisScore>alliesScore){ 
+		exec("ab allies");
+		exec("kb axis");
+	} else if(alliesScore>axisScore){ 
+		exec("ab axis");
+		exec("kb allies");
+	}
+}
+
 _player_collision(timer){
 	//level waittill("prematch_over");
 	while (isDefined(level.inPrematchPeriod) && level.inPrematchPeriod==true){ wait 1; }
@@ -310,6 +326,7 @@ _player_spawn_loop(){
         self thread _aim_mod();
         self thread _moving();
 		//self thread _law_pickup();
+		self thread _m16_pickup();
 		self thread _mobile_phone();
 		self thread _push();
 		self thread _stopADS();
@@ -1299,7 +1316,8 @@ _ds()
 		wait randomFloatRange(0, 0.2);
 		self playSound("stop_voice");
 			
-		if (self.ps_ended == true){
+		if (isDefined(sMeansOfDeath) && sMeansOfDeath == "MOD_HEAD_SHOT"){ self playSound("hs"); self playSound("t_crawl"); }
+		else if (self.ps_ended == true){
 			switch ( self.pers["team"] ) {
 			case "allies":
 				self playSound(self.ds);
@@ -1658,7 +1676,7 @@ _killed( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, 
 	
 	self StartRagdoll(0);
 	
-	if(!self.isbot && isDefined(eAttacker) && isAlive(eAttacker)){ self thread _linkto(eAttacker,0.3, 3); }
+	if(!self.isbot && isDefined(eAttacker) && isAlive(eAttacker) && eAttacker.classname == "player"){ self thread _linkto(eAttacker,0.3, 3); }
 
 	//self finishPlayerDamage( eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, psOffsetTime );
 	//if(isAlive(self)){
@@ -2045,6 +2063,39 @@ _dvar_map_restart(){
 	}
 }
 
+_dvar_add_remove_bots(){
+	level endon("disconnect");
+	
+	for(;;){
+		dvar = getDvar("ab");
+		if(dvar != ""){
+			//setDvar("bots_team",dvar);
+			if(dvar == "axis"){ level maps\mp\bots\_bot::add_bot("axis"); }
+			else if(dvar == "allies"){ level maps\mp\bots\_bot::add_bot("allies"); }
+			cl("55adding bot to "+dvar+" team");
+			setDvar("ab","");
+			setDvar("bots_manage_fill", getDvarInt("bots_manage_fill")+1);
+		}
+		
+		dvar = getDvar("kb");
+		botname="";
+		if(dvar!=""){
+			players = getentarray("player", "classname"); 
+			for(i=0;i<players.size;i++){
+				if(players[i].pers["team"]==dvar && players[i].isbot){
+					botname=players[i].name;
+					exec("kick " + botname);
+					cl("11kicking bot "+botname+" from "+dvar+" team");
+					break;
+				}	
+			setDvar("kb","");
+			setDvar("bots_manage_fill", getDvarInt("bots_manage_fill")-1);
+			}
+		}
+		wait 0.5;
+	}
+}
+
 _bomb_exploded(){
 	level endon("disconnect");
 	level endon("game_ended");
@@ -2147,30 +2198,43 @@ _init_bots_dvars(){
 	if (getdvarint("developer")>0){
 		setDvar("bots_manage_fill", 6);
 	} else {
-		wait 0.5;
-		//realPlayers["all"]=0;
-		realPlayers=_chk_players("real");
-		//if(!isDefined(realPlayers)){ realPlayers["all"]=0; }
-		cl("33realPlayers: "+realPlayers["all"]);
-		bots=10-int(realPlayers["all"]);
-		setDvar("bots_manage_fill", bots);
-		cl(getDvar("mapname"));
-		//level._maps = StrTok("", "," );
-		for (i=0;i<level._maps.size;i++){
-			mapname = getDvar("mapname");
-			if(mapname == level._maps[i]){ 
-				//setDvar("bots_manage_fill", level._maps[i+1]); 
-				game["botPlayers"]=int(level._maps[i+1]);
-				cl ("55Hitching map found: " + level._maps[i]);
-				cl ("55Adjusting bots count to " + level._maps[i+1]);
-				//cl("33realPlayers: "+realPlayers["all"]);
-				bots=int(game["botPlayers"]-realPlayers["all"]);
-				//cl("33bots: "+bots);
-				setDvar("bots_manage_fill", bots);
-				//cl(getDvar("bots_manage_fill"));
-				break;
+		if(game["roundsplayed"]<1){
+			wait 0.5;
+			//realPlayers["all"]=0;
+			realPlayers=_chk_players("real");
+			//if(!isDefined(realPlayers)){ realPlayers["all"]=0; }
+			cl("33realPlayers: "+realPlayers["all"]);
+			bots=18-int(realPlayers["all"]);
+			setDvar("bots_manage_fill", bots);
+			cl(getDvar("mapname"));
+			//level._maps = StrTok("", "," );
+			for (i=0;i<level._maps.size;i++){
+				mapname = getDvar("mapname");
+				if(mapname == level._maps[i]){ 
+					//setDvar("bots_manage_fill", level._maps[i+1]); 
+					game["botPlayers"]=int(level._maps[i+1]);
+					cl ("55Hitching map found: " + level._maps[i]);
+					cl ("55Adjusting bots count to " + level._maps[i+1]);
+					//cl("33realPlayers: "+realPlayers["all"]);
+					bots=int(game["botPlayers"]-realPlayers["all"]);
+					//cl("33bots: "+bots);
+					setDvar("bots_manage_fill", bots);
+					//cl(getDvar("bots_manage_fill"));
+					break;
+				}
 			}
+			level thread _add_some_bots(bots);
 		}
+	}
+}
+
+_add_some_bots(bots){
+	if(!isDefined(bots)){ bots=10; }
+	for(i=0;i<bots/2;i++){
+		setDvar("ab", "axis");
+		wait 1.5;
+		setDvar("ab","allies");
+		wait 1.5;
 	}
 }
 
@@ -2462,6 +2526,27 @@ _law_pickup(){
 				self takeWeapon("rpg_mp");
 				self giveWeapon("law_mp");
 				self SetSpawnWeapon("law_mp");
+			}
+		}
+		wait 0.05;
+	}
+}
+
+_m16_pickup(){
+	self endon ( "death" );
+	self endon ( "disconnect" );
+	self endon( "intermission" );
+	self endon( "game_ended" );
+	
+	for(;;){
+		self waittill("weapon_change", weapon);
+		if (isAlive(self)){
+			//weapon = self GetCurrentWeapon();
+			//self iprintln("weapon: "+weapon);
+			if(isSubStr(weapon, "m16")){ 
+				self takeWeapon("m16_mp");
+				self giveWeapon("m4_mp");
+				//self SwitchToWeapon("m4_mp");
 			}
 		}
 		wait 0.05;
