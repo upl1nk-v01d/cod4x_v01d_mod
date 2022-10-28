@@ -310,26 +310,58 @@ _show_hint_msg(delay,txt,dur,r,g,b,a,ox,oy){
 	if (!isDefined(ox)){ ox=0; }
 	if (!isDefined(oy)){ oy=0; }
 	
-	_a=0;
+	_a=1;
 	hudHint=[];
-	hudHint[0]=txt;
+	hudHint[0]="";
 	self.showHint=true;
 	wait delay;
+	size=0;
+	blob="asdfghjklqwertyuiopzxcvbnm";
+	c=3;
+	ntxt=txt;
 	//cl("^3_show_hint_msg");
+	//cl("33"+size);
 	
-	while(_a<a){
+	//while(_a<a){
+	while(size<txt.size){
+		r=randomIntRange(0,blob.size);
+		//blob[size]=rarr[r];
+		//while(txt[r] == " " && r>0){ r--; }
+		//blob = StrRepl(txt,txt[size],rarr[r]); 
+		//if(c<0){ txt = StrRepl(txt,txt[size-2],txt[size]); }
+		if(c<0){ size++; c=1; }
+		//hudHint[0]="";
+		ntxt="";
+		//txt[size]=blob[r];
+		for(i=0;i<size;i++){ ntxt+=txt[i]; }
+		if(size<txt.size){ hudHint[0]=ntxt+blob[r]; } else { hudHint[0]=ntxt; }
 		self _create_menu_text("hudHint",hudHint,"default", 1.6,1.4,(r,g,b),0,"CENTER","CENTER",ox,oy,_a,1);
+		self playLocalSound("mouse_click");
 		if(_a<a){ _a+=0.1; }
 		wait 0.05;
-		self _destroy_menu("hudHint");
+		c--;
+		if(size == txt.size){ wait 2; }
+		self _destroy_menu("hudHint"); 
 	}
-	while(_a>0){
+	//wait 1;
+	//while(_a>0){
+	self playLocalSound("ui_screen_trans_out");
+	while(size>0){
+		r=randomIntRange(0,txt.size);
+		//for(i=0;i<txt.size;i++){ if(txt[i] != " "){ txt[i]=" "; }}
+		while(txt[r] == " " && r>0){ r--; }
+		txt = StrRepl(txt,txt[r]," ");
+		hudHint[0]=txt;
 		self _create_menu_text("hudHint",hudHint,"default", 1.6,1.4,(r,g,b),0,"CENTER","CENTER",ox,oy,_a,1);
-		if(_a==a){ wait dur; }
-		if(_a>0){ _a-=0.1; }
+		//self playLocalSound("mouse_click");
+		//if(_a==a){ wait dur; }
+		//if(_a>0){ _a-=0.1; }
 		wait 0.05;
-		self _destroy_menu("hudHint");
+		size--;
+		//if(size == txt.size){ wait 1; }
+		self _destroy_menu("hudHint"); 
 	}
+	//cl("33"+self.name+" hud ended");
 }
 
 _welcome_msg(){
