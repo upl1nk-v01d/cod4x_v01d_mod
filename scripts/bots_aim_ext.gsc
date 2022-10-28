@@ -1,5 +1,6 @@
 #include maps\mp\_load;
 #include maps\mp\_utility;
+#include scripts\cl;
 
 init()
 {
@@ -14,6 +15,21 @@ init()
 		level waittill("connected", player);
 		player thread _start_aim_ext();
 	}
+}
+
+_bot_dp(to, from, a){
+	self endon ( "disconnect" );
+	self endon ( "death" );
+	self endon( "intermission" );
+	self endon( "game_ended" );
+	if(!self.isbot){ return; }
+
+	//a = self GetPlayerAngles();
+	dirToTarget = VectorNormalize(to - from);
+	forward = AnglesToForward(a);
+	vd = vectordot(dirToTarget, forward);
+	//cl("33"+self.name+":"+vd);
+	return vd;
 }
 
 _start_aim_ext()
@@ -112,41 +128,39 @@ _upd_aim(){
 	self.pers["bots"]["skill"]["aim_offset_amount"] = 1;
 	roundwins=0; kills=0; k=0;
 	aimspeed=1; aim_offset_amount=1;
+	self.bot.after_target_old=undefined;
 	
 	for(;;){
 		if (getDvar("bots_aim_ext")=="1" && getDvar("bots_play_move") == "1") {
-	 		if(isAlive(self)){
+	 		if(isAlive(self) && isDefined(self.bot.after_target)){
+	 			//cl("dp:"+(dp-1));
+	 			dp = self _bot_dp(self.bot.after_target.origin, self getEye(), self GetPlayerAngles());
+	 			if(dp<0){ dp *= -1; }
+	 			if(dp==0){ dp += 0.001; }
 	 			kills=self.pers["kills"];
 	 			if(self.pers["team"] == "axis") { roundwins=[[level._getTeamScore]]("allies"); }
 	 			else if(self.pers["team"] == "allies") { roundwins=[[level._getTeamScore]]("axis"); }
 				if(!isDefined(roundwins)) { roundwins=0; }
 				//k=(kills+roundwins*10)*0.005;
 				//k=(roundwins)*0.05;
-				
-				while (self.swc == 1)  { 
-					aimspeed -= k;
-					aimspeed *= 0.7;
-					aim_offset_amount -= k;
-					aim_offset_amount *= 0.8;
+				//while (self.swc == 1){ 
+				while (isDefined(self.bot.after_target)){ 
+					while(aimspeed>1){ aimspeed-=0.05; }
+	 				dp = self _bot_dp(self.bot.after_target.origin, self getEye(), self GetPlayerAngles());
+					//if(isDefined(dp) && dp<0.2){ aimspeed *= 0.7; } else { aimspeed *= 0.7; }
+					//aimspeed -= k;
+					aimspeed = aimspeed * (dp-0.5);
+					//aimspeed *= dp;
+					//aim_offset_amount -= k;
+					//aim_offset_amount *= 0.95;
 					if(aimspeed < 0.2) {self.swc = 0; aimspeed=0.2; aim_offset_amount=0.2; }
-					if(aim_offset_amount < 0.1) { aim_offset_amount=1; }
+					//if(aim_offset_amount < 0.1) { aim_offset_amount=1; }
 					if(aimspeed>=0.2){ self.pers["bots"]["skill"]["aim_time"] = aimspeed; }
-					if(aim_offset_amount>=0.1){ self.pers["bots"]["skill"]["aim_offset_amount"]=aim_offset_amount; }
-					wait 0.05;
-					//cl(aimspeed);
-				} 
-				while (self.swc == 0) {
-					aimspeed -= k; 
-					aimspeed *= 1.3; 
-					aim_offset_amount -= k;
-					aim_offset_amount *= 1.5;
-					if(aimspeed > 1) { self.swc = 1; aimspeed=1; aim_offset_amount=1; }
-					if(aim_offset_amount > 1) { aim_offset_amount=1; }
-					if(aimspeed < 1){ self.pers["bots"]["skill"]["aim_time"] = aimspeed; }
-					if(aim_offset_amount < 1){ self.pers["bots"]["skill"]["aim_offset_amount"]=aim_offset_amount; }						
+					//if(aim_offset_amount>=0.1){ self.pers["bots"]["skill"]["aim_offset_amount"]=aim_offset_amount; }
 					wait 0.05;
 					//cl(aimspeed);
 				}
+				self.pers["bots"]["skill"]["aim_time"] = 5;
 			}
 		}
 		wait 0.05;
@@ -195,18 +209,19 @@ _bot_aimspots(){
 	c=12;
 	for(;;){
 		if (getDvar("bots_aim_ext")=="1" && getDvar("bots_play_move") == "1") {
-			if(c<=12) { c++; }
-			else if (c>12 && isDefined(self.bot.after_target)) { 
+			//if(c<=12) { c++; }
+			//else if (c>12 && isDefined(self.bot.script_target)) { 
+			if (isDefined(self.bot.script_target)) { 
 				//if(isDefined(self.aimspots)){ self.aimspots Delete(); }
-				a=self.bot.after_target.origin;
-				r=randomFloatRange(0.97,1.03);
+				a=self.bot.script_target.origin;
+				r=randomFloatRange(0.95,1.05);
 				//self.aimspots = spawn("script_origin", (a[0]*r,a[1]*r,a[2]*r));
 				self.aimspots = (a[0]*r,a[1]*r,a[2]*r);
 				//self _aimspeed_mod(0.3);
-				self.pers["bots"]["skill"]["aim_time"] = 5;
-				if(isDefined(self.bot.target)){ 
+				//self.pers["bots"]["skill"]["aim_time"] = 5;
+				if(isDefined(self.bot.script_target) && isDefined(self.aimspots)){ 
 					//self.bot.target.aim_offset*=randomIntRange(1,10);
-					self.bot.target.origin=self.aimspots;
+					//self.bot.script_target=self.aimspots;
 					//self.bot.target=self.aimspots;
 					//self.bot.target.entity_old=self.bot.target.entity;
 					//self.bot.target.entity=self.aimspots;
@@ -214,13 +229,13 @@ _bot_aimspots(){
 					//if(isDefined(self.bot.target)){ self.bot.target.entity=self.bot.target.entity_old; }
 					//self.bot.script_aimpos=self.aimspots;
 					//self.bot.target.last_seen_pos=self.aimspots;
-					self botLookAt(self.aimspots,0.5);
+					self botLookAt(self.aimspots.origin,0.2);
+					//cl("11"+self.bot.script_target.name);
 				}
-				//cl("^1"+self.bot.script_target.name);
 				c=12+randomIntRange(-5,5);
 			}
 		}
-		wait 0.05;
+		wait 0.1+randomFloatRange(0,0.5);
 	}
 }
 
@@ -244,9 +259,4 @@ _hud_draw_bot_aimspots(bot){
 		wait 0.05;
 		if(isDefined(self.hud_aimspot)){ self.hud_aimspot Destroy(); }
 	}
-}
-
-cl(txt){
-	if (isDefined(txt)){ print("^2-- "+txt+" -- \n"); }
-	else { print("^3!! undefined !! \n"); }
 }

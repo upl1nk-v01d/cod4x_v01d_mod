@@ -307,6 +307,7 @@ _player_spawn_loop(){
 	
 	self.bombPing=undefined;
 	self setClientDvar( "v01d_tools_bp", 1 );
+	self.firingXP=0;
 	
 	for(;;){
 		self waittill("spawned_player");	
@@ -344,12 +345,30 @@ _player_spawn_loop(){
 		//self thread _dev_hp_test();
 		//self thread _dev_wpt_helpers_add_remove();
 		//self thread _dev_timescale();		
-		//self thread _dev_tag_angles();		
+		//self thread _dev_tag_angles();
+		//self thread _dev_test_dp();
 		
 		//if(isDefined(game["botPlayers"])){ setDvar("bots_manage_fill", game["botPlayers"]+1-game["realPlayers"]); }
 		//self.alpha=0;
 		//wait 20;
 		//self.alpha=1;
+	}
+}
+
+_dev_test_dp(to, from, dir){
+	self endon ( "disconnect" );
+	self endon ( "death" );
+	self endon( "intermission" );
+	self endon( "game_ended" );
+	if(self.isbot){ return; }
+	for(;;){
+		a = self GetPlayerAngles();
+		dirToTarget = VectorNormalize(level.sabBomb.curOrigin - self getEye());
+		forward = AnglesToForward(a);
+		vd = vectordot(dirToTarget, forward);
+		cl("33"+self.name+":"+vd);
+		wait 0.5;
+		//return vd;
 	}
 }
 
@@ -606,7 +625,7 @@ _give_knife(delay){
 		ammoList=[];
 		cw=self GetCurrentWeapon();
 		//cl("44"+cw);
-		if(isDefined(weaponsList)){
+		if(isDefined(weaponsList) && !self IsOnLadder() && !self IsMantling()){
 			for(i=0;i<weaponsList.size;i++){
 				//if(weaponsList[i]==cw){ break; }
 				ammoList[i] = self getAmmoCount(weaponsList[i]);
@@ -1570,6 +1589,7 @@ _killed( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, 
 	self.haveConcussionGrenades=0;
 	self.haveFlashGrenades=0;
 	self.haveSmokeGrenades=0;
+	//self.firingXP=0;
 	
 	self thread _unlink_veh();
 
@@ -2132,7 +2152,7 @@ _ts(){
 	players = getentarray( "player", "classname" );
 	for(i=0;i<players.size;i++){
 		if(!players[i].isbot){
-			players[i] playLocalSound("mp_last_stand");
+			players[i] playLocalSound("mp_last_stand_no_ts");
 			players[i] thread _player_mouse_accel(0.3,0.5);
 			players[i] thread _vfx(0.3,0.5);
         }
@@ -2716,8 +2736,9 @@ _recoil(){
 					self.hasFiredInterval = 1000/((gettime() - self.hasFiredIntervalPrev)+0.1);
 					self.hasFiredIntervalPrev = gettime();
 					//cl("^3"+self.name+" acc: "+self.hasFiredInterval); 
-					k+=self.hasFiredInterval;
+					k+=self.hasFiredInterval-self.firingXP;
 					//while(self attackButtonPressed()){ wait 0.05; }
+					self.firingXP+=0.01;
 				}
 				else { 
 					self thread _firing(k*0.5);

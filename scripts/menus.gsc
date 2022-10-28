@@ -625,6 +625,16 @@ _buy_menu_show(arr,prev,next,div){
 				self allowADS(1);
 			}
 			if(isDefined(self.buyMenuShow)) {
+				/*weapon = self _check_weapon_in_list(arr[2]);
+				if (isDefined(weapon) && arr[2] == weapon){
+					cl("11!!!!!!");
+					for(i=0;i<arr.size;i++){
+						if(arr[i]==weapon){ 
+							//arr[i]=arr[i]+" Ammo = "+ WeaponClipSize(weapon); 
+							arr[i+1]=int(arr[i+1]/10); 
+						}
+					}
+				}*/
 				//self _create_menu_text("hudBuyMenu",arr,"default", 1.6,1.4,(r,g,b),0,"CENTER","CENTER",100,0,a,1,selector,scolor);
 				self _create_menu_text("hudBuyMenu",arr,"default", 1.6,1.4,(r,g,b),0,"LEFT","CENTER",-300,0,a,1,selector,scolor,div);				
 				wait 0.1;
@@ -639,6 +649,22 @@ _buy_menu_show(arr,prev,next,div){
 	//self _destroy_menu("hudBuyMenu",arr.size,div); 
 	self EnableWeapons();
 	//cl("^3hud destroyed");
+}
+
+_check_weapon_in_list(weapon){
+	if(self.isbot){ return; }
+	if(!isDefined(weapon)){ return; }
+	if(isAlive(self)){
+		weaponsList = self GetWeaponsList();
+		if(isDefined(weaponsList)){
+			for(i=0;i<weaponsList.size;i++){
+				//cl("33"+weaponsList[i]);
+				if(isDefined(weaponsList[i])){
+					if (isSubStr(weaponsList[i], weapon)){ return weapon; }
+				}
+			}
+		}
+	}
 }
 
 _buy_weapons_ammo(weapon){
@@ -712,7 +738,7 @@ _buy_menu_main(){
 	buyMenuAmmo = undefined;
 
 	if(self.pers["team"] == "axis"){
-		buyMenuMain = StrTok("Pistols,SMGs,MGs,Rifles,Snipers,RPGs,GLs,Grenades,Ammo",",");
+		buyMenuMain = StrTok("Pistols,SMGs,MGs,Rifles,Snipers,RPGs,GLs,Grenades",",");
 		buyMenuAmmo = StrTok(self _buy_weapons_ammo(),",");
 		buyMenuPistols = StrTok("Beretta Silenced,138,beretta_silencer_mp,Desert Eagle,230,deserteagle_mp,Desert Eagle Gold,400,deserteaglegold_mp,RW1,450,rw1_mp",",");
 		buyMenuSMGs = StrTok("Uzi,320,uzi_mp,Skorpion,440,skorpion_mp,AK74U,580,ak74u_mp",",");
@@ -726,7 +752,7 @@ _buy_menu_main(){
 		buyMenuExplosives = StrTok("Claymore,100,claymore_mp,C4,400,c4_mp",",");
 		//buyMenuGrenades = StrTok("Smoke Grenade,10,smoke_grenade_mp,Flash Grenade,20,flash_grenade_mp,Concussion Grenade,30,concussion_grenade_mp,Frag Grenade,40,frag_grenade_mp",",");
 	} else if (self.pers["team"] == "allies") {
-		buyMenuMain = StrTok("Pistols,SMGs,MGs,Rifles,Snipers,RPGs,GLs,Grenades,Explosives,Ammo",",");
+		buyMenuMain = StrTok("Pistols,SMGs,MGs,Rifles,Snipers,RPGs,GLs,Grenades,Explosives",",");
 		buyMenuAmmo = StrTok(self _buy_weapons_ammo(),",");
 		buyMenuPistols = StrTok("Colt 45 Silenced,155,colt45_silencer_mp,USP Silenced,167,usp_silencer_mp",",");
 		buyMenuSMGs = StrTok("MP5,550,mp5_silencer_mp,G36C GL,630,g36c_gl_mp,P90,900,p90_silencer_mp",",");
