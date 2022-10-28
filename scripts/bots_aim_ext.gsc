@@ -211,15 +211,15 @@ _bot_aimspots(){
 		if (getDvar("bots_aim_ext")=="1" && getDvar("bots_play_move") == "1") {
 			//if(c<=12) { c++; }
 			//else if (c>12 && isDefined(self.bot.script_target)) { 
-			if (isDefined(self.bot.script_target)) { 
+			if (isDefined(self.bot.target)) { 
 				//if(isDefined(self.aimspots)){ self.aimspots Delete(); }
-				a=self.bot.script_target.origin;
-				r=randomFloatRange(0.95,1.05);
+				aimspot=self.bot.target.entity.origin;
+				r=randomFloatRange(0.85,1.15);
 				//self.aimspots = spawn("script_origin", (a[0]*r,a[1]*r,a[2]*r));
-				self.aimspots = (a[0]*r,a[1]*r,a[2]*r);
+				self.aimspots = (aimspot[0]*r,aimspot[1]*r,aimspot[2]*r);
 				//self _aimspeed_mod(0.3);
 				//self.pers["bots"]["skill"]["aim_time"] = 5;
-				if(isDefined(self.bot.script_target) && isDefined(self.aimspots)){ 
+				if(isDefined(self.aimspots)){ 
 					//self.bot.target.aim_offset*=randomIntRange(1,10);
 					//self.bot.script_target=self.aimspots;
 					//self.bot.target=self.aimspots;
@@ -229,8 +229,8 @@ _bot_aimspots(){
 					//if(isDefined(self.bot.target)){ self.bot.target.entity=self.bot.target.entity_old; }
 					//self.bot.script_aimpos=self.aimspots;
 					//self.bot.target.last_seen_pos=self.aimspots;
-					self botLookAt(self.aimspots.origin,0.2);
-					//cl("11"+self.bot.script_target.name);
+					self botLookAt(self.aimspots,0.9);
+					//cl("11"+self.name+":"+self.aimspots);
 				}
 				c=12+randomIntRange(-5,5);
 			}
