@@ -104,7 +104,7 @@ init()
 	setDvar("bots_main_menu", false);
 	//setDvar("bots_play_fire",0);
 	
-	if(!getDvar("bots_inbalance_feature")){ setDvar("bots_inbalance_feature",0); }
+	if(getDvar("bots_inbalance_feature") == ""){ setDvar("bots_inbalance_feature",0); }
 	
 	setDvar("pl",""); //in terminal argument a = show all players, r = real players, b = bot players
 	setDvar("m",""); //in terminal argument i = show current map and team score, f = fast restart, r = brutal restart
