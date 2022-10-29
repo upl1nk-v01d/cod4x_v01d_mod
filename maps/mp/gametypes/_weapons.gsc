@@ -70,7 +70,7 @@ init()
 	for ( index = 0; index < level.weaponList.size; index++ )
 	{
 		precacheItem( level.weaponList[index] );
-		println( "Precached weapon: " + level.weaponList[index] );	
+		//println( "Precached weapon: " + level.weaponList[index] );	
 	}
 
 	precacheItem( "frag_grenade_short_mp" );
@@ -95,6 +95,8 @@ init()
 	
 	level.C4FXid = loadfx( "misc/light_c4_blink" );
 	level.claymoreFXid = loadfx( "misc/claymore_laser" );
+	
+	level.claymoreArray = []; 
 	
 	level thread onPlayerConnect();
 	
@@ -728,6 +730,7 @@ watchClaymores()
 			claymore thread playClaymoreEffects();
 			claymore thread claymoreDetectionTrigger_wait( self.pers["team"] );
 			//claymore maps\mp\_entityheadicons::setEntityHeadIcon(self.pers["team"], (0,0,20));
+			level.claymoreArray[level.claymoreArray.size] = claymore;
 			
 			/#
 			if ( getdvarint("scr_claymoredebug") )
