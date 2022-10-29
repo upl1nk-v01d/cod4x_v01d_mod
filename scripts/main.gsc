@@ -167,6 +167,7 @@ init()
 	level thread _bomb_exploded();
 	level thread _bot_balance_manage();
 	level thread _dvar_add_remove_bots();
+	//level thread _explosives_array();
 	
 	level thread _t1();
 	level thread _t2();
@@ -447,9 +448,9 @@ _explosives_pickup(){
 				if(isDefined(pos)){
 					//cl("33c:"+c);
 					closest = 2147483647; nr=undefined; dist=undefined;
-					for(i=0;i<self.claymorearray.size;i++){
-						if(isDefined(self.claymorearray[i].origin)){
-							dist = distance(pos,self.claymorearray[i].origin); 
+					for(i=0;i<level.claymoreArray.size;i++){
+						if(isDefined(level.claymoreArray[i].origin)){
+							dist = distance(pos,level.claymoreArray[i].origin); 
 						}
 						if(isDefined(dist) && dist<32){ 
 							nr=i; 
@@ -458,9 +459,9 @@ _explosives_pickup(){
 					}
 					if(isDefined(nr) && c<=0){ 
 						//self.claymorearray[nr] notify("death");
-						self.claymorearray[nr] delete();
+						level.claymoreArray[nr] delete();
 						wait 0.05;
-						self.claymorearray = _arr_remove(self.claymorearray,self.claymorearray[nr]);
+						level.claymoreArray = _arr_remove(level.claymoreArray,level.claymoreArray[nr]);
 						self.inUse = false;
 						self GiveWeapon("claymore_mp");
 						self SwitchToWeapon("claymore_mp");
@@ -487,6 +488,18 @@ _explosives_pickup(){
 		}
 		while( self UseButtonPressed() ){ wait 0.05; }
 		wait 0.05;
+	}
+}
+
+_explosives_array(){
+	level endon ( "disconnect" );
+	level endon( "intermission" );
+	level endon( "game_ended" );
+	//if (!getdvarint("developer")>0){ return; }
+
+	for(;;){
+		cl("33clayarr size:"+level.claymoreArray.size);
+		wait 1;
 	}
 }
 
@@ -519,9 +532,9 @@ _bot_explosives_pickup(){
 				//cl("33c:"+c);
 				delay=0.05;
 				closest = 2147483647; nr=undefined; dist=undefined;
-				for(i=0;i<self.claymorearray.size;i++){
-					if(isDefined(self.claymorearray[i].origin)){
-						dist = distance(pos,self.claymorearray[i].origin); 
+				for(i=0;i<level.claymoreArray.size;i++){
+					if(isDefined(level.claymoreArray[i].origin)){
+						dist = distance(pos,level.claymoreArray[i].origin); 
 					}
 					if(isDefined(dist) && dist<32){ 
 						nr=i; 
@@ -532,7 +545,7 @@ _bot_explosives_pickup(){
 					//self.claymorearray[nr] notify("death");
 					self.claymorearray[nr] delete();
 					wait 0.05;
-					self.claymorearray = _arr_remove(self.claymorearray,self.claymorearray[nr]);
+					level.claymoreArray = _arr_remove(level.claymoreArray,level.claymoreArray[nr]);
 					self.inUse = false;
 					self GiveWeapon("claymore_mp");
 					self SwitchToWeapon("claymore_mp");
@@ -2157,6 +2170,7 @@ _ts(){
 	for(i=0;i<players.size;i++){
 		if(!players[i].isbot){
 			players[i] playLocalSound("mp_last_stand_no_ts");
+			players[i] playLocalSound("ui_screen_trans_in");
 			players[i] thread _player_mouse_accel(0.3,0.5);
 			players[i] thread _vfx(0.3,0.5);
         }
@@ -2905,7 +2919,7 @@ _useSoldier(){
 			//self.hudwpt = undefined;
 	
 				if (isAlive(self)){
-					if (isDefined(self.commanded) && isAlive(self.commanded)) {
+					if (isDefined(self.commanded) && isPlayer(self.commanded) && isAlive(self.commanded)) {
 						pos = trace["position"];
 	          			self.commanded.getInPos = pos;
 	          			self thread _set_hud_wpt("commanded","compass_waypoint_defend", 8, 8, 0.5, pos[0], pos[1], pos[2], self.commanded,1,1);
@@ -2916,7 +2930,7 @@ _useSoldier(){
 	          			self.commanded = undefined;
 					} else {
 						self.commanded = trace["entity"]; 
-	          			if (isDefined(self.commanded) && isAlive(self.commanded) && self.commanded.isbot && self.commanded.team == self.team){
+	          			if (isDefined(self.commanded) && isPlayer(self.commanded) && isAlive(self.commanded) && self.commanded.isbot && self.commanded.team == self.team){
 							self.commanded.toCommander = self;
 							self.commanded.getInPos = undefined;
 							self.commanded PingPlayer();	

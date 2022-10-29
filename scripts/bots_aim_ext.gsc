@@ -216,10 +216,10 @@ _bot_aimspots(){
 				aimspot=self.bot.target.entity.origin;
 				r=randomFloatRange(0.85,1.15);
 				//self.aimspots = spawn("script_origin", (a[0]*r,a[1]*r,a[2]*r));
-				self.aimspots = (aimspot[0]*r,aimspot[1]*r,aimspot[2]*r);
 				//self _aimspeed_mod(0.3);
 				//self.pers["bots"]["skill"]["aim_time"] = 5;
-				if(isDefined(self.aimspots)){ 
+				if(isDefined(aimspot)){ 
+					aimspot = (aimspot[0]*r,aimspot[1]*r,aimspot[2]*r);
 					//self.bot.target.aim_offset*=randomIntRange(1,10);
 					//self.bot.script_target=self.aimspots;
 					//self.bot.target=self.aimspots;
@@ -229,7 +229,7 @@ _bot_aimspots(){
 					//if(isDefined(self.bot.target)){ self.bot.target.entity=self.bot.target.entity_old; }
 					//self.bot.script_aimpos=self.aimspots;
 					//self.bot.target.last_seen_pos=self.aimspots;
-					self botLookAt(self.aimspots,0.9);
+					self botLookAt(aimspot,0.9);
 					//cl("11"+self.name+":"+self.aimspots);
 				}
 				c=12+randomIntRange(-5,5);
