@@ -956,19 +956,21 @@ hardpointNotify( hardpointType, streakVal )
 	self waittill( "playerKilledChallengesProcessed" );
 	wait .05;
 	
-	//if (isdefined(level.hardpointHints[hardpointType])){
-		//if(hardpointType == "artillery_mp" ) {
-		//	hardpointType = "airstrike_mp";	}
-		notifyData = spawnStruct();
-		//notifyData.titleLabel = level.hardpointHints[hardpointType];
-		//notifyData.titleText = undefined;
-		//notifyData.titleLabel = &"MP_KILLSTREAK_N";
-		notifyData.titleText = level.hardpointHints[hardpointType];
-		notifyData.notifyText = level.additionalHintText;
-		//notifyData.notifyText = "Press 6 or B to access Tools";
-		notifyData.sound = level.hardpointInforms[hardpointType];
-		self maps\mp\gametypes\_hud_message::notifyMessage( notifyData );
-	//}
+	if(isAlive(self)){
+		//if (isdefined(level.hardpointHints[hardpointType])){
+			//if(hardpointType == "artillery_mp" ) {
+			//	hardpointType = "airstrike_mp";	}
+			notifyData = spawnStruct();
+			//notifyData.titleLabel = level.hardpointHints[hardpointType];
+			//notifyData.titleText = undefined;
+			//notifyData.titleLabel = &"MP_KILLSTREAK_N";
+			notifyData.titleText = level.hardpointHints[hardpointType];
+			notifyData.notifyText = level.additionalHintText;
+			//notifyData.notifyText = "Press 6 or B to access Tools";
+			notifyData.sound = level.hardpointInforms[hardpointType];
+			self maps\mp\gametypes\_hud_message::notifyMessage( notifyData );
+		//}
+	}
 }
 
 
@@ -1220,12 +1222,12 @@ UAVAcquiredPrintAndSound( team, otherteam, callingPlayer, numseconds )
 			{
 				if ( playerteam == team ){
 					player playLocalSound("intelligence_pickup");
-					player iprintln("^5You temporary blocked enemy's UAV");
+					player iprintln("^5Your team temporary blocked enemy's UAV");
 				}
 				//	player iprintln( &"MP_WAR_RADAR_ACQUIRED", callingPlayer, numseconds );
 				else if ( playerteam == otherteam ){
 					player playLocalSound("mp_killstreak_radar");
-					player iprintln("^1Your UAV temporary has been blocked");
+					player iprintln("^1Your team UAV temporary has been blocked");
 				}
 				//	player iprintln( &"MP_WAR_RADAR_ACQUIRED_ENEMY", numseconds  );
 			}
