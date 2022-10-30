@@ -167,7 +167,7 @@ init()
 	level thread _bomb_exploded();
 	level thread _bot_balance_manage();
 	level thread _dvar_add_remove_bots();
-	//level thread _explosives_array();
+	level thread _explosives_array();
 	
 	level thread _t1();
 	level thread _t2();
@@ -342,7 +342,7 @@ _player_spawn_loop(){
 		self thread _give_knife(0.5);
 		self thread _knife_hit();
 		self thread _explosives_pickup();
-		self thread _bot_explosives_pickup();
+		//self thread _bot_explosives_pickup();
 		
 		//self thread _dev_coords();
 		//self thread _dev_weapon_test();
@@ -449,7 +449,7 @@ _explosives_pickup(){
 					//cl("33c:"+c);
 					closest = 2147483647; nr=undefined; dist=undefined;
 					for(i=0;i<level.claymoreArray.size;i++){
-						if(isDefined(level.claymoreArray[i].origin)){
+						if(isDefined(level.claymoreArray[i])){
 							dist = distance(pos,level.claymoreArray[i].origin); 
 						}
 						if(isDefined(dist) && dist<32){ 
@@ -457,19 +457,19 @@ _explosives_pickup(){
 							if(c>=20){ self thread _progress_bar(1000,0,1); }
 						}
 					}
-					if(isDefined(nr) && c<=0){ 
+					if(isDefined(nr) && !isDefined(level.claymoreArray[nr].removed) && c<=0){ 
 						//self.claymorearray[nr] notify("death");
 						level.claymoreArray[nr] delete();
 						wait 0.05;
-						level.claymoreArray = _arr_remove(level.claymoreArray,level.claymoreArray[nr]);
+						//level.claymoreArray = _arr_remove(level.claymoreArray,level.claymoreArray[nr]);
 						self.inUse = false;
 						self GiveWeapon("claymore_mp");
 						self SwitchToWeapon("claymore_mp");
 						self playSound("weap_pickup");
 						wait 0.1;
 						self.haveClaymores+=1;
-						//self SetWeaponAmmoClip("claymore_mp",self.haveClaymores);
-						self SetWeaponAmmoStock("claymore_mp",self.haveClaymores);
+						self SetWeaponAmmoClip("claymore_mp",self.haveClaymores);
+						//self SetWeaponAmmoStock("claymore_mp",self.haveClaymores);
 						//cl("55claymore arr size:"+self.claymorearray.size); 
 						//cl("55closest claymore nr:"+nr); 
 						cl("55getAmmoCount:"+self getAmmoCount("claymore_mp")); 
@@ -496,9 +496,16 @@ _explosives_array(){
 	level endon( "intermission" );
 	level endon( "game_ended" );
 	//if (!getdvarint("developer")>0){ return; }
-
+	
 	for(;;){
-		cl("33clayarr size:"+level.claymoreArray.size);
+		c=0;
+		for(i=0;i<level.claymoreArray.size;i++){
+			if (isDefined(level.claymoreArray[i]) && !isDefined(level.claymoreArray[i].detonated)){ 
+				//_arr_remove(level.claymoreArray,level.claymoreArray[i]); break; 
+				c++;
+			}
+		}
+		cl("33clayarr size:"+c);
 		wait 1;
 	}
 }
@@ -1623,8 +1630,8 @@ _killed( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, 
 		
 		//if (sMeansOfDeath != "MOD_PROJECTILE_SPLASH" || sMeansOfDeath != "MOD_GRENADE_SPLASH"){
 		if (!isSubStr(sMeansOfDeath,"PROJECTILE") || !isSubStr(sMeansOfDeath,"GRENADE")){
-			self setVelocity((x,y,0)); 
-		} else if (eInflictor.classname == "grenade" || eInflictor.classname == "rocket") {
+			self setVelocity((x,y,10)); 
+		} else if (eInflictor.classname == "grenade" || eInflictor.classname == "rocket" && self GetStance() != "prone") {
 			if (dist<500){
 				z = 500-dist;
 				self setVelocity((x,y,z)); 

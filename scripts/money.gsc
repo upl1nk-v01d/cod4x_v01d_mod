@@ -620,9 +620,11 @@ _buy(){
 						}
 						else {
 							pickedExplosives=true;
+							self giveWeapon(self.hasChosen[i]);
 							if (isSubStr(self.hasChosen[i],"claymore")){ 
 								self.haveClaymores+=1;
 								self SetWeaponAmmoClip(self.hasChosen[i],self.haveClaymores); 
+								//self SetWeaponAmmoStock(self.hasChosen[i],0);
 								self playSound("weap_pickup");
 								//self.money["acc"]-=int(self.hasChosen[i-1]);
 							} else if (isSubStr(self.hasChosen[i],"c4")){ 
@@ -657,7 +659,7 @@ _buy(){
 									//cl("33"+self.name+" bought ammo "+clip);
 									//cl("33"+self.name+" has ammo "+self getAmmoCount(self.hasChosen[i]));
 								} else {
-									self giveWeapon(self.hasChosen[i]);
+									//self giveWeapon(self.hasChosen[i]);
 									//self giveMaxAmmo(self.hasChosen[i]);
 									self SetWeaponAmmoStock(self.hasChosen[i],clip);
 									self SetWeaponAmmoClip(self.hasChosen[i],0);
@@ -669,7 +671,6 @@ _buy(){
 							}
 							
 							if(pickedExplosives==true){ 
-								self giveWeapon(self.hasChosen[i]);
 								self.money["acc"]-=int(self.hasChosen[i-1]); 
 							}
 							//self.money["acc"]-=int(self.hasChosen[i-1]);
