@@ -237,6 +237,7 @@ _start()
 	if(!isDefined(game["firstRound"][self.name])) { game["firstRound"][self.name]=false; }
 	
 	self.money["acc"] = game["money"][self.name];
+	//self.pers["summary"]["match"]=0;
 	//cl("^3money started on "+game["money"][self.name]);
 	//cl("^5acc on "+self.name+":"+self.money["acc"]);
 }
@@ -734,7 +735,9 @@ _game_end_bonuses(){
 		assists = players[i].pers["assists"];
 		match=players[i].pers["summary"]["match"];
 		game["money"][players[i].name] += kills*10 + assists*5 + match*10;
+		money=game["money"][players[i].name];
 		players[i].pers["summary"]["match"]=0;
+		//players[i].pers["summary"]["match"]=money;
 		players[i].setPromotion=undefined;
 		//cl("^2match kills: "+players[i].pers["kills"]);
 		//cl("^2match assists: "+players[i].pers["assists"]);

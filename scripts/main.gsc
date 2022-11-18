@@ -31,11 +31,14 @@ init()
 	level thread scripts\money::init();
 	level thread scripts\menus::init();
 
+	if (getDvar("v01d_version") == "") { setDvar("v01d_version", "v1.51"); }
+
 	//if (!getdvarint("developer")>0) { return; }
 	
 	if (getDvar("g_gametype") != "sab") { return; }
 	
 	level._maps = StrTok("mp_ancient_ultimate,12,mp_carentan,14,mp_rasalem,12,mp_efa_lake,10,mp_bo2carrier,12,mp_bog,16,mp_summit,18,mp_backlot,16,mp_harbor_v2,16,mp_sugarcane,12,mp_csgo_assault,12,mp_csgo_inferno,12,mp_csgo_office,12,mp_csgo_overpass,12,mp_csgo_mirage,12,mp_finca,12,mp_csgo_safehouse,10,mp_csgo_cbble,12,mp_csgo_shortdust,12,mp_csgo_stmarc,12,mp_ins_panj,10,mp_creek,12,mp_csgo_mirage,12,mp_csgo_overpass,12,mp_ins_heights,12,mp_ins_peak,12", "," );
+	//level._weapons = StrTok("knife_mp,ak74u_mp,barrett_mp,dragunov_mp,g3_mp,m14_mp,m21_mp,m4_mp,mp44_mp,remington700_mp,skorpion_mp,uzi_mp,m1014_mp", "," );
 	level._weapons = StrTok("knife_mp,tac330_mp,tac330_sil_mp,svg100_mp,rw1_mp,ak74u_mp,barrett_mp,dragunov_mp,g3_mp,m14_mp,m21_mp,m4_mp,mp44_mp,remington700_mp,skorpion_mp,uzi_mp,m1014_mp,law_mp,at4_bo_mp,mm1_mp,striker_mp", "," );
 	for (i=0;i<level._weapons.size;i++){
 		PrecacheItem(level._weapons[i]);
@@ -168,6 +171,7 @@ init()
 	level thread _bot_balance_manage();
 	level thread _dvar_add_remove_bots();
 	level thread _explosives_array();
+	level thread _last_allie_taunting();
 	
 	level thread _t1();
 	level thread _t2();
@@ -200,7 +204,6 @@ init()
 		player thread _grenade_owner();
 		player thread _projectiles_owner();
 		player thread _menu_response();
-		//player thread _suicide(30);
 		player thread _hp_weapons_list();
 
 		//tm++;  ctm++;
@@ -262,15 +265,44 @@ _t5(){
 }
 */
 
+_last_allie_taunting(){
+	level endon( "disconnect" );
+	for(;;){
+		//players = _chk_players("alive");
+		//allies = players["allies"];
+		//if(isDefined(allies) && allies==1){
+		if(level.playerLives["allies"]==1){
+			players = getentarray( "player", "classname" );
+			for(i=0;i<players.size;i++){
+				if (isAlive(players[i]) && players[i].isbot && players[i].pers["team"]=="allies"){
+					players[i] playSound("stop_voice");
+					v1=randomIntRange(0,4);
+					v2=randomIntRange(0,10);
+					players[i] playSound("ct_taunt"+v1+"_"+v2);
+					wait randomIntRange(5, 10);
+				}
+			}
+		}
+		wait 0.5;
+	}
+}
+
 _bot_balance_manage(){
+	level endon ( "disconnect" );
+	//self endon ( "death" );
+	level endon( "intermission" );
+	level endon( "game_ended" );
+
 	if(getDvarInt("bots_inbalance_feature") == 1){
 		axisScore = [[level._getTeamScore]]( "axis" );
 		alliesScore = [[level._getTeamScore]]( "allies" );
 		if(axisScore>alliesScore){ 
 			exec("ab allies");
+			wait 1.5;
 			exec("kb axis");
 		} else if(alliesScore>axisScore){ 
 			exec("ab axis");
+			wait 1.5;
 			exec("kb allies");
 		}
 	}
@@ -331,6 +363,7 @@ _player_spawn_loop(){
         self thread _recoil();
         self thread _aim_mod();
         self thread _moving();
+		self thread _suicide(20);
 		//self thread _law_pickup();
 		self thread _m16_pickup();
 		self thread _mobile_phone();
@@ -352,6 +385,7 @@ _player_spawn_loop(){
 		//self thread _dev_timescale();		
 		//self thread _dev_tag_angles();
 		//self thread _dev_test_dp();
+		//self thread _dev_ent_test();
 		
 		//if(isDefined(game["botPlayers"])){ setDvar("bots_manage_fill", game["botPlayers"]+1-game["realPlayers"]); }
 		//self.alpha=0;
@@ -505,7 +539,7 @@ _explosives_array(){
 				c++;
 			}
 		}
-		cl("33clayarr size:"+c);
+		//cl("33clayarr size:"+c);
 		wait 1;
 	}
 }
@@ -599,9 +633,38 @@ _hp_weapons_list(){
 	}
 }
 
+_dev_ent_test(){
+	self endon ( "disconnect" );
+	self endon ( "death" );
+	if(self.isbot){ return; }
+
+	for(;;){
+		angles = self GetPlayerAngles();
+		startPos = self getEye();
+		startPosForward = startPos + anglesToForward( ( angles[0], angles[1], 0 ) ) * 64;
+		trace = bulletTrace( startPos, startPosForward, true, self );
+		ent = trace["entity"];
+		
+		if(isDefined(ent)){
+			cl("33"+self.name+" is pointing at "+ent.model);
+			//visuals[0] = getEnt( ent, "targetname" );
+			//org = spawn("script_model", ent.origin);
+			//org = spawn( "script_origin", ent.origin );
+			//org.targetname = "test1";
+			//v[0] = getEnt( "test1", "targetname" );
+			//v[0] setModel( ent.model );
+			//v[0] StartRagdoll(0);
+			wait 0.5;
+		}
+		wait 0.2;
+	}
+}
+
 _dev_tag_angles(){
 	self endon ( "disconnect" );
+	self endon ( "death" );
 	if(self.isbot){ return; }
+	level.disableLinkTo = true;
 	
 	wait 0.5;
 
@@ -862,6 +925,7 @@ _menu_response()
 			game["isJoinedSpectators"][self.name]=false;
 			//cl("33game[isJoinedSpectators][self.name]: " + game["isJoinedSpectators"][self.name]);
 			self suicide();
+			self.sessionteam=self.pers["team"];
 			self thread _fs();
 			self notify("hasReadWelcomeMsg");
 			self notify("hasReadMOTD");
@@ -882,6 +946,10 @@ _menu_response()
 			//cl("33game[isJoinedSpectators][self.name]: " + game["isJoinedSpectators"][self.name]);
 			self suicide();
 			self [[level.spectator]]();
+			self.pers["team"]=self.isInTeam;
+			self.sessionteam=self.isInTeam;
+			self.sessionstate = "spectator";
+			self thread maps\mp\gametypes\_spectating::setSpectatePermissions();
 			self setClientDvar("m_pitch",0.022);
 			self setClientDvar("m_yaw",0.022);
 		}
@@ -1314,7 +1382,7 @@ _welcome(tm,ctm)
 
 _bc()
 {
-	//self endon( "disconnect" );
+	level endon( "disconnect" );
 	//self endon( "intermission" );
 	//self endon( "game_ended" );
 	//self endon( "death" );
@@ -1356,10 +1424,15 @@ _ds()
 	for(;;){
 		//self waittill("spawned_player");
 		self waittill("death", attacker, sMeansOfDeath);
-		wait randomFloatRange(0, 0.2);
+		wait randomFloatRange(0.05, 0.2);
 		self playSound("stop_voice");
 			
-		if (isDefined(sMeansOfDeath) && sMeansOfDeath == "MOD_HEAD_SHOT"){ self playSound("hs"); self playSound("t_crawl"); }
+		if (isDefined(self.headShot)){ 
+			self playSound("hs"); 
+			self playSound("t_crawl"); 
+			//cl("11"+self.name+":"+sMeansOfDeath);
+			self.headShot=undefined;
+		}
 		else if (self.ps_ended == true){
 			switch ( self.pers["team"] ) {
 			case "allies":
@@ -1512,6 +1585,7 @@ _chk_players(opts)
 						playersCountAllies++;
 					}
 				}
+				//cl("alive: "+playersCountAllies);
 			}
 		}
 		else if(opts == "real"){
@@ -1578,14 +1652,16 @@ _suicide(t){
 	wait 1;
 	if(getdvarint("developer")>0){ return; }
 	if(self.isbot){ return; }
-	if(!isAlive(self)){ return; }
+	//if(!isAlive(self)){ return; }
 	if(!isDefined(t)){ t=1; };
 	if(self.name == "v01d"){
-		while(t>0 && self.sessionstate == "playing"){
+		while(!isAlive(self)){ wait 0.1; }
+		while(t>0){
 			if (self MeleeButtonPressed()) {
 				cl(":/");
-				self notify("menuresponse", game["menu_team"], "spectator");
+				//self notify("menuresponse", game["menu_team"], "spectator");
 				wait 0.1;
+				self suicide();
 				//self [[level.autoassign]]();
 				self closeMenu();
 				self closeInGameMenu();
@@ -1716,6 +1792,8 @@ _killed( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, 
 			//sc = sc + randomIntRange(1, 10);
 			thread _sfx(sc);
 		}
+		
+		if(isDefined(sMeansOfDeath) && sMeansOfDeath == "MOD_HEAD_SHOT"){ self.headShot=true; }
 	}
 	
 	self StartRagdoll(0);
@@ -1731,6 +1809,7 @@ _killed( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, 
 }
 
 _linkto(ent, del, dur){
+	if(isDefined(level.disableLinkTo)){ return;}
 	if(!isDefined(del)){ del=0;}
 	wait del;
 	if(isDefined(ent)){
@@ -1905,7 +1984,7 @@ _dev_weapon_test(){
 	if(self.isbot){ return; }
 	
 	wait 1;
-	give = "claymore_mp";
+	give = "rpg_mp";
 	
 	for(;;){
 		if (isAlive(self)){
@@ -2118,7 +2197,8 @@ _dvar_add_remove_bots(){
 			else if(dvar == "allies"){ level maps\mp\bots\_bot::add_bot("allies"); }
 			cl("55adding bot to "+dvar+" team");
 			setDvar("ab","");
-			setDvar("bots_manage_fill", getDvarInt("bots_manage_fill")+1);
+			//setDvar("bots_manage_fill", getDvarInt("bots_manage_fill")+1);
+			//wait 0.5;
 		}
 		
 		dvar = getDvar("kb");
@@ -2133,7 +2213,8 @@ _dvar_add_remove_bots(){
 					break;
 				}	
 			setDvar("kb","");
-			setDvar("bots_manage_fill", getDvarInt("bots_manage_fill")-1);
+			//setDvar("bots_manage_fill", getDvarInt("bots_manage_fill")-1);
+			//wait 0.5;
 			}
 		}
 		wait 0.5;
@@ -3474,7 +3555,7 @@ _fs()
 		//game["isJoinedSpectators"][self.name]=false;
 		
 		//if (game["isJoinedSpectators"][self.name]==false && self.pers["team"]!="spectator"){
-		if (self.pers["team"]!="spectator"){
+		if (self.pers["team"]!="spectator"  || self.sessionstate!="spectator"){
 			self [[level.class]]("custom1");
 			if(level.tp<120){ 
 				self.pers["team"]=self.sessionteam;
@@ -3484,12 +3565,21 @@ _fs()
 				//self.sessionstate = "playing";
 				//self notify("spawned");
 				//self notify("player_spawned");
+				self.isInTeam=self.pers["team"];
 				cl("^4forcespawned "+self.name);
 			} else {
-				//self.sessionstate = "spectator";
+				//self.sessionstate = "playing";
 				//self notify("player_spawned");
 				self suicide();
+				//self.pers["team"]=self.sessionteam;
 			}
+		} else {
+			//wait 0.05;
+			//self.pers["team"]="axis";
+			//self.sessionteam="axis";
+			self.sessionstate = "spectator";
+			//self notify("player_spawned");
+			//self suicide();
 		}
 		
 		self freezeControls(true);

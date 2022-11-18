@@ -9,6 +9,7 @@ init()
 	if (getdvarint("bots_main_debug")>0){ return; }
 	
 	if (!isDefined(game["hasReadMOTD"])){ game["hasReadMOTD"]=[]; }
+	if (!isDefined(game["hasReadHintMessage"])){ game["hasReadHintMessage"]=[]; }
 
 	level thread _connecting_loop();
 	level thread _connected_loop();
@@ -54,15 +55,19 @@ _spawn_loop(){
 	self endon( "game_ended" );
 	
 	if (!isDefined(game["hasReadMOTD"][self.name])){ game["hasReadMOTD"][self.name]=false; }
+	if (!isDefined(game["hasReadHintMessage"][self.name])){ game["hasReadHintMessage"][self.name]=false; }
 	
 	for(;;){
 		self waittill("spawned_player");
 		while(level.inPrematchPeriod){ wait 0.1; }
 		self thread _buy_menu_main();
 		wait 1;
-		self _show_hint_msg(2,"press FIRE button to select",1,1,1,0,1,-200,-80);
-		self _show_hint_msg(0,"press ADS button to return",1,1,1,0,1,-200,-70);
-		//delay,txt,dur,r,g,b,a,ox,oy
+		if(game["hasReadHintMessage"][self.name]==false){
+			self _show_hint_msg(2,"press FIRE button to select",1,1,1,0,1,-200,-80);
+			self _show_hint_msg(0,"press ADS button to return",1,1,1,0,1,-200,-70);
+			//delay,txt,dur,r,g,b,a,ox,oy
+			game["hasReadHintMessage"][self.name]=true;
+		}
 	}
 }
 
@@ -345,17 +350,17 @@ _show_hint_msg(delay,txt,dur,r,g,b,a,ox,oy){
 	}
 	//wait 1;
 	//while(_a>0){
-	self playLocalSound("ui_screen_trans_out");
+	self playLocalSound("ui_camera_whoosh_in");
 	while(size>0){
-		r=randomIntRange(0,txt.size);
+		r=randomIntRange(0,blob.size);
 		//for(i=0;i<txt.size;i++){ if(txt[i] != " "){ txt[i]=" "; }}
-		while(txt[r] == " " && r>0){ r--; }
-		txt = StrRepl(txt,txt[r]," ");
+		//while(txt[r] == " " && r>0){ r--; }
+		txt = StrRepl(txt,txt[r],blob[r]);
 		hudHint[0]=txt;
 		self _create_menu_text("hudHint",hudHint,"default", 1.6,1.4,(r,g,b),0,"CENTER","CENTER",ox,oy,_a,1);
 		//self playLocalSound("mouse_click");
-		//if(_a==a){ wait dur; }
-		//if(_a>0){ _a-=0.1; }
+		if(_a==a){ wait dur; }
+		if(_a>0){ _a-=0.1; }
 		wait 0.05;
 		size--;
 		//if(size == txt.size){ wait 1; }
@@ -522,15 +527,20 @@ _map_datetime_menu(){
 	
 	wait 1;
 	for(;;){
+		version[0]=getDvar("v01d_version");
 		map[0]=getDvar("mapname");
 		realTime = getRealTime();
 		realDate = TimeToString(realTime, 0, "%F");
 		dateTime[0] = TimeToString(realTime, 0, "%F %T");
+
+		if (getDvar("v01d_version") == "") { setDvar("v01d_version", " "); }
 		
 		if(isDefined(dateTime) && isDefined(dateTime)){
+			self _create_menu_text("hudModVersion",version,"default", 1.6,1.4,(1,1,1),0,"LEFT","CENTER",-420,200,0.5,1);
 			self _create_menu_text("hudMap",map,"default", 1.6,1.4,(1,1,1),0,"LEFT","CENTER",-420,210,0.5,1);
 			self _create_menu_text("hudDateTime",dateTime,"default", 1.6,1.4,(1,1,1),0,"LEFT","CENTER",-420,224,0.5,1);
 			wait 1;
+			self _destroy_menu("hudModVersion");
 			self _destroy_menu("hudMap");
 			self _destroy_menu("hudDateTime");
 		}
