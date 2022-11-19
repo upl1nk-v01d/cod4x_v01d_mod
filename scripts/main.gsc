@@ -31,7 +31,7 @@ init()
 	level thread scripts\money::init();
 	level thread scripts\menus::init();
 
-	if (getDvar("v01d_version") == "") { setDvar("v01d_version", "v1.51"); }
+	if (getDvar("v01d_version") == "") { setDvar("v01d_version", "v1.55"); }
 
 	//if (!getdvarint("developer")>0) { return; }
 	
@@ -39,6 +39,7 @@ init()
 	
 	level._maps = StrTok("mp_ancient_ultimate,12,mp_carentan,14,mp_rasalem,12,mp_efa_lake,10,mp_bo2carrier,12,mp_bog,16,mp_summit,18,mp_backlot,16,mp_harbor_v2,16,mp_sugarcane,12,mp_csgo_assault,12,mp_csgo_inferno,12,mp_csgo_office,12,mp_csgo_overpass,12,mp_csgo_mirage,12,mp_finca,12,mp_csgo_safehouse,10,mp_csgo_cbble,12,mp_csgo_shortdust,12,mp_csgo_stmarc,12,mp_ins_panj,10,mp_creek,12,mp_csgo_mirage,12,mp_csgo_overpass,12,mp_ins_heights,12,mp_ins_peak,12", "," );
 	//level._weapons = StrTok("knife_mp,ak74u_mp,barrett_mp,dragunov_mp,g3_mp,m14_mp,m21_mp,m4_mp,mp44_mp,remington700_mp,skorpion_mp,uzi_mp,m1014_mp", "," );
+	level._gametypes = StrTok("mp_csgo_assault,war,mp_csgo_inferno,dm", "," );
 	level._weapons = StrTok("knife_mp,tac330_mp,tac330_sil_mp,svg100_mp,rw1_mp,ak74u_mp,barrett_mp,dragunov_mp,g3_mp,m14_mp,m21_mp,m4_mp,mp44_mp,remington700_mp,skorpion_mp,uzi_mp,m1014_mp,law_mp,at4_bo_mp,mm1_mp,striker_mp", "," );
 	for (i=0;i<level._weapons.size;i++){
 		PrecacheItem(level._weapons[i]);
@@ -46,6 +47,11 @@ init()
 	}
 	level.hudMarkers = [];
 	level.slowMo=false;
+	
+	//for(i=0;i<level._gametypes;i+=2){ 
+	//	if(level._gametypes[i]==getDvar("mapname")){ setDvar("g_gametype",level._gametypes[i+1]); break; }
+	//	else{ setDvar("g_gametype","sab"); }
+	//}
 	
 	/*
 	level.classSniper = StrTok("tac330_mp,tac330_sil_mp,svg100_mp,barrett_mp,dragunov_mp,m40a3_mp,remington700_mp", "," );
@@ -298,11 +304,11 @@ _bot_balance_manage(){
 		alliesScore = [[level._getTeamScore]]( "allies" );
 		if(axisScore>alliesScore){ 
 			exec("ab allies");
-			wait 1.5;
+			wait 0.5;
 			exec("kb axis");
 		} else if(alliesScore>axisScore){ 
 			exec("ab axis");
-			wait 1.5;
+			wait 0.5;
 			exec("kb allies");
 		}
 	}
@@ -857,6 +863,10 @@ _maps_randomizer(){
 			wait getDvarFloat( "scr_intermission_time" )-1.5;
 			exec("map " + game["nextMap"]);
 			game["nextMap"]="";
+			for(i=0;i<level._gametypes;i+=2){ 
+				if(level._gametypes[i]==game["nextMap"]){ setDvar("g_gametype",level._gametypes[i+1]); break; }
+				else{ setDvar("g_gametype","sab"); }
+			}
 		}
 	}
 }
@@ -2126,14 +2136,18 @@ _dvar_players(){
 			cl("-------------------"); 
 			players = getentarray( "player", "classname" );  c=0; names="";
 			for(i=0;i<players.size;i++){
+				color="77";
+				if(players[i].pers["team"]=="axis"){ color="11"; }
+				if(players[i].pers["team"]=="allies"){ color="55"; }
+				input=color+"player: "+players[i].name;
 				if(!players[i].isbot && pl == "r"){
-					cl("player: "+players[i].name); c++;
+					cl(input); c++;
 				}
 				else if(players[i].isbot && pl == "b"){
-					cl("player: "+players[i].name); c++;
+					cl(input); c++;
 				}
 				else if(pl == "a"){
-					cl("player: "+players[i].name); c++;
+					cl(input); c++;
 				}
 			}
 			cl("-------------------"); 
@@ -2174,7 +2188,13 @@ _dvar_map_restart(){
 		m=getDvar("mapname");
 		if(dvar != ""){
 			if(dvar == "r"){ cl("restarting map "+m); exec("map " + m); }
-			if(dvar == "rr"){ cl("rotating map "+game["nextMap"]); exec("map " + game["nextMap"]); }
+			if(dvar == "rr"){ cl("rotating map "+game["nextMap"]); 
+				for(i=0;i<level._gametypes;i+=2){ 
+				if(level._gametypes[i]==game["nextMap"]){ setDvar("g_gametype",level._gametypes[i+1]); break; }
+				else{ setDvar("g_gametype","sab"); }
+			}
+				exec("map " + game["nextMap"]); 
+			}
 			else if(dvar == "f"){ cl("fast restarting map"); Map_Restart(false); }
 			else if(dvar == "i"){ 
 				cl("current map: "+getDvar("mapname")); 
@@ -2195,7 +2215,7 @@ _dvar_add_remove_bots(){
 			//setDvar("bots_team",dvar);
 			if(dvar == "axis"){ level maps\mp\bots\_bot::add_bot("axis"); }
 			else if(dvar == "allies"){ level maps\mp\bots\_bot::add_bot("allies"); }
-			cl("55adding bot to "+dvar+" team");
+			cl("22adding bot to "+dvar+" team");
 			setDvar("ab","");
 			//setDvar("bots_manage_fill", getDvarInt("bots_manage_fill")+1);
 			//wait 0.5;
@@ -2207,7 +2227,7 @@ _dvar_add_remove_bots(){
 			players = getentarray("player", "classname"); 
 			for(i=0;i<players.size;i++){
 				if(players[i].pers["team"]==dvar && players[i].isbot){
-					botname=players[i].name;
+					botname=StrRepl(players[i].name, "//", "");
 					exec("kick " + botname);
 					cl("11kicking bot "+botname+" from "+dvar+" team");
 					break;
@@ -2355,6 +2375,9 @@ _init_bots_dvars(){
 }
 
 _add_some_bots(bots){
+	setDvar( "testclients_doreload", true );
+	wait 0.1;
+	setDvar( "testclients_doreload", false );
 	if(!isDefined(bots)){ bots=10; }
 	for(i=0;i<bots/2;i++){
 		setDvar("ab", "axis");

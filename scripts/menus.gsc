@@ -63,8 +63,9 @@ _spawn_loop(){
 		self thread _buy_menu_main();
 		wait 1;
 		if(game["hasReadHintMessage"][self.name]==false){
-			self _show_hint_msg(2,"press FIRE button to select",1,1,1,0,1,-200,-80);
+			self _show_hint_msg(0,"press FIRE button to select",1,1,1,0,1,-200,-80);
 			self _show_hint_msg(0,"press ADS button to return",1,1,1,0,1,-200,-70);
+			self _show_hint_msg(0,"buy ammo choosing weapon",1,1,1,0,1,-200,-70);
 			//delay,txt,dur,r,g,b,a,ox,oy
 			game["hasReadHintMessage"][self.name]=true;
 		}
@@ -799,7 +800,7 @@ _buy_menu_main(){
 		buyMenuPistols = StrTok("Colt 45 Silenced,155,colt45_silencer_mp,USP Silenced,167,usp_silencer_mp",",");
 		buyMenuSMGs = StrTok("MP5,550,mp5_silencer_mp,G36C GL,630,g36c_gl_mp,P90,900,p90_silencer_mp",",");
 		buyMenuMGs = StrTok("M60E4,1600,m60e4_mp",",");
-		buyMenuRifles = StrTok("M16 GL,1200,m16_gl_mp,M21,1650,m21_mp,Striker,1800,striker_mp",",");
+		buyMenuRifles = StrTok("M4 GL,1200,m4_gl_mp,M21,1650,m21_mp,Striker,1800,striker_mp",",");
 		buyMenuSnipers = StrTok("TAC330,2000,tac330_mp,TAC330 Silenced,2300,tac330_sil_mp",",");
 		//buyMenuRPGs = StrTok("AT4,2600,at4_mp",",");
 		buyMenuRPGs = StrTok("LAW,2200,law_mp,AT4,3200,at4_mp",",");
