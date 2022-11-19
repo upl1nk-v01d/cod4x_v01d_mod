@@ -587,6 +587,7 @@ callStrike_bombEffect( plane, launchTime, owner, requiredDeathCount )
 			thread playsoundinspace( "artillery_impact", traceHit );
 			playRumbleOnPosition( "artillery_rumble", traceHit );
 			earthquake( 0.7, 0.75, traceHit, 1000 );
+			earthquake( 0.3, 3.7, traceHit, 4800 );
 		}
 		
 		wait ( 0.05 );
