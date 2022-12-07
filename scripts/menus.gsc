@@ -426,6 +426,8 @@ _welcome_msg(){
 	//self waittill("spawned_player");
 	wait 0.05;
 
+	if(getDvarInt("log_motd") != 1){ game["hasReadMOTD"][self.name]=true; }
+
 	if (game["hasReadMOTD"][self.name]==false){
 		self thread _accept();
 		motd=_get_motd_txt();

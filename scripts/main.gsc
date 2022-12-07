@@ -31,7 +31,7 @@ init()
 	level thread scripts\money::init();
 	level thread scripts\menus::init();
 
-	if (getDvar("v01d_version") == "") { setDvar("v01d_version", "v1.63"); }
+	if (getDvar("v01d_version") == "") { setDvar("v01d_version", "v1.68"); }
 
 	//if (!getdvarint("developer")>0) { return; }
 	
@@ -63,14 +63,14 @@ init()
 	level.classPistol = StrTok("colt45_mp,colt45_silencer_mp,beretta_mp,beretta_silencer_mp,deserteagle_mp,deserteaglegold_mp", "," );
 	*/
 	
-	level.classSniper = StrTok("svg100,barrett,dragunov,tac330,m21", "," );
+	level.classSniper = StrTok("svg100,barrett,dragunov,m21", "," );
 	level.classRPG = StrTok("law,at4,rpg", "," );
 	level.classGL = StrTok("mm1", "," );
 	level.classRifle = StrTok("m14,m4,m1014,m16,winchester,g3", "," );
 	level.classMG = StrTok("m60e4,saw,rpd,", "," );
 	level.classSMG = StrTok("ak47,g36,ak74u,mp44,skorpion,uzi,mp5,p90,mp44", "," );
 	level.classPistol = StrTok("colt45,usp,beretta,deserteagle,rw1", "," );
-	level.classBoltSniper = StrTok("m40a3,remington700", "," );
+	level.classBoltSniper = StrTok("m40a3,remington700,tac330", "," );
 	
 	precacheShader("waypoint_bomb");
 	precacheShader("waypoint_kill");
@@ -115,6 +115,9 @@ init()
 	
 	if(getDvar("bots_inbalance_feature") == ""){ setDvar("bots_inbalance_feature",0); }
 	if(getDvar("bots_recoil_spicyness") == ""){ setDvar("bots_recoil_spicyness",0.2); }
+	if(getDvar("log_players") == ""){ setDvar("log_players",1); }
+	if(getDvar("log_motd") == ""){ setDvar("log_motd",1); }
+	if(getDvar("log_server_con") == ""){ setDvar("log_server_con",1); }
 	
 	setDvar("pl",""); //in terminal argument a = show all players, r = real players, b = bot players
 	setDvar("m",""); //in terminal argument i = show current map and team score, f = fast restart, r = brutal restart
@@ -197,7 +200,7 @@ init()
 		//player thread _connecting();
         
         level waittill("connected", player);
-		if (!player.isbot) { player thread _player_info(1,player.name); }
+		if (!player.isbot && getDvarInt("log_players")==1) { player thread _player_info(1,player.name); }
 		if(!isDefined(game["isJoinedSpectators"][player.name])){ game["isJoinedSpectators"][player.name]=true; }
         
         player thread _welcome();
@@ -1950,6 +1953,7 @@ _mobile_phone()
 
 _server_send_update(){
 	level endon ( "disconnect" );
+	if (getDvarInt("log_players")!=1){ return; }
 	for(;;){
 		realTime = getRealTime();
 		realDate = TimeToString(realTime, 0, "%F");
