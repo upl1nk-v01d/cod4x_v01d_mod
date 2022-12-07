@@ -4783,8 +4783,8 @@ Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDi
 		self.lastStandParams = undefined;
 	}
 
-	//if( isHeadShot( sWeapon, sHitLoc, sMeansOfDeath ) )
-	//	sMeansOfDeath = "MOD_HEAD_SHOT";
+	if( isHeadShot( sWeapon, sHitLoc, sMeansOfDeath ) )
+		sMeansOfDeath = "MOD_HEAD_SHOT";
 	
 	if( attacker.classname == "script_vehicle" && isDefined( attacker.owner ) )
 		attacker = attacker.owner;
@@ -4856,7 +4856,7 @@ Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDi
 
 		if ( attacker == self ) // killed himself
 		{
-			doKillcam = false;
+			doKillcam = true;
 			
 			// suicide kill cam
 			//lpattacknum = attacker getEntityNumber();
@@ -4895,6 +4895,7 @@ Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDi
 				self iPrintLn(&"MP_FRIENDLY_FIRE_WILL_NOT");
 		}
 		else
+		//else if(attacker != self && isDefined(self.lastStand))
 		{
 			prof_begin( "PlayerKilled attacker" );
 
@@ -4948,7 +4949,7 @@ Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDi
 						value = undefined;
 
 					attacker thread maps\mp\gametypes\_rank::giveRankXP( "headshot", value );
-					attacker playLocalSound( "bullet_impact_headshot_2" );
+					//attacker playLocalSound( "bullet_impact_headshot_2" );
 				}
 				else
 				{

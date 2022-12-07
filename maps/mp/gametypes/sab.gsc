@@ -504,8 +504,8 @@ onPickup( player )
 	if ( team == self maps\mp\gametypes\_gameobjects::getOwnerTeam() )
 	{
 		//printOnTeamArg( &"MP_EXPLOSIVES_RECOVERED_BY", team, player );
-		if(team == "axis"){ iPrintLn( "^1Explosiver recovered by ", player ); }
-		if(team == "allies"){ iPrintLn( "^4Explosiver recovered by ", player ); }
+		if(team == "axis"){ iPrintLn( "^1Explosives recovered by ", player ); }
+		if(team == "allies"){ iPrintLn( "^5Explosives recovered by ", player ); }
 		//playSoundOnPlayers( game["bomb_recovered_sound"], team );
 	}
 	else
@@ -513,8 +513,8 @@ onPickup( player )
 		printOnTeamArg( &"MP_EXPLOSIVES_RECOVERED_BY", team, player );
 //		printOnTeamArg( &"MP_EXPLOSIVES_RECOVERED_BY", otherTeam, &"MP_THE_ENEMY" );
 		//playSoundOnPlayers( game["bomb_recovered_sound"] );
-		if(team == "axis"){ iPrintLn( "^1Explosiver recovered by ", player ); }
-		if(team == "allies"){ iPrintLn( "^4Explosiver recovered by ", player ); }
+		if(team == "axis"){ iPrintLn( "^1Explosives recovered by ", player ); }
+		if(team == "allies"){ iPrintLn( "^5Explosives recovered by ", player ); }
 	}
 	
 	self maps\mp\gametypes\_gameobjects::setOwnerTeam( team );
@@ -676,6 +676,8 @@ bombPlanted( destroyedObj, team )
 	setDvar( "ui_bomb_timer", 0 );
 	destroyedObj.visuals[0] maps\mp\gametypes\_globallogic::stopTickingSound();
 
+	if(level.gameEnded == true){ return; }
+
 	if ( !level.bombPlanted )
 	{
 		if ( level.hotPotato )
@@ -734,7 +736,8 @@ playSoundinSpace( alias, origin )
 	org = spawn( "script_origin", origin );
 	org.origin = origin;
 	org playSound( alias  );
-	wait 10; // MP doesn't have "sounddone" notifies =(
+	wait 1; // MP doesn't have "sounddone" notifies =(
+	//wait 10; // MP doesn't have "sounddone" notifies =(
 	org delete();
 }
 
@@ -742,6 +745,7 @@ playSoundinSpace( alias, origin )
 bombTimerWait()
 {
 	level endon("bomb_defused");
+	level endon("game_ended");
 	wait level.bombTimer;
 }
 

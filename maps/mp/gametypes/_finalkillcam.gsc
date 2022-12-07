@@ -28,6 +28,7 @@ OnPlayerConnect()
     {
         level waittill("connected", player);
         player thread beginFK();
+        //player CreateFKMenu(player , player);
     }
 }    
         
@@ -63,7 +64,8 @@ finalkillcam( attacker, attackerNum, deathtime, victim)
     //print (victim getEntityNumber()+"\n");
     victimNum = victim getEntityNumber();
     
-    //self SetClientDvar("ui_ShowMenuOnly", "none");
+    self SetClientDvar("ui_ShowMenuOnly", "none");
+    self scripts\main::_film_tweaks(1,0.05,"1 0.6 0.6","1 0.6 0.6",0.6,1,1,0,1);
 
     camtime = 5;
     predelay = getTime()/1000 - deathTime;
@@ -150,6 +152,7 @@ CleanFK()
     self setClientDvars("cg_thirdperson", 0);
     
     self SetClientDvar("ui_ShowMenuOnly", "");
+    self scripts\main::_film_tweaks(0,0,"1 1 1","1 1 1",0.4,1,1,0,1.4);
     
     visionSetNaked( "mpOutro", 1.0 );
 }

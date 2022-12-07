@@ -76,6 +76,7 @@ init()
 	precacheLocationSelector( "map_artillery_selector" );
 
 	level.airstrikefx = loadfx ("explosions/clusterbomb");
+	level.artilleryfx = loadfx ("explosions/tanker_explosion");
 	level.mortareffect = loadfx ("explosions/artilleryExp_dirt_brown");
 	level.bombstrike = loadfx ("explosions/wall_explosion_pm_a");
     level.hardEffects[ "artilleryExp" ] = loadfx("explosions/tanker_explosion");
@@ -584,7 +585,8 @@ callStrike_bombEffect( plane, launchTime, owner, requiredDeathCount )
 	
 		if ( i%3 == 0 )
 		{
-			thread playsoundinspace( "artillery_impact", traceHit );
+			playfx( level.artilleryfx, traceHit );
+			thread playsoundinspace( "exp_suitcase_bomb_main", traceHit );
 			playRumbleOnPosition( "artillery_rumble", traceHit );
 			earthquake( 0.7, 0.75, traceHit, 1000 );
 			earthquake( 0.3, 3.7, traceHit, 4800 );
@@ -728,10 +730,10 @@ callStrike( owner, coord, yaw )
 	level.airStrikeDamagedEntsCount = 0;
 	level.airStrikeDamagedEntsIndex = 0;
 	level thread doPlaneStrike( owner, requiredDeathCount, coord, startPoint+(0,0,randomInt(500)), endPoint+(0,0,randomInt(500)), bombTime, flyTime, direction );
-	wait randomfloatrange( 1.5, 2.5 );
-	level thread doPlaneStrike( owner, requiredDeathCount, coord, startPoint+(0,0,randomInt(200)), endPoint+(0,0,randomInt(200)), bombTime, flyTime, direction );
-	wait randomfloatrange( 1.5, 2.5 );
-	level thread doPlaneStrike( owner, requiredDeathCount, coord, startPoint+(0,0,randomInt(200)), endPoint+(0,0,randomInt(200)), bombTime, flyTime, direction );
+	//wait randomfloatrange( 1.5, 2.5 );
+	//level thread doPlaneStrike( owner, requiredDeathCount, coord, startPoint+(0,0,randomInt(200)), endPoint+(0,0,randomInt(200)), bombTime, flyTime, direction );
+	//wait randomfloatrange( 1.5, 2.5 );
+	//level thread doPlaneStrike( owner, requiredDeathCount, coord, startPoint+(0,0,randomInt(200)), endPoint+(0,0,randomInt(200)), bombTime, flyTime, direction );
 }
 
 

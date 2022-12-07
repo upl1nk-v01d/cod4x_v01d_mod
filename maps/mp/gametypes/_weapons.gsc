@@ -97,6 +97,7 @@ init()
 	level.claymoreFXid = loadfx( "misc/claymore_laser" );
 	
 	level.claymoreArray = []; 
+	level.claymoreID = 0;
 	
 	level thread onPlayerConnect();
 	
@@ -721,7 +722,10 @@ watchClaymores()
 		self waittill( "grenade_fire", claymore, weapname );
 		if ( weapname == "claymore" || weapname == "claymore_mp" )
 		{
-			self.claymorearray[self.claymorearray.size] = claymore;
+			self.claymorearray[level.claymoreID] = claymore;
+			level.claymoreArray[level.claymoreID] = claymore;
+			claymore.ID = level.claymoreID;
+			level.claymoreID++;
 			claymore.trigger = claymore.origin;
 			claymore.activated = false;
 			claymore.owner = self;
@@ -730,7 +734,6 @@ watchClaymores()
 			claymore thread playClaymoreEffects();
 			claymore thread claymoreDetectionTrigger_wait( self.pers["team"] );
 			//claymore maps\mp\_entityheadicons::setEntityHeadIcon(self.pers["team"], (0,0,20));
-			level.claymoreArray[level.claymoreArray.size] = claymore;
 			
 			/#
 			if ( getdvarint("scr_claymoredebug") )
@@ -837,7 +840,10 @@ claymoreDetonation()
 	wait level.claymoreDetectionGracePeriod;
 	
 	self maps\mp\_entityheadicons::setEntityHeadIcon("none");
+	self.detonated = true;
 	self detonate();
+	level.claymoreArray[self.ID].removed = true;
+	level.claymoreArray[self.ID] delete();
 }
 
 shouldAffectClaymore( claymore )
