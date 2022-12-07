@@ -166,11 +166,11 @@ heli_update_global_dvars()
 	for( ;; )
 	{
 		// heli_update_dvar( dvar, default ) returns value
-		level.heli_loopmax = heli_get_dvar_int( "scr_heli_loopmax", "1" );			// how many times helicopter will circle the map before it leaves
+		level.heli_loopmax = heli_get_dvar_int( "scr_heli_loopmax", "10" );			// how many times helicopter will circle the map before it leaves
 		level.heli_missile_rof = heli_get_dvar_int( "scr_heli_missile_rof", "5" );	// missile rate of fire, one every this many seconds per target, could fire two at the same time to different targets
-		level.heli_armor = heli_get_dvar_int( "scr_heli_armor", "500" );			// armor points, after this much damage is taken, helicopter is easily damaged, and health degrades
+		level.heli_armor = heli_get_dvar_int( "scr_heli_armor", "100" );			// armor points, after this much damage is taken, helicopter is easily damaged, and health degrades
 		level.heli_rage_missile = heli_get_dvar( "scr_heli_rage_missile", "5" );	// higher the value, more frequent the missile assault
-		level.heli_maxhealth = heli_get_dvar_int( "scr_heli_maxhealth", "1100" );	// max health of the helicopter
+		level.heli_maxhealth = heli_get_dvar_int( "scr_heli_maxhealth", "100" );	// max health of the helicopter
 		level.heli_missile_max = heli_get_dvar_int( "scr_heli_missile_max", "3" );	// max number of missiles helicopter can carry
 		level.heli_dest_wait = heli_get_dvar_int( "scr_heli_dest_wait", "2" );		// time helicopter waits (hovers) after reaching a destination
 		level.heli_debug = heli_get_dvar_int( "scr_heli_debug", "0" );				// debug mode, draws debugging info on screen
@@ -687,7 +687,10 @@ heli_evasive()
 // attach helicopter on crash path
 heli_crash()
 {
-	self notify( "crashing" );
+	
+	if(randomInt(5)>2){ self notify( "death" ); }
+	else{ self notify( "crashing" ); }
+	//self notify( "crashing" );
 	
 	// fly to crash path
 	self thread heli_fly( level.heli_crash_paths[0] );
