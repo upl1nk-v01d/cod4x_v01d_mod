@@ -598,6 +598,10 @@ _buy(){
 				//cl("^3self.hasChosen:"+self.hasChosen[i]);
 				if (isSubStr(self.hasChosen[i],"_mp")){ 
 					//cl("^4found weapon: "+self.hasChosen[i]); 
+					weapon = self _check_weapon_in_list(self.hasChosen[i]);
+					if(isDefined(weapon) && self.hasChosen[i] == weapon && !isSubStr(self.hasChosen[i],"c4") && !isSubStr(self.hasChosen[i],"claymore") && !isSubStr(self.hasChosen[i],"grenade")){ 
+						self.hasChosen[i-1] = int(int(self.hasChosen[i-1])/10);
+					}
 					if(isDefined(self.money) && self.money["acc"]>=int(self.hasChosen[i-1])){ 
 						if (FS_TestFile("/scripts/main.gsc")){
 							//cl("^3main.gsc exists!");
@@ -613,13 +617,12 @@ _buy(){
 						ammo = self getAmmoCount(self.hasChosen[i]);
 						clip = WeaponClipSize(self.hasChosen[i]);
 						maxAmmo = weaponMaxAmmo(self.hasChosen[i]);
-						weapon = self _check_weapon_in_list(self.hasChosen[i]);
 						
 						if(ammo >= maxAmmo){ 
 							cl("33max ammo reached to "+self.hasChosen[i]); 
 							wait 0.05; 
 						}
-						else {
+						else{
 							pickedExplosives=true;
 							self giveWeapon(self.hasChosen[i]);
 							if (isSubStr(self.hasChosen[i],"claymore")){ 
@@ -655,7 +658,8 @@ _buy(){
 								//.money["acc"]-=int(self.hasChosen[i-1]);
 							} else {
 								if (isDefined(weapon) && self.hasChosen[i] == weapon){
-									self.money["acc"]-=int(int(self.hasChosen[i-1])/10);
+									self.money["acc"]-=int(int(self.hasChosen[i-1]));
+									//self.money["acc"]-=int(int(self.hasChosen[i-1])/10);
 									self SetWeaponAmmoStock(self.hasChosen[i], ammo+clip);
 									//cl("33"+self.name+" bought ammo "+clip);
 									//cl("33"+self.name+" has ammo "+self getAmmoCount(self.hasChosen[i]));
@@ -688,6 +692,8 @@ _buy(){
 						} else if(isSubStr(self.hasChosen[i],"ammo")){
 							cl(self.name+" has "+self getAmmoCount(currentWeapon));
 						}
+						
+						self.hasChosen[i-1] = "" + self.hasChosen[i-1];
 						//if (isSubStr(self.hasChosen[i],"grenade")){ self SetWeaponAmmoClip(self.hasChosen[i],1); setWeaponAmmoStock(self.hasChosen[i],int(ammo+1)); }
 						//self setWeaponAmmoStock(self.hasChosen[i],int(ammo+1));
 						//self SetSpawnWeapon(self.hasChosen[i]);

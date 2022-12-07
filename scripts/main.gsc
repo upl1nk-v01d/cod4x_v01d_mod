@@ -31,7 +31,7 @@ init()
 	level thread scripts\money::init();
 	level thread scripts\menus::init();
 
-	if (getDvar("v01d_version") == "") { setDvar("v01d_version", "v1.55"); }
+	if (getDvar("v01d_version") == "") { setDvar("v01d_version", "v1.63"); }
 
 	//if (!getdvarint("developer")>0) { return; }
 	
@@ -114,6 +114,7 @@ init()
 	//setDvar("bots_play_fire",0);
 	
 	if(getDvar("bots_inbalance_feature") == ""){ setDvar("bots_inbalance_feature",0); }
+	if(getDvar("bots_recoil_spicyness") == ""){ setDvar("bots_recoil_spicyness",0.2); }
 	
 	setDvar("pl",""); //in terminal argument a = show all players, r = real players, b = bot players
 	setDvar("m",""); //in terminal argument i = show current map and team score, f = fast restart, r = brutal restart
@@ -282,8 +283,8 @@ _last_allie_taunting(){
 			for(i=0;i<players.size;i++){
 				if (isAlive(players[i]) && players[i].isbot && players[i].pers["team"]=="allies"){
 					players[i] playSound("stop_voice");
-					v1=randomIntRange(0,4);
-					v2=randomIntRange(0,10);
+					v1=randomIntRange(1,4);
+					v2=randomIntRange(1,10);
 					players[i] playSound("ct_taunt"+v1+"_"+v2);
 					wait randomIntRange(5, 10);
 				}
@@ -371,7 +372,7 @@ _player_spawn_loop(){
         self thread _moving();
 		self thread _suicide(20);
 		//self thread _law_pickup();
-		self thread _m16_pickup();
+		//self thread _m16_pickup();
 		self thread _mobile_phone();
 		self thread _push();
 		self thread _stopADS();
@@ -382,6 +383,8 @@ _player_spawn_loop(){
 		self thread _knife_hit();
 		self thread _explosives_pickup();
 		//self thread _bot_explosives_pickup();
+		self thread _weapon_cock_sound();
+		self thread _player_mouse();
 		
 		//self thread _dev_coords();
 		//self thread _dev_weapon_test();
@@ -392,12 +395,50 @@ _player_spawn_loop(){
 		//self thread _dev_tag_angles();
 		//self thread _dev_test_dp();
 		//self thread _dev_ent_test();
+		//self thread _dev_test_clcmds();
+		//self thread _dev_test_fx();
 		
 		//if(isDefined(game["botPlayers"])){ setDvar("bots_manage_fill", game["botPlayers"]+1-game["realPlayers"]); }
 		//self.alpha=0;
 		//wait 20;
 		//self.alpha=1;
+		self takeWeapon("briefcase_bomb_mp");
 	}
+}
+
+_dev_test_fx(){
+	self endon ( "disconnect" );
+	self endon ( "death" );
+	self endon( "intermission" );
+	self endon( "game_ended" );
+	if(self.isbot){ return; }
+	
+	fx = loadfx ("explosions/artilleryExp_dirt_brown");
+	
+	for(;;){
+		while(!self UseButtonPressed()){ wait 0.05; }
+		//self setClientDvar("mp_QuickMessage","");
+		myAngles = self GetPlayerAngles();
+		startPos = self getEye();
+		startPosForward = startPos + anglesToForward((myAngles[0],myAngles[1],0))*1200;
+		trace = bulletTrace(startPos,startPosForward,true,self);
+		pos = trace["position"];
+		//ent = trace["entity"];
+		if(isDefined(pos)){
+			playfx (fx, pos);
+			self thread _playSoundInSpace("rocket_explode_default",pos,0,self);
+			//thread playsoundinspace( "artillery_impact", traceHit );		
+		}
+		while(self UseButtonPressed()){	wait 0.05; }
+		wait 0.05;
+	}
+}
+
+_dev_test_clcmds(){
+	//self setClientDvar("ui_ShowMenuOnly", "none");
+	//self scripts\menus::_create_menu_bg("hudWelcomeBG","CENTER","TOP",100,100,0,0,(1,1,1),1,1,"black",50,"fullscreen","fullscreen");
+	self _film_tweaks(1,0.05,"1 0.6 0.6","1 0.6 0.6",0.6,1,1,0,1);
+	//self _film_tweaks(0,0,"1 1 1","1 1 1",0.4,1,1,0,1.4);
 }
 
 _dev_test_dp(to, from, dir){
@@ -718,7 +759,7 @@ _give_knife(delay){
 		ammoList=[];
 		cw=self GetCurrentWeapon();
 		//cl("44"+cw);
-		if(isDefined(weaponsList) && !self IsOnLadder() && !self IsMantling()){
+		if(isDefined(weaponsList) && !self IsOnLadder() && !self IsMantling() && !isDefined(self.buyMenuShow)){
 			for(i=0;i<weaponsList.size;i++){
 				//if(weaponsList[i]==cw){ break; }
 				ammoList[i] = self getAmmoCount(weaponsList[i]);
@@ -773,14 +814,39 @@ _knife_hit(){
 	}
 }
 
+_weapon_cock_sound(){
+	self endon ( "disconnect" );
+	self endon ( "death" );
+	self endon( "intermission" );
+	self endon( "game_ended" );
+	if(self.isbot){ return; }
+
+	for(;;){
+		if(isAlive(self)){
+			self waittill("weapon_fired");
+			weapon = self GetCurrentWeapon();
+			if(isSubStr(weapon,"grenade") || isSubStr(weapon,"claymore") || isSubStr(weapon,"knife")){ continue; }
+			if(isSubStr(weapon,"beretta") || isSubStr(weapon,"colt") || isSubStr(weapon,"deserteagle")){ self playLocalSound("pistol_cock"); }
+			else{ 
+				//self playLocalSound("rifle_cock"); 
+			} 
+			//cl("11fired");
+		}
+		wait 0.1;
+	}
+}
+
 _cg_cmds(){
 	if(self.isbot){ return; }
 	self setClientDvar("cg_blood", 0); 
 	self setClientDvar("cg_friendlyNameFadeIn", 100000);
 	self setClientDvar("cg_enemyNameFadeIn", 100000);
 	self setClientDvar("cg_centertime", 0);
+	self setClientDvar("r_blur", 0);
 	self setClientDvar("r_filmUseTweaks", 0);
 	self setClientDvar("r_filmTweakEnable", 1);
+	self setClientDvar("r_filmTweakBrightness", 0);
+	self setClientDvar("r_filmTweakContrast", 1.4);
 	self setClientDvar("r_filmTweakDarkTint", "1 1 1");
 	self setClientDvar("r_filmTweakLightTint", "1 1 1");
 	self setClientDvar("r_filmTweakDesaturation", 0.4);
@@ -796,6 +862,20 @@ _cg_cmds(){
 	//self setClientDvar("ui_uav_axis",1);
 	//self setClientDvar("ui_uav_allies",1);
 	//self setClientDvar("perk_weapReloadMultiplier", 0.1);
+}
+
+_film_tweaks(enable,blur,dtint,ltint,desat,glow,glowdesat,bright,contrast){
+	self setClientDvar("r_blur", blur);
+	self setClientDvar("r_filmTweakBrightness", bright);
+	self setClientDvar("r_filmTweakContrast", contrast);
+	self setClientDvar("r_filmUseTweaks", enable);
+	self setClientDvar("r_filmTweakEnable", enable);
+	self setClientDvar("r_filmTweakDarkTint", dtint);
+	self setClientDvar("r_filmTweakLightTint", ltint);
+	self setClientDvar("r_filmTweakDesaturation", desat);
+	self setClientDvar("r_glowTweakEnable", glow);
+	self setClientDvar("r_glowUseTweaks", enable);
+	self setClientDvar("r_glowTweakBloomDesaturation", glowdesat);
 }
 
 getClientDvar(dvar){
@@ -1555,7 +1635,8 @@ _bs()
 			}
 		//wait .784;
 		self.ps_ended = false;
-		wait 2.1 + randomfloat (1.8);
+		if(self.pers["team"]=="axis"){ wait 1.1 + randomfloat (0.8); }
+		if(self.pers["team"]=="allies"){ wait 3.1 + randomfloat (2.8); }
 		self.ps_ended = true;
 	}
 
@@ -1659,6 +1740,11 @@ _tiebreaker(){
 }
 
 _suicide(t){
+	self endon( "death" );
+	self endon( "disconnect" );
+	self endon( "intermission" );
+	self endon( "game_ended" );
+
 	wait 1;
 	if(getdvarint("developer")>0){ return; }
 	if(self.isbot){ return; }
@@ -1692,6 +1778,7 @@ _killed( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, 
 	
 	self setClientDvar("m_pitch",0.022);
 	self setClientDvar("m_yaw",0.022);
+	self SetClientDvar("ui_ShowMenuOnly", "");
 	
 	self.haveC4=0;
 	self.haveClaymores=0;
@@ -1773,6 +1860,8 @@ _killed( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, 
 		//cl(eInflictor.classname); //script_vehicle
 		//cl(eInflictor.name); //
 		//cl("^2"+vDir); //
+		
+		self.kb = eAttacker;
 		
 		if(isPlayer(eAttacker) && sMeansOfDeath == "MOD_MELEE") //
 		{	
@@ -1892,10 +1981,13 @@ _connecting(){
 		game["realPlayers"]++;
 		game["isConnecting"][name]=true; 
 		
+		self setClientDvar("ui_ShowMenuOnly", "");
+		
 		self waittill("disconnect");
 		if(!isDefined(game["isConnecting"])){ return; }
 		cl("^1"+name+" disconnected");
 		game["isConnecting"][name]=false; 
+		//game["isConnecting"][name] SetClientDvar("ui_ShowMenuOnly", "none");
 		//cl("realPlayers: "+(game["realPlayers"]-1));
 	}
 }
@@ -1972,9 +2064,9 @@ _dev_sound_test(){
 	if(self.isbot){ return; }
 	
 	while(1){
-		self playSound("bh");
+		self playSound("rifle_cock");
 		wait 1;
-		self playSound("rapidbreathe");
+		self playSound("pistol_cock");
 		wait 2;
 		//self playLocalSound("em1_el_zap");
 		//self playLoopSound("em1_el_loop");
@@ -1993,8 +2085,10 @@ _dev_weapon_test(){
 	if (getdvarint("bots_main_debug")>0) { return; }  
 	if(self.isbot){ return; }
 	
+	give = "at4_bo";
+
 	wait 1;
-	give = "rpg_mp";
+	give+="_mp";
 	
 	for(;;){
 		if (isAlive(self)){
@@ -2208,6 +2302,8 @@ _dvar_map_restart(){
 
 _dvar_add_remove_bots(){
 	level endon("disconnect");
+	level endon("intermission");
+	level endon("game_ended");
 	
 	for(;;){
 		dvar = getDvar("ab");
@@ -2217,6 +2313,7 @@ _dvar_add_remove_bots(){
 			else if(dvar == "allies"){ level maps\mp\bots\_bot::add_bot("allies"); }
 			cl("22adding bot to "+dvar+" team");
 			setDvar("ab","");
+			//exec("ab none");
 			//setDvar("bots_manage_fill", getDvarInt("bots_manage_fill")+1);
 			//wait 0.5;
 		}
@@ -2227,17 +2324,18 @@ _dvar_add_remove_bots(){
 			players = getentarray("player", "classname"); 
 			for(i=0;i<players.size;i++){
 				if(players[i].pers["team"]==dvar && players[i].isbot){
-					botname=StrRepl(players[i].name, "//", "");
+					botname=StrRepl(players[i].name, "/", "");
 					exec("kick " + botname);
 					cl("11kicking bot "+botname+" from "+dvar+" team");
 					break;
 				}	
 			setDvar("kb","");
+			//exec("kb none");
 			//setDvar("bots_manage_fill", getDvarInt("bots_manage_fill")-1);
 			//wait 0.5;
 			}
 		}
-		wait 0.5;
+		wait 0.05;
 	}
 }
 
@@ -2277,9 +2375,10 @@ _ts(){
 	players = getentarray( "player", "classname" );
 	for(i=0;i<players.size;i++){
 		if(!players[i].isbot){
+			//players[i] playLocalSound("mp_last_stand");
 			players[i] playLocalSound("mp_last_stand_no_ts");
 			players[i] playLocalSound("ui_screen_trans_in");
-			players[i] thread _player_mouse_accel(0.3,0.5);
+			//players[i] thread _player_mouse_accel(0.3,0.5);
 			players[i] thread _vfx(0.3,0.5);
         }
     }
@@ -2318,8 +2417,30 @@ _vfx(t1,t2){
 	//self setClientDvar("r_glowTweakBloomDesaturation", 1);
 }
 
+_player_mouse(){
+	self endon ( "death" );
+	self endon ( "disconnect" );
+	self endon( "intermission" );
+	self endon( "game_ended" );
+	
+	ma=0.022;
+	
+	for(;;){
+		ts=float(getDvar("timescale"));
+		if(isDefined(ts) && !self.isbot && self.sessionstate == "playing"){
+			self setClientDvars("m_pitch",ma*ts,"m_yaw",ma*ts);
+		}
+    	wait 0.05;
+    }
+
+}
+
+
 _player_mouse_accel(t1,t2){
-	self endon("disconnect");
+	self endon ( "death" );
+	self endon ( "disconnect" );
+	self endon( "intermission" );
+	self endon( "game_ended" );
 	
 	ma=0.022; t1*=0.2; t2*=0.2;
 	while(ma>0.001){
@@ -2336,6 +2457,7 @@ _player_mouse_accel(t1,t2){
     	ma+=0.002; wait 0.05;
     }
 }
+
 
 _init_bots_dvars(){
 	self endon("disconnect");
@@ -2814,6 +2936,9 @@ _recoil(){
 				curView = self getPlayerAngles();
 				wclass = self _classCheck(weapon);
 				k=1;
+				if(self.isbot && getDvarFloat("bots_recoil_spicyness")>0){ 
+					k*=getDvarFloat("bots_recoil_spicyness"); 
+				}
 				if(isDefined(wclass)) { 
 					if(wclass=="sniper") { k=3; }
 					else if(wclass=="rpg") { k=1.3; }
@@ -3416,17 +3541,21 @@ _dev_wpt_helpers_add_remove(){
 _commander_snd(){
 	if (isAlive(self.commanded)){
 		if (self.team == self.commanded.team){
+			prefix="US_";
 			//cl(self.name+" commanded "+self.commanded.name);
-			if (self.team == "allies")
+			if (self.team == "allies"){
+				if(game["allies"] == "sas"){ prefix = "UK_"; }
 				if (isDefined(self.commanded.getInPos))
-	          			self playSound("US_mp_cmd_movein");
+	          		self playSound(prefix+"mp_cmd_movein");
 				else
-	          			self playSound("US_mp_cmd_followme");
-			else
+	          		self playSound(prefix+"mp_cmd_followme");
+	          	wait randomFloatRange(0.5,1);
+	          	if(isAlive(self.commanded)){ self.commanded playSound(prefix+"mp_rsp_yessir"); }
+	        } else {
 	          		self playSound(self.bc);
 	          		//self playSound("t_taunt"+randomIntRange(1, 6));
 	          		//self playSound("t_taunt");
-	          		
+	        }
 		} else {
 			cl(self.name+" taunted "+self.commanded.name);
 			switch ( self.pers["team"] ) {
@@ -3490,7 +3619,7 @@ _damaged(){
 	self endon( "game_ended" );
 		
 	for(;;){
-		self waittill("damage", amount, attacker ); 
+		self waittill("damage", amount, attacker); 
 		self thread _flash("blur",3+(0.01*amount),0,1,0.1); //type,amp,dur,t1,t2
 		//if (self hasPerk("specialty_pistoldeath") == true) { 
 		//cl("33self.prevOrigin: "+self.prevOrigin);
@@ -3501,8 +3630,6 @@ _damaged(){
 			y = self.origin[1]-attacker.origin[1];
 			z = 100;
 			self setVelocity((x,y,z));
-			self setClientDvar("m_pitch",0.002);
-			self setClientDvar("m_yaw",0.002);
 			//cl("33"+self.name+" self.velocity:"+self.velocity);
 			//cl("33"+self.name+" self.origin:"+self.origin);
 			//cl("33"+self.name+" self.prevOrigin:"+self.prevOrigin);
@@ -3510,6 +3637,8 @@ _damaged(){
 
 		if (isDefined(self.lastStand)) { 
 			self thread _suicide_pd(); 
+			self setClientDvar("m_pitch",0.002);
+			self setClientDvar("m_yaw",0.002);
 			//iprintln(self.name+" has perk specialty_pistoldeath");
 		}
 		if(self.isbot){ self botAction("-ads"); }
@@ -3519,6 +3648,11 @@ _damaged(){
 }
 
 _suicide_pd(){
+	//self endon ( "death" );
+	self endon ( "disconnect" );
+	self endon( "intermission" );
+	self endon( "game_ended" );
+
 	weaponslist = self GetWeaponsList();
 	weapon = self getCurrentWeapon();
 	//cl(weapon);

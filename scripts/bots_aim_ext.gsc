@@ -58,7 +58,7 @@ _start_aim_ext()
 
     	self thread _upd_aim();
     	self thread _upd_wpts();
-    	self thread _bot_aimspots();
+    	//self thread _bot_aimspots();
 		wait 0.05;
 	}
 }
@@ -133,6 +133,7 @@ _upd_aim(){
 	for(;;){
 		if (getDvar("bots_aim_ext")=="1" && getDvar("bots_play_move") == "1") {
 	 		if(isAlive(self) && isDefined(self.bot.after_target)){
+	 			if(self.bot.after_target_old!=self.bot.after_target_old){ aimspeed=2; }
 	 			//cl("dp:"+(dp-1));
 	 			dp = self _bot_dp(self.bot.after_target.origin, self getEye(), self GetPlayerAngles());
 	 			if(dp<0){ dp *= -1; }
@@ -143,9 +144,11 @@ _upd_aim(){
 				if(!isDefined(roundwins)) { roundwins=0; }
 				//k=(kills+roundwins*10)*0.005;
 				//k=(roundwins)*0.05;
+				self.bot.after_target_old=self.bot.after_target;
 				//while (self.swc == 1){ 
-				while (isDefined(self.bot.after_target)){ 
-					while(aimspeed>1){ aimspeed-=0.05; }
+				while (isDefined(self.bot.after_target) && self.bot.after_target_old==self.bot.after_target_old){ 
+					//if(self.bot.after_target_old==self.bot.after_target_old){ aimspeed=2; }
+					if(aimspeed>1){ aimspeed-=0.05; }
 	 				dp = self _bot_dp(self.bot.after_target.origin, self getEye(), self GetPlayerAngles());
 					//if(isDefined(dp) && dp<0.2){ aimspeed *= 0.7; } else { aimspeed *= 0.7; }
 					//aimspeed -= k;

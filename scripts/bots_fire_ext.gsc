@@ -57,7 +57,8 @@ _bot_fire(){
 					//vehicle_cobra_helicopter_fly
 					stance=self getStance();
 					dist=distance(self.bot.after_target.origin,self.origin);
-					if (stance == "prone" || stance == "crouch"){ self.bot.stop_move=true; }
+					if (stance == "stand" || stance == "crouch"){ self.bot.stop_move=true; }
+					else { self.bot.stop_move=false; }
 					if (isDefined(level.classBoltSniper)) { 
 						for (i=0;i<level.classBoltSniper.size;i++){
 							if (isSubStr( self GetCurrentWeapon(), level.classBoltSniper[i])){ 

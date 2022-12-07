@@ -59,8 +59,8 @@ _fire_on_enemies(){
 		if(isDefined(allies_choppers)){ cl("allies_choppers.size:"+allies_choppers.size); }
 		if(isDefined(choppers)){
 			for(i=0;i<choppers.size;i++){ 
-				choppers[i].maxhealth=100;
-				choppers[i].heli_armor=100;
+				//choppers[i].maxhealth=100;
+				//choppers[i].heli_armor=100;
 				//choppers[i] settargetyaw(choppers[i].angles[1]+90);
 				for(j=0;j<choppers.size;j++){ 
 					if(choppers[i] != choppers[j] && choppers[i].team != choppers[j].team ){

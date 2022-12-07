@@ -60,12 +60,15 @@ _spawn_loop(){
 	for(;;){
 		self waittill("spawned_player");
 		while(level.inPrematchPeriod){ wait 0.1; }
+		
 		self thread _buy_menu_main();
+		//self thread _buy_menu_iterate();
+			
 		wait 1;
 		if(game["hasReadHintMessage"][self.name]==false){
 			self _show_hint_msg(0,"press FIRE button to select",1,1,1,0,1,-200,-80);
 			self _show_hint_msg(0,"press ADS button to return",1,1,1,0,1,-200,-70);
-			self _show_hint_msg(0,"buy ammo choosing weapon",1,1,1,0,1,-200,-70);
+			//self _show_hint_msg(0,"buy ammo choosing weapon",1,1,1,0,1,-200,-70);
 			//delay,txt,dur,r,g,b,a,ox,oy
 			game["hasReadHintMessage"][self.name]=true;
 		}
@@ -143,7 +146,7 @@ _create_menu_text(hud,arr,ft,fsz,fsc,color,glow,ax,ay,w,h,a,sort,selector,scolor
 	}
 }
 
-_create_menu_bg(bg,align,relative,x,y,w,h,color,sort,alpha,sh,aperc){
+_create_menu_bg(bg,align,relative,x,y,w,h,color,sort,alpha,sh,aperc,ha,va){
 	self endon ( "disconnect" );
 	self endon ( "death" );
 	self endon( "intermission" );
@@ -152,7 +155,7 @@ _create_menu_bg(bg,align,relative,x,y,w,h,color,sort,alpha,sh,aperc){
 	
 	alpha=alpha*(aperc/100);
 	self.money[bg] = undefined;
-	self.money[bg] = self createRectangle(align,relative,x,y,w,h,color,sort,alpha,sh);
+	self.money[bg] = self createRectangle(align,relative,x,y,w,h,color,sort,alpha,sh,ha,va);
 }
 
 _destroy_menu(menu,size,delay){
@@ -221,7 +224,7 @@ initHudElem(txt, xl, yl)
 	return hud;
 }
 
-createRectangle(align,relative,x,y,width,height,color,sort,alpha,shader)
+createRectangle(align,relative,x,y,width,height,color,sort,alpha,shader,ha,va)
 {
 	barElemBG = newClientHudElem( self );
 	barElemBG.elemType = "bar_";
@@ -235,10 +238,12 @@ createRectangle(align,relative,x,y,width,height,color,sort,alpha,shader)
 	barElemBG.sort = sort;
 	barElemBG.color = color;
 	barElemBG.alpha = alpha;
-	barElemBG setParent( level.uiParent );
+	barElemBG.horzAlign = ha;
+    barElemBG.vertAlign = va;	
+    barElemBG setParent( level.uiParent );
 	if(isDefined(shader)){ barElemBG setShader( shader, width , height ); }
 	barElemBG.hidden = false;
-	barElemBG setPoint(align, relative, x, y);
+	barElemBG setPoint(align,relative,x,y);
 	return barElemBG;
 }
 
@@ -390,7 +395,7 @@ _welcome_msg(){
 	//while(!isDefined(self.money)) { wait 0.5; }
 	
 	while(r<1){
-		//self _create_menu_bg("hudWelcomeBG","CENTER","CENTER",0,0,400,400,(r,g,b),1,a,"black",50);
+		//self _create_menu_bg("hudWelcomeBG","CENTER","CENTER",0,0,400,400,(r,g,b),1001,a,"black",50);
 		self _create_menu_text("hudWelcome",hudWelcome,"default", 1.6,1.4,(r,g,b),0,"CENTER","CENTER",0,-70,a,1);
 		if(r<1){ r+=0.1;g+=0.1;b+=0.1;a+=0.1; }
 		level waittill("timers");
@@ -402,14 +407,14 @@ _welcome_msg(){
 		//wait 0.05;
 	}
 	while(r>0){
-		//self _create_menu_bg("hudWelcomeBG","CENTER","CENTER",0,0,400,400,(r,g,b),1,a,"black",50);
+		//self _create_menu_bg("hudWelcomeBG","CENTER","CENTER",0,0,400,400,(r,g,b),1001,a,"black",50);
 		self _create_menu_text("hudWelcome",hudWelcome,"default", 1.6,1.4,(r,g,b),0,"CENTER","CENTER",0,-70,a,1);
 		if(r==1){ wait 1; }
 		//self _create_menu_text("hudWelcome",txt,"default", 1.6,1.4,(1,1,1),0,"CENTER","CENTER",0,0,1,1);
 		if(r>0){ r-=0.1;g-=0.1;b-=0.1;a-=0.1; }
 		level waittill("timers");
 		//wait 0.05;
-		//self _destroy_menu(self.money["hudWelcomeBG"]);
+		self _destroy_menu(self.money["hudWelcomeBG"]);
 		self _destroy_menu("hudWelcome");
 		//self _destroy_bg("hudWelcomeBG");
 		c++;
@@ -429,7 +434,7 @@ _welcome_msg(){
 		if(isDefined(self.hudMOTD) && isDefined(motd)){
 			while(h<300){
 				self _create_menu_text("hudWelcome",self.hudMOTD[0],"default", 1.6,1.4,(r,g,b),0,"CENTER","CENTER",0,-70,a,2);
-				self _create_menu_bg("hudWelcomeBG","CENTER","CENTER",0,0,w,h,(r,g,b),1,a,"black",50);
+				self _create_menu_bg("hudWelcomeBG","CENTER","CENTER",0,0,w,h,(r,g,b),1,a,"black",50,"fullscreen","fullscreen");
 				if(r<1){ r+=0.1;g+=0.1;b+=0.1;a+=0.1; }
 				if(w<400){ w+=30; }
 				if(h<300){ h+=20; }
@@ -447,7 +452,7 @@ _welcome_msg(){
 
 			while(h>1){
 				self _create_menu_text("hudWelcome",self.hudMOTD[0],"default", 1.6,1.4,(r,g,b),0,"CENTER","CENTER",0,-70,a,2);
-				self _create_menu_bg("hudWelcomeBG","CENTER","CENTER",0,0,w,h,(r,g,b),1,a,"black",50);
+				self _create_menu_bg("hudWelcomeBG","CENTER","CENTER",0,0,w,h,(r,g,b),1,a,"black",50,"fullscreen","fullscreen");
 				//if(r==1){ wait 2; }
 				//self _create_menu_text("hudWelcome",txt,"default", 1.6,1.4,(1,1,1),0,"CENTER","CENTER",0,0,1,1);
 				if(game["hasReadMOTD"][self.name]==true){
@@ -599,7 +604,7 @@ _buy_menu_show(arr,prev,next,div){
 	if(self.pers["team"] == "axis"){ r=1;g=0;b=0;a=1; }
 	if(self.pers["team"] == "allies"){ r=0;g=0;b=1;a=1; }
 	if(!isDefined(div)) { div=1; }
-	size=arr.size/div;
+	size=self.buyMenuShow.size/div;
 	//cl("^3_buy_menu_show div:"+div);
 	while(!isDefined(self.money)) { wait 0.5; }
 		
@@ -612,9 +617,23 @@ _buy_menu_show(arr,prev,next,div){
 		//cl("^4cl_mouseAccel:"+sens);
 		//self setClientDvars("cl_mouseAccel", 0);
 		//self _create_menu_bg("hudBuyMenuBG","CENTER","CENTER",0,0,200,100,(r,g,b),1,a,"white");
+				
 		while(isAlive(self) && isDefined(self.buyMenuShow)){
 			//cl("^4pitch:"+pitch);
 			if(isDefined(self.spawnStartOrigin) && distance(self.spawnStartOrigin,self.origin)>=16){ self.buyMenuShow=undefined; }
+			if(isDefined(self.buyMenuShow)){
+				//cl(self.buyMenuShow[1]);
+				for(i=0;i<self.buyMenuShow.size;i+=3){
+					if(isDefined(self.buyMenuShow[i]) && isDefined(self.buyMenuShow[i+2])){
+						if(isSubStr(self.buyMenuShow[i+2],"_mp") && !isSubStr(self.buyMenuShow[i+2],"c4") && !isSubStr(self.buyMenuShow[i+2],"claymore") && !isSubStr(self.buyMenuShow[i+2],"grenade") && !isSubStr(self.buyMenuShow[i],"1 CLIP") && isDefined(self _check_weapon_in_list(self.buyMenuShow[i+2]))){ 
+							//clipSize=WeaponClipSize(self.buyMenuShow[i+2]);
+							//self.buyMenuShow[i]+=" [AMMO | 1 CLIP = "+(clipSize*1.5)+"$]"; 
+							self.buyMenuShow[i]+=" [AMMO | 1 CLIP = "+(int(self.buyMenuShow[i+1])/10)+"$]"; 
+						}
+						//cl(self.buyMenuShow[i]);
+					}
+				}
+			}
 			if(AttackButtonPressed==false){
 				if(selector>0 && selector<=size) {
 					if(pitch>curView[0]+5 || self LeanLeftButtonPressed()) { selector--; pitch=curView[0]; }
@@ -635,15 +654,18 @@ _buy_menu_show(arr,prev,next,div){
 				//if(scolor[0]==0){ scolor=(1,0,0); }
 				//else { scolor=(0,1,0); }
 				//if(c>=10){ 
-					if(next){ self.buyMenuShow=undefined; }
+					//if(next){ self.buyMenuShow=undefined; }
 					//self.buyMenuShowNext=next; 
 					AttackButtonPressed=false;
 					//cl("^3selector:"+selector);
 					for(i=0;i<div;i++){
-						self.hasChosen[i]=arr[(selector-1)*div+i];
+						self.hasChosen[i]=self.buyMenuShow[(selector-1)*div+i];
 						//cl("^3self.hasChosen:"+self.hasChosen[i]);
 					}
 					self notify("isBuying");
+					//self thread _check_ammo_buy_menu();
+					if(next==true){ self.buyMenuShow=undefined; }
+					//self.buyMenuShow=undefined;
 					//self.hasChosen=arr[(selector-1)*div];
 					//cl("^3self.hasChosen:"+self.hasChosen);
 					//cl("^3c: size:"+size);
@@ -679,11 +701,11 @@ _buy_menu_show(arr,prev,next,div){
 					}
 				}*/
 				//self _create_menu_text("hudBuyMenu",arr,"default", 1.6,1.4,(r,g,b),0,"CENTER","CENTER",100,0,a,1,selector,scolor);
-				self _create_menu_text("hudBuyMenu",arr,"default", 1.6,1.4,(r,g,b),0,"LEFT","CENTER",-300,0,a,1,selector,scolor,div);				
+				self _create_menu_text("hudBuyMenu",self.buyMenuShow,"default", 1.6,1.4,(r,g,b),0,"LEFT","CENTER",-300,0,a,1,selector,scolor,div);				
 				wait 0.1;
 				curView = self getPlayerAngles();
 				if(sw==1){sw=0;wait 0.5;}
-				self _destroy_menu("hudBuyMenu",arr.size,div);
+				self _destroy_menu("hudBuyMenu",self.buyMenuShow.size,div);
 			}								//hud,txt,ft,fsz,fsc,color,glow,ax,ay,w,h,a,sort,selector,scolor
 		}
 		wait 0.05;
@@ -703,12 +725,28 @@ _check_weapon_in_list(weapon){
 			for(i=0;i<weaponsList.size;i++){
 				//cl("33"+weaponsList[i]);
 				if(isDefined(weaponsList[i])){
-					if (isSubStr(weaponsList[i], weapon)){ return weapon; }
+					if (weaponsList[i] == weapon){
+						//cl("33returning: "+ weaponsList[i]);
+						return weapon; 
+					}
 				}
 			}
 		}
 	}
 }
+
+/*
+_check_ammo_buy_menu(){
+		if(isDefined(self.buyMenuShow)){
+			for(i=0;i<self.buyMenuShow.size;i+=3){
+				if(isSubStr(self.buyMenuShow[i+2],"_mp") && !isSubStr(self.buyMenuShow[i],"1 CLIP") && isDefined(self _check_weapon_in_list(self.buyMenuShow[i+2]))){ 
+					self.buyMenuShow[i]+=" [1 CLIP | "+int(int(self.buyMenuShow[i+1])/10)+"$]";
+				}
+				//cl(self.buyMenuShow[i]);
+			}
+		}	
+}
+*/
 
 _buy_weapons_ammo(weapon){
 	wait 0.3;
@@ -787,7 +825,7 @@ _buy_menu_main(){
 		buyMenuSMGs = StrTok("Uzi,320,uzi_mp,Skorpion,440,skorpion_mp,AK74U,580,ak74u_mp",",");
 		buyMenuMGs = StrTok("SAW,1200,saw_mp,RPD,1300,rpd_mp",",");
 		buyMenuRifles = StrTok("AK47,640,ak47_mp,AK47 GL,800,ak47_gl_mp",",");
-		buyMenuSnipers = StrTok("Dragunov,640,dragunov_mp",",");
+		buyMenuSnipers = StrTok("G3,430,g3_acog_mp,Dragunov,640,dragunov_mp",",");
 		buyMenuRPGs = StrTok("RPG,1200,rpg_mp",",");
 		//buyMenuRPGs = StrTok("RPG,2300,rpg_mp,LAW,2500,law_mp,AT4,2600,at4_mp",",");
 		buyMenuGLs = StrTok("MM1,2400,mm1_mp",",");
@@ -812,6 +850,7 @@ _buy_menu_main(){
 	//cl("^3self.spawnStartOrigin");
 	//while(isAlive(self) && !self UseButtonPressed()){ wait 0.05; }
 	wait 0.3;
+	
 	self.spawnStartOrigin=self.origin;
 	self.hasChosen[0]="buyMenuMain";
 	while(!level.gameEnded && !level.slowMo && isAlive(self) && !isDefined(self.lastStand) && distance(self.spawnStartOrigin,self.origin)<32){
@@ -842,5 +881,22 @@ _buy_menu_main(){
 		//cl("^3self.buyMenuShowNext");
 		wait 0.1;
 		//while(isAlive(self) && self UseButtonPressed()){ wait 0.05; }
+	}
+}
+
+_buy_menu_iterate(){
+	self endon ( "disconnect" );
+	self endon ( "death" );
+	self endon( "intermission" );
+	self endon( "game_ended" );
+
+	for(;;){
+		if(isDefined(self.buyMenuShow)){
+			cl(self.buyMenuShow[0]);
+		}
+		if(isDefined(self.hasChosen)){
+			cl(self.hasChosen[0]);
+		}
+		wait 1;
 	}
 }
