@@ -4,8 +4,6 @@
 
 init()
 {
-	if(getDvarInt("enable_challenges")==0){ return; }
-	
 	if ( !mayProcessChallenges() )
 		return;
 	
@@ -226,6 +224,8 @@ tierCheck( tierID )
 
 challengeNotify( challengeName, challengeDesc )
 {
+	if(getDvarInt("enable_challenges")==0){ return; }
+	
 	notifyData = spawnStruct();
 	notifyData.titleText = &"MP_CHALLENGE_COMPLETED";
 	notifyData.notifyText = challengeName;
