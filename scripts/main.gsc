@@ -31,7 +31,7 @@ init()
 	level thread scripts\money::init();
 	level thread scripts\menus::init();
 
-	if (getDvar("v01d_version") == "") { setDvar("v01d_version", "v1.68"); }
+	if (getDvar("v01d_version") == "") { setDvar("v01d_version", "v1.71"); }
 
 	//if (!getdvarint("developer")>0) { return; }
 	
@@ -373,7 +373,7 @@ _player_spawn_loop(){
         self thread _recoil();
         self thread _aim_mod();
         self thread _moving();
-		self thread _suicide(20);
+		self thread _suicide(10);
 		//self thread _law_pickup();
 		//self thread _m16_pickup();
 		self thread _mobile_phone();
@@ -1408,9 +1408,9 @@ _welcome(tm,ctm)
 {
     self endon("disconnect");
 	
-	self closeMenu();
-	self closeInGameMenu();
-		
+	//self closeMenu();
+	//self closeInGameMenu();
+	
 	self waittill("spawned_player");
 	
 	self.pers["lives"] = getdvarint("scr_sab_numlives")-1;
@@ -1522,8 +1522,11 @@ _ds()
 			
 		if (isDefined(self.headShot)){ 
 			self playSound("hs"); 
-			self playSound("t_crawl"); 
-			//cl("11"+self.name+":"+sMeansOfDeath);
+			if(self.pers["team"] == "axis"){
+				self playSound("t_crawl"); 
+			}else if(self.pers["team"] == "allies"){
+				self playSound("ct_hs"); 		
+			}
 			self.headShot=undefined;
 		}
 		else if (self.ps_ended == true){
@@ -1555,18 +1558,6 @@ _ps()
 		self playSound("stop_voice");
 
 		if (self.health > 0){
-			if (isPlayer(self) && isAlive(self)){
-				curView = self getPlayerAngles();
-				self setPlayerAngles(curView * randomFloatRange(0.1, 1.9)); 
-				self shellshock( "frag_grenade_mp", 5 );
-				if(randomFloatRange(0, 2)>1){
-					self thread _disable_weapons_on_hit(0.1);
-				}
-				//self shellshock( "damage_mp", 5 );
-				//self PlayRumbleOnEntity( "damage_heavy" );
-				//print (curView + "\n");
-			}
-			//if ( isDefined( amount ) && amount == 0 ) {	return; }
 			
 			if (self.ps_ended == true){
 				self.ps_ended = false;
@@ -1806,7 +1797,7 @@ _killed( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, 
 		
 		//if (sMeansOfDeath != "MOD_PROJECTILE_SPLASH" || sMeansOfDeath != "MOD_GRENADE_SPLASH"){
 		if (!isSubStr(sMeansOfDeath,"PROJECTILE") || !isSubStr(sMeansOfDeath,"GRENADE")){
-			self setVelocity((x,y,10)); 
+			self setVelocity((x/2,y/2,10)); 
 		} else if (eInflictor.classname == "grenade" || eInflictor.classname == "rocket" && self GetStance() != "prone") {
 			if (dist<500){
 				z = 500-dist;
@@ -3621,33 +3612,52 @@ _damaged(){
 	self endon ( "disconnect" );
 	self endon( "intermission" );
 	self endon( "game_ended" );
-		
+	
+	k=1; seconds=10;
 	for(;;){
 		self waittill("damage", amount, attacker); 
-		self thread _flash("blur",3+(0.01*amount),0,1,0.1); //type,amp,dur,t1,t2
-		//if (self hasPerk("specialty_pistoldeath") == true) { 
-		//cl("33self.prevOrigin: "+self.prevOrigin);
-		//cl("33self.velocity: "+self.velocity); 
-		//if(isDefined(attacker)){ cl("33attacker:"+attacker.name+" damaged "+amount+" to victim:"+self.name); }
-		if (isDefined(self.lastStand) && isDefined(self.velocity) && isDefined(self.prevOrigin)) { 
+		
+		if (isPlayer(self) && isAlive(self) && isDefined(amount) && amount>0){
+			if(amount>0 && amount<self.maxhealth){ k=amount/self.maxhealth; } else { k=1; }
+			curView = self getPlayerAngles();
+			self setPlayerAngles(curView * (randomFloatRange(0.1, 1.9) * k)); 
+			self shellshock("frag_grenade_mp",seconds * k);
+			if(randomFloatRange(0, 2)>1){
+				self thread _disable_weapons_on_hit(0.1);
+			}
+			//self shellshock( "damage_mp", 5 );
+			//self PlayRumbleOnEntity( "damage_heavy" );
+			//print (curView + "\n");
+			//cl("33k:"+k);
+		
+			//cl("33maxhealth:"+self.maxhealth);
+			self thread _flash("blur",3+(0.01*amount),0,1,0.1); //type,amp,dur,t1,t2
+			//if (self hasPerk("specialty_pistoldeath") == true) { 
+			//cl("33self.prevOrigin: "+self.prevOrigin);
+			//cl("33self.velocity: "+self.velocity); 
+			//if(isDefined(attacker)){ cl("33attacker:"+attacker.name+" damaged "+amount+" to victim:"+self.name); }
 			x = self.origin[0]-attacker.origin[0];
 			y = self.origin[1]-attacker.origin[1];
 			z = 100;
-			self setVelocity((x,y,z));
-			//cl("33"+self.name+" self.velocity:"+self.velocity);
-			//cl("33"+self.name+" self.origin:"+self.origin);
-			//cl("33"+self.name+" self.prevOrigin:"+self.prevOrigin);
+			
+			if (isDefined(self.lastStand) && isDefined(self.velocity) && isDefined(self.prevOrigin)) { 
+				self setVelocity((x,y,z));
+				//cl("33"+self.name+" self.velocity:"+self.velocity);
+				//cl("33"+self.name+" self.origin:"+self.origin);
+				//cl("33"+self.name+" self.prevOrigin:"+self.prevOrigin);
+			} else {
+				self setVelocity((x/4,y/4,z/4));
+			}
+	
+			if (isDefined(self.lastStand)) { 
+				self thread _suicide_pd(); 
+				self setClientDvar("m_pitch",0.002);
+				self setClientDvar("m_yaw",0.002);
+				//iprintln(self.name+" has perk specialty_pistoldeath");
+			}
+			if(self.isbot){ self botAction("-ads"); }
+			else { self allowADS(0); wait 0.05; self allowADS(1); }
 		}
-
-		if (isDefined(self.lastStand)) { 
-			self thread _suicide_pd(); 
-			self setClientDvar("m_pitch",0.002);
-			self setClientDvar("m_yaw",0.002);
-			//iprintln(self.name+" has perk specialty_pistoldeath");
-		}
-		if(self.isbot){ self botAction("-ads"); }
-		else { self allowADS(0); wait 0.05; self allowADS(1); }
-	wait 0.05;
 	}
 }
 

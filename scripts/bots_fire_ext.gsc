@@ -101,7 +101,7 @@ _bot_press_fire(delay,target)
 	dist=distance(target.origin,self.origin);
 	duration=randomFloatRange(0.05,0.3)+(1/(dist*2));
 	self botAction("+fire");
-	self.pers["bots"]["skill"]["aim_time"] = 5;
+	//self.pers["bots"]["skill"]["aim_time"] = 5;
 	if(duration) { wait duration; }
 	self botAction("-fire");
 	if(duration) { wait duration/2; }

@@ -41,8 +41,8 @@ _connected_loop(){
 		player thread _welcome_msg();
 		player thread _spawn_loop();
 		player thread _map_datetime_menu();
+		//player thread _show_message(3,"TEST TEST TEST",1,1,1,0,1,-200,-80);
 		//player thread _keystrokes();
-
 		//wait 0.1;
 		//player setClientDvar( "ui_lobbypopup", "summary" );
 	}
@@ -66,8 +66,9 @@ _spawn_loop(){
 			
 		wait 1;
 		if(game["hasReadHintMessage"][self.name]==false){
-			self _show_hint_msg(0,"press FIRE button to select",1,1,1,0,1,-200,-80);
-			self _show_hint_msg(0,"press ADS button to return",1,1,1,0,1,-200,-70);
+			//self thread _show_message(0,"TEST TEST TEST",1,1,1,0,1,-200,-80);
+			//self _show_hint_msg(0,"press FIRE button to select",1,1,1,0,1,-200,-80);
+			//self _show_hint_msg(0,"press ADS button to return",1,1,1,0,1,-200,-70);
 			//self _show_hint_msg(0,"buy ammo choosing weapon",1,1,1,0,1,-200,-70);
 			//delay,txt,dur,r,g,b,a,ox,oy
 			game["hasReadHintMessage"][self.name]=true;
@@ -113,8 +114,9 @@ _create_menu_text(hud,arr,ft,fsz,fsc,color,glow,ax,ay,w,h,a,sort,selector,scolor
 	//if(!isAlive(self)){ return; }
 
 	self.money[hud]=[]; size=arr.size;
-	if(!isDefined(scolor)){ scolor=(0,1,0); }
+	if(!isDefined(scolor)){ scolor=(0,0,0); }
 	if(!isDefined(div)){ div=1; }
+	if(!isDefined(a)){ a=1; }
 	if(div>1){ size=arr.size/div; }
 	if(!isDefined(skip)){ skip=0; }
 	
@@ -306,6 +308,77 @@ _get_motd_txt(d){
 //---------------------------------------------------------------------------------------------------
 
 
+_show_message(delay,txt,dur,r,g,b,a,ox,oy){
+	self endon ( "disconnect" );
+	//self endon ( "death" );
+	self endon( "intermission" );
+	self endon( "game_ended" );
+	
+	if (self.isbot){ return; }
+	if (!isDefined(delay)){ delay=1; }
+	if (!isDefined(dur)){ dur=5; }
+	if (!isDefined(r)){ r=1; }
+	if (!isDefined(g)){ g=1; }
+	if (!isDefined(b)){ b=1; }
+	if (!isDefined(a)){ a=1; }
+	if (!isDefined(ox)){ ox=0; }
+	if (!isDefined(oy)){ oy=0; }
+	
+	_a=1;
+	_ox=ox;
+	_oy=oy;
+	self.showMessage=true;
+	size=0;
+	blob="asdfghjklqwertyuiopzxcvbnm";
+	c=0; cm=-1; ch=[];
+	m=0;
+	_m=8;
+	ntxt=txt;
+	exit=false;
+
+	wait delay;
+	cl("33show_message");
+	for(i=0;i<txt.size;i++){ ch[i]=0; }
+	while(1){
+		hudMessage[m]=[];
+		hudMessage[m][0]="";
+		skip=false;
+		
+		for(i=0;i<txt.size;i++){
+			r=randomIntRange(0,blob.size);
+			if(ch[i]==0){ hudMessage[m][0]=blob[r]; }
+			//if(cm>-1 && cm<txt.size && cm>i && skip==false){ 
+			//if(cm>-1 && cm<txt.size && ch[cm]==0 && skip==false){ 
+			if(cm>-1 && cm<txt.size && ch[cm]==0 && skip==false){ 
+				hudMessage[m][0]=txt[i]; 
+				ch[i]=1;
+				//skip=true;
+				//cm++;
+			}
+			self _create_menu_text("hudMessage"+i,hudMessage[m],"default", 1.6,1.4,(r,g,b),0,"CENTER","CENTER",ox,oy,_a,1);
+			self playLocalSound("mouse_click");
+			ox+=8;
+			m++;
+			wait 0.5;
+		}
+		if(cm>=txt.size-1){ wait dur; exit=true; }
+		//cl("33cm:"+cm);
+		wait 0.5;
+		for(i=0;i<hudMessage.size;i++){
+			self _destroy_menu("hudMessage"+i); 
+		}
+		ox=_ox;
+		m=0;
+		
+		//for(i=0;i<txt.size;i++){ cl("33ch["+i+"]="+ch[i]); 
+		if(c<1){ c++; }
+		else{ c=0; if(cm<txt.size){ cm++; }}
+		//else{ c=0; }
+		//wait 0.1;
+		if(exit==true){ break; }
+	}
+}
+
 _show_hint_msg(delay,txt,dur,r,g,b,a,ox,oy){
 	self endon ( "disconnect" );
 	//self endon ( "death" );
@@ -384,9 +457,12 @@ _welcome_msg(){
 	
 	//if(!isDefined(self.readDay)){ self.readDay=0; };
 	//if(!isDefined(self.prevReadDay)){ self.prevReadDay=-1; };
+
+	self closeMenu();
+	self closeInGameMenu();
+	//self freezeControls(true);
 	
 	wait 0.3;
-	//self freezeControls(true);
 		
 	hudWelcome=[]; hudWelcomeBG=[];
 	hudWelcome[0]="Welcome to my -=sabotage=- server! :)";

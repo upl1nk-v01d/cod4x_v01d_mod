@@ -146,24 +146,24 @@ _upd_aim(){
 				//k=(roundwins)*0.05;
 				self.bot.after_target_old=self.bot.after_target;
 				//while (self.swc == 1){ 
-				while (isDefined(self.bot.after_target) && self.bot.after_target_old==self.bot.after_target_old){ 
+				aimspeed = 5;
+				while (isDefined(self.bot.after_target) && self.bot.after_target==self.bot.after_target_old){ 
 					//if(self.bot.after_target_old==self.bot.after_target_old){ aimspeed=2; }
-					if(aimspeed>1){ aimspeed-=0.05; }
+					if(aimspeed>0.2){ aimspeed*=0.2; }
 	 				dp = self _bot_dp(self.bot.after_target.origin, self getEye(), self GetPlayerAngles());
 					//if(isDefined(dp) && dp<0.2){ aimspeed *= 0.7; } else { aimspeed *= 0.7; }
 					//aimspeed -= k;
-					aimspeed = aimspeed * (dp-0.5);
+					//aimspeed = aimspeed * (dp-0.5);
 					//aimspeed *= dp;
 					//aim_offset_amount -= k;
 					//aim_offset_amount *= 0.95;
-					if(aimspeed < 0.2) {self.swc = 0; aimspeed=0.2; aim_offset_amount=0.2; }
+					//if(aimspeed < 0.2) {self.swc = 0; aimspeed=0.2; aim_offset_amount=0.2; }
 					//if(aim_offset_amount < 0.1) { aim_offset_amount=1; }
 					if(aimspeed>=0.2){ self.pers["bots"]["skill"]["aim_time"] = aimspeed; }
 					//if(aim_offset_amount>=0.1){ self.pers["bots"]["skill"]["aim_offset_amount"]=aim_offset_amount; }
 					wait 0.05;
 					//cl(aimspeed);
 				}
-				self.pers["bots"]["skill"]["aim_time"] = 5;
 			}
 		}
 		wait 0.05;
@@ -180,6 +180,7 @@ _upd_wpts(){
 	
 	self.bot._next_wp=0;
 	roundwins=0; kills=0; k=0;
+	aimspeed=1;
 		
 	for(;;){
 		if (getDvar("bots_aim_ext")=="1" && getDvar("bots_play_move") == "1") {
@@ -194,6 +195,15 @@ _upd_wpts(){
 					if(k<0.1){ k=0.1; }
 					self _aimspeed_mod(k);
 					self.bot.next_wp = self.bot._next_wp;
+					//while (isDefined(self.bot.next_wp) && self.bot.next_wp==self.bot._next_wp){ 
+					aimspeed=5;
+					while (isDefined(self.bot.next_wp) && self.bot.next_wp==self.bot._next_wp){ 
+						aimspeed*=0.3;
+						if(aimspeed>0.2){
+							self.pers["bots"]["skill"]["aim_time"] = aimspeed;
+						}
+						wait 0.05;
+					}
 				}
 			}
 		}
