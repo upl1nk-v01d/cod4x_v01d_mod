@@ -3,13 +3,14 @@
 #include maps\mp\gametypes\_hud_util;
 #include scripts\cl;
 
-init()
-{
+init(){
 	//if (!getdvarint("developer")>0){ return; }
 	if (getdvarint("bots_main_debug")>0){ return; }
 	
 	if (!isDefined(game["hasReadMOTD"])){ game["hasReadMOTD"]=[]; }
 	if (!isDefined(game["hasReadHintMessage"])){ game["hasReadHintMessage"]=[]; }
+	
+	level.msgID=0;
 
 	level thread _connecting_loop();
 	level thread _connected_loop();
@@ -41,7 +42,10 @@ _connected_loop(){
 		player thread _welcome_msg();
 		player thread _spawn_loop();
 		player thread _map_datetime_menu();
-		//player thread _show_message(3,"TEST TEST TEST",1,1,1,0,1,-200,-80);
+		//player _show_message(1,"test test test test",2,(1,1,0),1,(1,1,0),1,"center","middle",-200,-80,"default",1.4,1.6,0);
+		//wait 0.5;
+		//player _show_message(1,"test test test test",2,(1,1,0),1,(1,1,0),1,"center","middle",-200,-60,"default",1.4,1.6,0);
+		//_show_message(delay,txt,dur,color,a,gc,ga,ax,ay,ox,oy,ft,fsz,fsc,sort){
 		//player thread _keystrokes();
 		//wait 0.1;
 		//player setClientDvar( "ui_lobbypopup", "summary" );
@@ -66,10 +70,15 @@ _spawn_loop(){
 			
 		wait 1;
 		if(game["hasReadHintMessage"][self.name]==false){
+			//self _show_message("press FIRE button to select",1,2,60,80,0,0,"center","middle",0,0,(1,1,0),1,(1,1,0),1,"default",1.6,1.6,2);
+			//self _show_message("press ADS button to return",1,2,60,80,0,0,"center","middle",0,0,(1,1,0),1,(1,1,0),1,"default",1.6,1.6,2);
+			
+			//self _show_message(1,"press ADS button to return",2,(1,1,0),1,(1,1,0),1,"center","middle",-200,-80,"default",1.4,1.6,1);
 			//self thread _show_message(0,"TEST TEST TEST",1,1,1,0,1,-200,-80);
-			//self _show_hint_msg(0,"press FIRE button to select",1,1,1,0,1,-200,-80);
-			//self _show_hint_msg(0,"press ADS button to return",1,1,1,0,1,-200,-70);
-			//self _show_hint_msg(0,"buy ammo choosing weapon",1,1,1,0,1,-200,-70);
+			
+			self _show_hint_msg("press ADS button to return",1,2,-20,300,0,0,"left","middle",0,0,"default",1.6,1.6,(1,1,0),1,(1,1,0),1,1);
+			self _show_hint_msg("press ADS button to return",1,2,-20,310,0,0,"left","middle",0,0,"default",1.6,1.6,(1,1,0),1,(1,1,0),1,1);
+			//_show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort){
 			//delay,txt,dur,r,g,b,a,ox,oy
 			game["hasReadHintMessage"][self.name]=true;
 		}
@@ -86,11 +95,11 @@ _keystrokes(){
 	for(;;){
 		while (self ForwardButtonPressed()){ cl(self.name+" pressed UP key"); wait 0.5; }
 		while (self BackButtonPressed()){ cl(self.name+" pressed DOWN key"); wait 0.5; }
-		while (self MoveLeftButtonPressed()){ cl(self.name+" pressed LEFT key"); wait 0.5; }
+		while (self MoveleftButtonPressed()){ cl(self.name+" pressed left key"); wait 0.5; }
 		while (self MoveRightButtonPressed()){ cl(self.name+" pressed RIGHT key"); wait 0.5; }
 		while (self SprintButtonPressed()){ cl(self.name+" pressed SPRINT key"); wait 0.5; }
 		while (self ReloadButtonPressed()){ cl(self.name+" pressed RELOAD key"); wait 0.5; }
-		while (self LeanLeftButtonPressed()){ cl(self.name+" pressed LEAN LEFT key"); wait 0.5; }
+		while (self LeanleftButtonPressed()){ cl(self.name+" pressed LEAN left key"); wait 0.5; }
 		while (self LeanRightButtonPressed()){ cl(self.name+" pressed LEAN RIGHT key"); wait 0.5; }
 		while (self LeanRightButtonPressed()){ cl(self.name+" pressed LEAN RIGHT key"); wait 0.5; }
 		while (self HoldBreathButtonPressed()){ cl(self.name+" pressed HOLD BREATH key"); wait 0.5; }
@@ -100,64 +109,141 @@ _keystrokes(){
 	}
 }
 
+/*
 _create_menu(align,relative,x,y,width,height,color,sort,alpha,shader){
 	self.Menu = undefined;
 	self.Menu = self createRectangle(align,relative,x,y,width,height,color,sort,alpha,shader);
 }
+*/
 
-_create_menu_text(hud,arr,ft,fsz,fsc,color,glow,ax,ay,w,h,a,sort,selector,scolor,div,skip){
+_create_menu_text(hud,arr,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,selector,scolor,div,skip){
 	self endon ( "disconnect" );
 	self endon ( "death" );
 	self endon( "intermission" );
 	self endon( "game_ended" );
 	if(self.isbot){ return; }
 	//if(!isAlive(self)){ return; }
+	if(!isDefined(hud)){ cl("11no hud defined!"); return; }
+	if(!isDefined(arr)){ cl("11no arr defined!"); return; }
 
-	self.money[hud]=[]; size=arr.size;
+	self.money[hud]=[];
+	size=arr.size;
+	if(!isDefined(x)){ x=320; } //max width = 640;
+	if(!isDefined(y)){ y=240; } //max height = 480;
+	if(!isDefined(w)){ w=0; }
+	if(!isDefined(h)){ h=0; }
+	if(!isDefined(ox)){ ox=0; }
+	if(!isDefined(oy)){ oy=0; }
+	if(!isDefined(ax)){ ax="center"; } //left center right
+	if(!isDefined(ay)){ ay="middle"; } //top middle bottom
+	if(!isDefined(color)){ color=(1,1,1); }
+	if(!isDefined(a)){ a=1; }
+	if(!isDefined(ft)){ ft="default"; }
+	if(!isDefined(fsz)){ fsz=1.4; }
+	if(!isDefined(fsc)){ fsc=1.6; }
+	if(!isDefined(gc)){ gc=(1,1,1); }
+	if(!isDefined(ga)){ ga=0; }
+	if(!isDefined(sort)){ sort=1; }
 	if(!isDefined(scolor)){ scolor=(0,0,0); }
 	if(!isDefined(div)){ div=1; }
-	if(!isDefined(a)){ a=1; }
 	if(div>1){ size=arr.size/div; }
 	if(!isDefined(skip)){ skip=0; }
-	
+		
 	//cl("^3hud:"+hud);
 	//cl("^3arr.size:"+arr.size);
 	//cl("^3size:"+size);
 	//cl("^3div:"+div);
 	for(i=0;i<size;i++){
-		//cl("i:"+i);
+		//cl("33i:"+i);
 		self.money[hud][i] = undefined;
-		self.money[hud][i] = self createfontstring(ft, fsz);
-		self.money[hud][i] setpoint(ax, ay, w, h+i*10);
+		self.money[hud][i] = newClientHudElem(self);
+		self.money[hud][i].x = x;
+		self.money[hud][i].y = y;
+		self.money[hud][i].width = w;
+		self.money[hud][i].height = h;
+		self.money[hud][i].xOffset = ox;
+		self.money[hud][i].yOffset = oy;
+		self.money[hud][i].alignX = ax; //left center right
+		self.money[hud][i].alignY = ay; //top middle bottom
+	
+		//self.money[hud][i] = self createfontstring(ft, fsz);
 		if(div>1){ 
 			//txt=arr[i*div]; 
 			txt=arr[i*div+1]+"$ - "+arr[i*div]; 
 			if(isDefined(txt)){
-				//cl("txt:"+txt);
 				self.money[hud][i] settext(txt);
 			}
 		}
-		else { self.money[hud][i] settext(arr[i]); }
+		else { 
+			self.money[hud][i] settext(arr[i]); 
+			//cl("txt:"+arr[i]);
+		}
+		y+=10;
 		self.money[hud][i].alpha = a;
+		self.money[hud][i].glowColor = gc;
+		self.money[hud][i].glowAlpha = ga;
 		self.money[hud][i].sort = sort;
 		self.money[hud][i].fontscale = fsc;
+		self.money[hud][i].font = ft;
 		self.money[hud][i].color = color;
-		if(isDefined(selector) && selector-1 == i) { self.money[hud][i].color=scolor; }
-		self.money[hud][i].glowAlpha = glow;
+		//self.money[hud][i].archived = false;
+		//self.money[hud][i].children = [];		
+		//self.money[hud][i] setParent(level.uiParent);
+		self.money[hud][i].hidden = false;
+		//self.money[hud][i] setpoint(ax, ay, ox, oy+i*10);
+		//self.money[hud][i] setSize( 640, 480 );
+		if(isDefined(selector) && selector-1 == i) { 
+			self.money[hud][i].color=scolor; 
+		}
 		//if(div>0){ i+=div; }
 	}
 }
 
-_create_menu_bg(bg,align,relative,x,y,w,h,color,sort,alpha,sh,aperc,ha,va){
+_create_menu_bg(bg,x,y,w,h,ox,oy,ax,ay,color,a,sort,shader,aperc){
 	self endon ( "disconnect" );
 	self endon ( "death" );
 	self endon( "intermission" );
 	self endon( "game_ended" );
 	if(self.isbot){ return; }
+
+	if(!isDefined(x)){ x=160; } //max width = 640;
+	if(!isDefined(y)){ y=120; } //max height = 480;
+	if(!isDefined(w)){ w=0; }
+	if(!isDefined(h)){ h=0; }
+	if(!isDefined(ox)){ ox=0; }
+	if(!isDefined(oy)){ oy=0; }
+	if(!isDefined(ax)){ ax="center"; } //left center right
+	if(!isDefined(ay)){ ay="middle"; } //top middle bottom
+	if(!isDefined(color)){ color=(0,0,0); }
+	if(!isDefined(a)){ a=1; }
+	if(!isDefined(sort)){ sort=0; }
+	if(!isDefined(shader)){ shader="black"; }
+	if(!isDefined(aperc)){ aperc=100; }
 	
-	alpha=alpha*(aperc/100);
+	a=a*(aperc/100);
 	self.money[bg] = undefined;
-	self.money[bg] = self createRectangle(align,relative,x,y,w,h,color,sort,alpha,sh,ha,va);
+	//self.money[bg] = self createRectangle(align,relative,x,y,w,h,color,sort,alpha,sh,ha,va);
+	self.money[bg] = newClientHudElem( self );
+	self.money[bg].x = x;
+	self.money[bg].y = y;
+	self.money[bg].width = w;
+	self.money[bg].height = h;
+	self.money[bg].xOffset = ox;
+	self.money[bg].yOffset = oy;
+	//self.money[bg].elemType = "bar_";
+	self.money[bg].sort = sort;
+	self.money[bg].color = color;
+	self.money[bg].alpha = a;
+	//self.money[bg].align = align;
+	//self.money[bg].relative = relative;
+	//self.money[bg].children = [];
+	self.money[bg].horzAlign = ax;
+    self.money[bg].vertAlign = ay;	
+    //self.money[bg] setParent( level.uiParent );
+	if(isDefined(shader)){ self.money[bg] setShader(shader,w,h); }
+	self.money[bg].hidden = false;
+	//self.money[bg] setPoint(align,relative,x,y);
+	//cl("33"+a);
 }
 
 _destroy_menu(menu,size,delay){
@@ -171,8 +257,10 @@ _destroy_menu(menu,size,delay){
 	if(!isDefined(delay)){ delay=1; }
 
 	c=0; size=menu.size;
-
-	if(isDefined(self.money) && isArray(self.money)){		
+	
+	if(!isDefined(size) || menu.size<1){ return; }
+	
+	if(isDefined(self.money) && isArray(self.money) && isDefined(self.money[menu])){		
 		for(i=0;i<size;i++){
 			if(isDefined(self.money[menu][i])){
 				self.money[menu][i] destroy();
@@ -205,25 +293,29 @@ _destroy_bg(menu,size,delay){
 
 }
 
-initHudElem(txt, xl, yl)
+/*
+_hud_arr(txt,x,y)
 {
-	hud = NewClientHudElem( self );
+	hud = NewHudElem( self );
 	hud setText(txt);
-	hud.alignX = "center";
-	hud.alignY = "bottom";
-	hud.horzAlign = "center";
-	hud.vertAlign = "bottom";
-	hud.x = xl;
-	hud.y = yl;
+	hud.alignX = "left";
+	hud.alignY = "middle";
+	//hud.horzAlign = "middle";
+	//hud.vertAlign = "bottom";
+	hud.x = x;
+	hud.y = y;
 	hud.foreground = true;
 	hud.fontScale = 1.4;
-	hud.font = "objective";
+	hud.font = "default";
 	hud.alpha = 1;
 	hud.glow = 0;
 	hud.glowColor = ( 0, 0, 0 );
 	hud.glowAlpha = 1;
 	hud.color = ( 1.0, 1.0, 1.0 );
-	return hud;
+	//hud.children = [];
+	//hud setParent( level.uiParent );
+	//hud setpoint(x, y, ox, oy);
+	//return hud;
 }
 
 createRectangle(align,relative,x,y,width,height,color,sort,alpha,shader,ha,va)
@@ -248,6 +340,7 @@ createRectangle(align,relative,x,y,width,height,color,sort,alpha,shader,ha,va)
 	barElemBG setPoint(align,relative,x,y);
 	return barElemBG;
 }
+*/
 
 _get_motd_txt(d){
 	if(!isDefined(self.readDay)){ self.readDay=0; }
@@ -282,7 +375,7 @@ _get_motd_txt(d){
 	csv = FS_FOpen(filename, "read");
 	line = FS_ReadLine(csv);
 	lines[0]="^2"+realDate+"\n";
-	lines[1]="\n";
+	lines[1]="\n\n";
 	while (isDefined(line) && line != ""){
 		cl("^3line: " + line);
 		if (line == "") { continue; }
@@ -300,7 +393,7 @@ _get_motd_txt(d){
 	}
 	return chars;*/
 
-	lines[2]="\n\n\n\n\n\n\n\n^2Press LEFT or RIGHT button to navigate\n";
+	lines[2]="\n\n\n\n\n\n\n\n\n^2Press left or RIGHT button to navigate\n";
 	lines[2]+="^1Press JUMP button to destroy this message\n";
 	return lines;
 }
@@ -308,93 +401,169 @@ _get_motd_txt(d){
 //---------------------------------------------------------------------------------------------------
 
 
-_show_message(delay,txt,dur,r,g,b,a,ox,oy){
+_show_message(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,color,a,gc,ga,ft,fsz,fsc,sort){
 	self endon ( "disconnect" );
 	//self endon ( "death" );
 	self endon( "intermission" );
 	self endon( "game_ended" );
 	
 	if (self.isbot){ return; }
+	if (!isDefined(txt)){ cl("11no txt defined!"); return; }
 	if (!isDefined(delay)){ delay=1; }
 	if (!isDefined(dur)){ dur=5; }
-	if (!isDefined(r)){ r=1; }
-	if (!isDefined(g)){ g=1; }
-	if (!isDefined(b)){ b=1; }
-	if (!isDefined(a)){ a=1; }
+	if (!isDefined(x)){ x=0; }
+	if (!isDefined(y)){ y=0; }
+	if (!isDefined(w)){ w=0; }
+	if (!isDefined(h)){ h=0; }
+	if (!isDefined(ax)){ ax="center"; }
+	if (!isDefined(ay)){ ay="middle"; }
 	if (!isDefined(ox)){ ox=0; }
 	if (!isDefined(oy)){ oy=0; }
+	if (!isDefined(color)){ color=(1,1,1); }
+	if (!isDefined(a)){ a=1; }
+	if (!isDefined(gc)){ gc=(1,1,1); }
+	if (!isDefined(ga)){ ga=1; }
+	if (!isDefined(ft)){ ft="default"; }
+	if (!isDefined(fsz)){ fsz=1.6; }
+	if (!isDefined(fsc)){ fsc=1.4; }
+	if (!isDefined(sort)){ sort=1; }
 	
-	_a=1;
-	_ox=ox;
-	_oy=oy;
+	_a=a;
+	_x=x;
+	_y=y;
 	self.showMessage=true;
 	size=0;
 	blob="asdfghjklqwertyuiopzxcvbnm";
-	c=0; cm=-1; ch=[];
-	m=0;
-	_m=8;
-	ntxt=txt;
+	c1=0; _c1=4; c2=0; cm=-1; ch=[]; ph=0;
+	//m=0;
+	//_m=8;
+	//ntxt=txt;
 	exit=false;
-
+	level.msgID++;
 	wait delay;
 	cl("33show_message");
+	hudMessage[0]=[];
+	hudMessage[0][0]="";
 	for(i=0;i<txt.size;i++){ ch[i]=0; }
 	while(1){
-		hudMessage[m]=[];
-		hudMessage[m][0]="";
+		//hudMessage[0]=[];
+		//hudMessage[0][0]="";
 		skip=false;
 		
 		for(i=0;i<txt.size;i++){
 			r=randomIntRange(0,blob.size);
-			if(ch[i]==0){ hudMessage[m][0]=blob[r]; }
+			if(ch[i]==0){ hudMessage[i]=blob[r]; }
+			//if(ch[i]==0){ hudMessage[i]=""; }
 			//if(cm>-1 && cm<txt.size && cm>i && skip==false){ 
 			//if(cm>-1 && cm<txt.size && ch[cm]==0 && skip==false){ 
-			if(cm>-1 && cm<txt.size && ch[cm]==0 && skip==false){ 
-				hudMessage[m][0]=txt[i]; 
+			/*if(cm>-1 && cm<txt.size && ch[cm]==0 && skip==false){ 
+				hudMessage[i][0]=txt[i]; 
 				ch[i]=1;
 				//skip=true;
 				//cm++;
+			}*/
+			if(cm>-1 && cm<txt.size && ch[cm]==0 && ph==0){ 
+				hudMessage[i]=txt[i]; 
+				ch[i]=1;
 			}
-			self _create_menu_text("hudMessage"+i,hudMessage[m],"default", 1.6,1.4,(r,g,b),0,"CENTER","CENTER",ox,oy,_a,1);
-			self playLocalSound("mouse_click");
-			ox+=8;
-			m++;
-			wait 0.5;
+			if(cm>-1 && cm<txt.size && ch[cm]==1 && ph==1){ 
+				hudMessage[i]=txt[i]; 
+				ch[cm]=0;
+				//ch[randomIntRange(0,txt.size)]=0;
+			}
+			self _create_menu_text("hudMessage"+i,hudMessage[i],x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort);
+			//_create_menu_text(hud,arr,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,selector,scolor,div,skip);
+			//self playLocalSound("mouse_click");
+			//self _hud_arr(hudMessage[i],x,y);
+			x=x+10;
+			//m++;
+			//cl("33i:"+i);
+			//cl("33x:"+x);
+			//cl("33_x:"+_x);
+			//wait 0.5;
 		}
-		if(cm>=txt.size-1){ wait dur; exit=true; }
+		//cl("33hudMessage.size:"+hudMessage.size);
+		//for(i=0;i<hudMessage.size;i++){ cl("33hudMessage["+i+"]="+hudMessage[i]); } 
+		self playLocalSound("mouse_click");
+		//self playLocalSound("mp_suitcase_pickup");
+		if(cm>=txt.size-1 && ph==0){ wait dur; }
+		//cl("33ph"+ph);
+		if(ph>=2){ exit=true; }
 		//cl("33cm:"+cm);
-		wait 0.5;
+		wait 0.05;
 		for(i=0;i<hudMessage.size;i++){
-			self _destroy_menu("hudMessage"+i); 
+			self _destroy_menu("hudMessage"+i);
+			//wait 0.5;		
+			//cl("33show_message");
 		}
-		ox=_ox;
-		m=0;
+		x=_x;
+		//m=0;
 		
-		//for(i=0;i<txt.size;i++){ cl("33ch["+i+"]="+ch[i]); 
-		if(c<1){ c++; }
-		else{ c=0; if(cm<txt.size){ cm++; }}
+		//for(i=0;i<ch.size;i++){ cl("33ch["+i+"]="+ch[i]); } 
+		//for(i=0;i<hudMessage.size;i++){ cl("33hudMessage["+i+"]="+hudMessage[i][0]); } 
+		if(c1<_c1){ c1++; }
+		if(ph==0){ cm++; if(cm>=txt.size){ ph=1; }}
+		if(ph==1){ 
+			arr=[]; c=0;
+			for(j=0;j<ch.size;j++){	
+				if(ch[j]==1){ 
+					arr[c]=j; c++;
+				}
+			}
+			/*c=0;
+			while(1){ 
+				if(ch[c]==1){ if(randomIntRange(0,2)>1){ ch[c]=0; }}
+				if(c>ch.size){ c=0; } else { c++; }
+				wait 0.05;
+			}*/
+			cm=arr[randomIntRange(0,arr.size)];
+			//cl("33arr:"+arr.size);
+			//cl("33ch.size:"+ch.size);
+			//cl("33arr.size:"+arr.size);
+			//cl("33c:"+c);
+			//cl("33cm:"+cm);
+			//for(i=0;i<arr.size;i++){ cl("33arr["+i+"]="+arr[i]); } 
+			c2++;
+			if(c2>=txt.size){ ph=2; }
+		}
+		if(ph==2){ exit=true; }
+		//if(cm>txt.size-1){ ph=1; }	
+		//else{ if(cm<txt.size){ cm++; }}
 		//else{ c=0; }
 		//wait 0.1;
 		if(exit==true){ break; }
 	}
+	cl("33ended show_message");
 }
 
-_show_hint_msg(delay,txt,dur,r,g,b,a,ox,oy){
+_show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort){
 	self endon ( "disconnect" );
 	//self endon ( "death" );
 	self endon( "intermission" );
 	self endon( "game_ended" );
 	if (self.isbot){ return; }
 	//if (!isDefined(txt)){ return; }
+	if (!isDefined(txt)){ cl("11no txt defined!"); return; }
+	if (!isDefined(delay)){ delay=1; }
 	if (!isDefined(dur)){ dur=5; }
-	if (!isDefined(r)){ r=1; }
-	if (!isDefined(g)){ g=1; }
-	if (!isDefined(b)){ b=1; }
-	if (!isDefined(a)){ a=1; }
+	if (!isDefined(x)){ x=0; }
+	if (!isDefined(y)){ y=0; }
+	if (!isDefined(w)){ w=0; }
+	if (!isDefined(h)){ h=0; }
+	if (!isDefined(ax)){ ax="left"; }
+	if (!isDefined(ay)){ ay="middle"; }
 	if (!isDefined(ox)){ ox=0; }
 	if (!isDefined(oy)){ oy=0; }
+	if (!isDefined(color)){ color=(1,1,1); }
+	if (!isDefined(a)){ a=1; }
+	if (!isDefined(gc)){ gc=(1,1,1); }
+	if (!isDefined(ga)){ ga=1; }
+	if (!isDefined(ft)){ ft="default"; }
+	if (!isDefined(fsz)){ fsz=1.6; }
+	if (!isDefined(fsc)){ fsc=1.4; }
+	if (!isDefined(sort)){ sort=1; }
 	
-	_a=1;
+	_a=a;
 	hudHint=[];
 	hudHint[0]="";
 	self.showHint=true;
@@ -419,9 +588,11 @@ _show_hint_msg(delay,txt,dur,r,g,b,a,ox,oy){
 		//txt[size]=blob[r];
 		for(i=0;i<size;i++){ ntxt+=txt[i]; }
 		if(size<txt.size){ hudHint[0]=ntxt+blob[r]; } else { hudHint[0]=ntxt; }
-		self _create_menu_text("hudHint",hudHint,"default", 1.6,1.4,(r,g,b),0,"CENTER","CENTER",ox,oy,_a,1);
+		self _create_menu_text("hudHint",hudHint,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort);
+		//self _create_menu_text("hudHint",hudHint,"default", 1.6,1.4,(r,g,b),_a,(0,0,0),0,300,300,"center","middle",ox,oy,1);
+		//_create_menu_text(hud,arr,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,selector,scolor,div,skip);		
 		self playLocalSound("mouse_click");
-		if(_a<a){ _a+=0.1; }
+		if(a<_a){ _a+=0.1; }
 		wait 0.05;
 		c--;
 		if(size == txt.size){ wait 2; }
@@ -434,12 +605,17 @@ _show_hint_msg(delay,txt,dur,r,g,b,a,ox,oy){
 		r=randomIntRange(0,blob.size);
 		//for(i=0;i<txt.size;i++){ if(txt[i] != " "){ txt[i]=" "; }}
 		//while(txt[r] == " " && r>0){ r--; }
-		txt = StrRepl(txt,txt[r],blob[r]);
-		hudHint[0]=txt;
-		self _create_menu_text("hudHint",hudHint,"default", 1.6,1.4,(r,g,b),0,"CENTER","CENTER",ox,oy,_a,1);
-		//self playLocalSound("mouse_click");
-		if(_a==a){ wait dur; }
-		if(_a>0){ _a-=0.1; }
+		//txt = StrRepl(txt,txt[r],blob[r]);
+		ntxt="";
+		for(i=0;i<size-1;i+=2){ ntxt+=txt[i]; ntxt+=txt[i+1]; }
+		ntxt+=blob[r];
+		hudHint[0]=ntxt;
+		self _create_menu_text("hudHint",hudHint,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort);
+		//_create_menu_text(hud,arr,ft,fsz,fsc,color,a,gc,ga,x,y,ax,ay,ox,oy,sort,selector,scolor,div,skip){		
+		self playLocalSound("mouse_click");
+		if(ntxt.size==txt.size+3){ wait dur; }
+		//if(a==_a){ wait dur; }
+		//if(a>0){ a-=0.1; }
 		wait 0.05;
 		size--;
 		//if(size == txt.size){ wait 1; }
@@ -471,8 +647,9 @@ _welcome_msg(){
 	//while(!isDefined(self.money)) { wait 0.5; }
 	
 	while(r<1){
-		//self _create_menu_bg("hudWelcomeBG","CENTER","CENTER",0,0,400,400,(r,g,b),1001,a,"black",50);
-		self _create_menu_text("hudWelcome",hudWelcome,"default", 1.6,1.4,(r,g,b),0,"CENTER","CENTER",0,-70,a,1);
+		//self _create_menu_bg("hudWelcomeBG","middle","middle",0,0,400,400,(r,g,b),1001,a,"black",50);
+		self _create_menu_text("hudWelcome",hudWelcome,320,180,0,0,"center","middle",0,0,"default", 1.6,1.4,(r,g,b),a,(0,0,0),0,1);
+		//_create_menu_text(hud,arr,x,y,w,h,ox,oy,ax,ay,ft,fsz,fsc,color,a,gc,ga,sort,selector,scolor,div,skip){		
 		if(r<1){ r+=0.1;g+=0.1;b+=0.1;a+=0.1; }
 		level waittill("timers");
 		//wait 0.05;
@@ -483,10 +660,11 @@ _welcome_msg(){
 		//wait 0.05;
 	}
 	while(r>0){
-		//self _create_menu_bg("hudWelcomeBG","CENTER","CENTER",0,0,400,400,(r,g,b),1001,a,"black",50);
-		self _create_menu_text("hudWelcome",hudWelcome,"default", 1.6,1.4,(r,g,b),0,"CENTER","CENTER",0,-70,a,1);
+		//self _create_menu_bg("hudWelcomeBG","middle","middle",0,0,400,400,(r,g,b),1001,a,"black",50);
+		self _create_menu_text("hudWelcome",hudWelcome,320,180,0,0,"center","middle",0,0,"default", 1.6,1.4,(r,g,b),a,(0,0,0),0,1);
+		//_create_menu_text(hud,arr,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,selector,scolor,div,skip){		
 		if(r==1){ wait 1; }
-		//self _create_menu_text("hudWelcome",txt,"default", 1.6,1.4,(1,1,1),0,"CENTER","CENTER",0,0,1,1);
+		//self _create_menu_text("hudWelcome",txt,"default", 1.6,1.4,(1,1,1),0,"middle","middle",0,0,1,1);
 		if(r>0){ r-=0.1;g-=0.1;b-=0.1;a-=0.1; }
 		level waittill("timers");
 		//wait 0.05;
@@ -511,8 +689,11 @@ _welcome_msg(){
 		
 		if(isDefined(self.hudMOTD) && isDefined(motd)){
 			while(h<300){
-				self _create_menu_text("hudWelcome",self.hudMOTD[0],"default", 1.6,1.4,(r,g,b),0,"CENTER","CENTER",0,-70,a,2);
-				self _create_menu_bg("hudWelcomeBG","CENTER","CENTER",0,0,w,h,(r,g,b),1,a,"black",50,"fullscreen","fullscreen");
+				//self _create_menu_text("hudWelcome",self.hudMOTD[0],"default", 1.6,1.4,(r,g,b),a,(0,0,0),0,"center","middle",0,-70,2);
+				self _create_menu_text("hudWelcome",self.hudMOTD[0],320,155,0,0,"center","middle",0,0,"default", 1.6,1.4,(r,g,b),a,(0,0,0),0,1);
+				//self _create_menu_bg("hudWelcomeBG","middle","middle",0,0,w,h,(r,g,b),1,a,"black",50,"fullscreen","fullscreen");
+				self _create_menu_bg("hudWelcomeBG",-160,-120,320,240,0,0,"center","middle",(0,0,0),a,0,"black",50);
+				//_create_menu_bg(bg,x,y,w,h,ox,oy,ax,ay,color,a,sort,shader,aperc){
 				if(r<1){ r+=0.1;g+=0.1;b+=0.1;a+=0.1; }
 				if(w<400){ w+=30; }
 				if(h<300){ h+=20; }
@@ -529,10 +710,13 @@ _welcome_msg(){
 			self thread _nav_motd();
 
 			while(h>1){
-				self _create_menu_text("hudWelcome",self.hudMOTD[0],"default", 1.6,1.4,(r,g,b),0,"CENTER","CENTER",0,-70,a,2);
-				self _create_menu_bg("hudWelcomeBG","CENTER","CENTER",0,0,w,h,(r,g,b),1,a,"black",50,"fullscreen","fullscreen");
+				//self _create_menu_text("hudWelcome",self.hudMOTD[0],"default", 1.6,1.4,(r,g,b),a,(0,0,0),0,"center","middle",0,-70,2);
+				self _create_menu_text("hudWelcome",self.hudMOTD[0],320,155,0,0,"center","middle",0,0,"default", 1.6,1.4,(r,g,b),a,(0,0,0),0,1);
+				//self _create_menu_bg("hudWelcomeBG","middle","middle",0,0,w,h,(r,g,b),1,a,"black",50,"fullscreen","fullscreen");
+				self _create_menu_bg("hudWelcomeBG",-160,-120,320,240,0,0,"center","middle",(0,0,0),a,0,"black",50);
+				//_create_menu_bg(bg,x,y,w,h,ox,oy,ax,ay,color,a,sort,sh,aperc){
 				//if(r==1){ wait 2; }
-				//self _create_menu_text("hudWelcome",txt,"default", 1.6,1.4,(1,1,1),0,"CENTER","CENTER",0,0,1,1);
+				//self _create_menu_text("hudWelcome",txt,"default", 1.6,1.4,(1,1,1),0,"middle","middle",0,0,1,1);
 				if(game["hasReadMOTD"][self.name]==true){
 					if(r>0){ r-=0.1;g-=0.1;b-=0.1;a-=0.1; }
 					if(w>1){ w-=30; }
@@ -580,14 +764,14 @@ _nav_motd(){
 	if(self.isbot){ return; }
 	
 	while(game["hasReadMOTD"][self.name]==false){
-		if (self MoveLeftButtonPressed()){ 
-			//cl(self.name+" pressed LEFT key");
-			self notify("hasPressedMoveLeftButton");
+		if (self MoveleftButtonPressed()){ 
+			//cl(self.name+" pressed left key");
+			self notify("hasPressedMoveleftButton");
 			self.readDay++;
 			motd=_get_motd_txt(self.readDay);
 			if(isDefined(motd)){ self.hudMOTD[0]=motd; }
 			self playLocalSound("mouse_click");
-			while (self MoveLeftButtonPressed()){ wait 0.05; }
+			while (self MoveleftButtonPressed()){ wait 0.05; }
 		}
 		
 		if (self MoveRightButtonPressed()){ 
@@ -608,6 +792,7 @@ _map_datetime_menu(){
 	if(self.isbot){ return; }
 	
 	map=[]; dateTime=[];
+	x=-100; y=440; ax="left"; ay="bottom"; a=0.5; ft="default"; fsz=1.4; fsc=1.6; color=(1,1,1); a=0.3;
 	
 	wait 1;
 	for(;;){
@@ -620,9 +805,9 @@ _map_datetime_menu(){
 		if (getDvar("v01d_version") == "") { setDvar("v01d_version", " "); }
 		
 		if(isDefined(dateTime) && isDefined(dateTime)){
-			self _create_menu_text("hudModVersion",version,"default", 1.6,1.4,(1,1,1),0,"LEFT","CENTER",-420,200,0.5,1);
-			self _create_menu_text("hudMap",map,"default", 1.6,1.4,(1,1,1),0,"LEFT","CENTER",-420,210,0.5,1);
-			self _create_menu_text("hudDateTime",dateTime,"default", 1.6,1.4,(1,1,1),0,"LEFT","CENTER",-420,224,0.5,1);
+			self _create_menu_text("hudModVersion",version,x,y,0,0,ax,ay,0,0,ft,fsz,fsc,color,a);
+			self _create_menu_text("hudMap",map,x,y+14,0,0,ax,ay,0,0,ft,fsz,fsc,color,a);
+			self _create_menu_text("hudDateTime",dateTime,x,y+28,0,0,ax,ay,0,0,ft,fsz,fsc,color,a);
 			wait 1;
 			self _destroy_menu("hudModVersion");
 			self _destroy_menu("hudMap");
@@ -641,7 +826,9 @@ _money_menu(){
 	self waittill("spawned_player");
 
 	r=1;g=1;b=1;a=1;c=0;
+	x=710;y=460;
 	money=[];
+	
 	while(1){
 		while(!isDefined(self.money)) { wait 0.5; }
 		while (game["state"] == "postgame" || level.gameEnded || !isAlive(self)) { wait 1; }
@@ -649,12 +836,12 @@ _money_menu(){
 			money[0]=self.money["acc"]+"$";
 			if(isDefined(self.notEnoughMoney)){
 				if(c<10){
-					if(c%2==0){	self _create_menu_text("hudMoney",money,"default", 1.6,1.4,(1,0,0),0,"CENTER","CENTER",400,200,a,1); }
-					else { self _create_menu_text("hudMoney",money,"default", 1.6,1.4,(1,1,1),0,"CENTER","CENTER",400,200,a,1); }
+					if(c%2==0){ self _create_menu_text("hudMoney",money,x,y); }
+					else { self _create_menu_text("hudMoney",money,x,y); }
 					c++;
 				} else { self.notEnoughMoney=undefined; c=0; }
 			} else {
-				self _create_menu_text("hudMoney",money,"default", 1.6,1.4,(r,g,b),0,"CENTER","CENTER",400,200,a,1);
+				self _create_menu_text("hudMoney",money,x,y);
 			}
 			wait 0.1;
 			self _destroy_menu("hudMoney");
@@ -694,7 +881,7 @@ _buy_menu_show(arr,prev,next,div){
 		//sens = self getClientDvar("cl_mouseAccel");
 		//cl("^4cl_mouseAccel:"+sens);
 		//self setClientDvars("cl_mouseAccel", 0);
-		//self _create_menu_bg("hudBuyMenuBG","CENTER","CENTER",0,0,200,100,(r,g,b),1,a,"white");
+		//self _create_menu_bg("hudBuyMenuBG","middle","middle",0,0,200,100,(r,g,b),1,a,"white");
 				
 		while(isAlive(self) && isDefined(self.buyMenuShow)){
 			//cl("^4pitch:"+pitch);
@@ -714,7 +901,7 @@ _buy_menu_show(arr,prev,next,div){
 			}
 			if(AttackButtonPressed==false){
 				if(selector>0 && selector<=size) {
-					if(pitch>curView[0]+5 || self LeanLeftButtonPressed()) { selector--; pitch=curView[0]; }
+					if(pitch>curView[0]+5 || self LeanleftButtonPressed()) { selector--; pitch=curView[0]; }
 					else if(pitch<curView[0]-5 || self LeanRightButtonPressed()) { selector++; pitch=curView[0]; }
 					//self playLocalSound( "mouse_click" );
 				}
@@ -778,12 +965,17 @@ _buy_menu_show(arr,prev,next,div){
 						}
 					}
 				}*/
-				//self _create_menu_text("hudBuyMenu",arr,"default", 1.6,1.4,(r,g,b),0,"CENTER","CENTER",100,0,a,1,selector,scolor);
-				self _create_menu_text("hudBuyMenu",self.buyMenuShow,"default", 1.6,1.4,(r,g,b),0,"LEFT","CENTER",-300,0,a,1,selector,scolor,div);				
+				//self _create_menu_text("hudBuyMenu",arr,"default", 1.6,1.4,(r,g,b),0,"middle","middle",100,0,a,1,selector,scolor);
+				if(isDefined(self.buyMenuShow)){
+					//_create_menu_text(hud,arr,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,selector,scolor,div,skip){
+					self _create_menu_text("hudBuyMenu",self.buyMenuShow,0,200,0,0,"left","middle",0,0,"default",1.6,1.4,(r,g,b),a,(0,0,0),0,1,selector,scolor,div);				
+				}
 				wait 0.1;
 				curView = self getPlayerAngles();
 				if(sw==1){sw=0;wait 0.5;}
-				self _destroy_menu("hudBuyMenu",self.buyMenuShow.size,div);
+				if(isDefined(self.buyMenuShow)){
+					self _destroy_menu("hudBuyMenu",self.buyMenuShow.size,div);
+				}
 			}								//hud,txt,ft,fsz,fsc,color,glow,ax,ay,w,h,a,sort,selector,scolor
 		}
 		wait 0.05;
