@@ -1032,10 +1032,7 @@ _menu_response()
 			game["isJoinedSpectators"][self.name]=false;
 			//cl("33game[isJoinedSpectators][self.name]: " + game["isJoinedSpectators"][self.name]);
 			self suicide();
-			wait 0.05;
 			self.sessionteam=self.pers["team"];
-			self.isInTeam=self.pers["team"];
-			self.isInTeam=self.sessionteam;
 			self thread _fs();
 			self thread maps\mp\gametypes\_spectating::setSpectatePermissions();
 			self notify("hasReadWelcomeMsg");
@@ -3791,17 +3788,12 @@ _fs()
 		//if (self.pers["team"]!="spectator"  || self.sessionstate!="spectator"){
 			self [[level.class]]("custom1");
 			if(level.tp<120){ 
-				//self.pers["team"]=self.sessionteam;
+				self.pers["team"]=self.sessionteam;
 				self.pers["lives"]=getDvarInt("scr_sab_numlives");
-				if(level.tp>15 && !isAlive(self)){ 
-					//self [[level.spawnPlayer]](); 
-					self.pers["team"]=self.isInTeam;
-					//self.sessionteam=self.isInTeam;
-					self notify("spawned"); 
-					self.pers["lives"]=1; 
-				}
+				if(level.tp>15 && self.hasSpawned!=true){ self [[level.spawnPlayer]](); self.pers["lives"]=1; }
 				else { self.pers["lives"] = getDvarInt("scr_sab_numlives")-1; }
 				//self.sessionstate = "playing";
+				//self notify("spawned");
 				//self notify("player_spawned");
 				self.isInTeam=self.pers["team"];
 				cl("^4forcespawned "+self.name);
