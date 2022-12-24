@@ -76,7 +76,7 @@ _spawn_loop(){
 			//self _show_message(1,"press ADS button to return",2,(1,1,0),1,(1,1,0),1,"center","middle",-200,-80,"default",1.4,1.6,1);
 			//self thread _show_message(0,"TEST TEST TEST",1,1,1,0,1,-200,-80);
 			
-			self _show_hint_msg("press ADS button to return",1,2,-20,300,0,0,"left","middle",0,0,"default",1.6,1.6,(1,1,0),1,(1,1,0),1,1);
+			self _show_hint_msg("press FIRE button to select",1,2,-20,300,0,0,"left","middle",0,0,"default",1.6,1.6,(1,1,0),1,(1,1,0),1,1);
 			self _show_hint_msg("press ADS button to return",1,2,-20,310,0,0,"left","middle",0,0,"default",1.6,1.6,(1,1,0),1,(1,1,0),1,1);
 			//_show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort){
 			//delay,txt,dur,r,g,b,a,ox,oy
@@ -408,6 +408,7 @@ _show_message(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,color,a,gc,ga,ft,fsz,fsc,sort){
 	self endon( "game_ended" );
 	
 	if (self.isbot){ return; }
+	if (!isDefined(self.buyMenuShow)){ return; }
 	if (!isDefined(txt)){ cl("11no txt defined!"); return; }
 	if (!isDefined(delay)){ delay=1; }
 	if (!isDefined(dur)){ dur=5; }
@@ -542,6 +543,7 @@ _show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort){
 	self endon( "intermission" );
 	self endon( "game_ended" );
 	if (self.isbot){ return; }
+	if (!isDefined(self.buyMenuShow)){ return; }
 	//if (!isDefined(txt)){ return; }
 	if (!isDefined(txt)){ cl("11no txt defined!"); return; }
 	if (!isDefined(delay)){ delay=1; }
@@ -573,6 +575,7 @@ _show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort){
 	c=3;
 	ntxt=txt;
 	//cl("^3_show_hint_msg");
+	cl("33hintmsg:"+txt);
 	//cl("33"+size);
 	
 	//while(_a<a){
@@ -836,12 +839,20 @@ _money_menu(){
 			money[0]=self.money["acc"]+"$";
 			if(isDefined(self.notEnoughMoney)){
 				if(c<10){
-					if(c%2==0){ self _create_menu_text("hudMoney",money,x,y); }
-					else { self _create_menu_text("hudMoney",money,x,y); }
+					//_create_menu_text(hud,arr,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,selector,scolor,div,skip){
+					if(c%2==0){ self _create_menu_text("hudMoney",money,x,y,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,(1,0,0)); }
+					else { self _create_menu_text("hudMoney",money,x,y,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,(1,1,1)); }
 					c++;
 				} else { self.notEnoughMoney=undefined; c=0; }
+			} else if(isDefined(self.spentMoney)){
+				//_create_menu_text(hud,arr,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,selector,scolor,div,skip){
+				self _create_menu_text("hudMoney",money,x,y,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,(1,0,0));
+				wait 0.1;
+				self _destroy_menu("hudMoney");
+				self _create_menu_text("hudMoney",money,x,y,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,(1,1,1));
+				self.spentMoney=undefined;
 			} else {
-				self _create_menu_text("hudMoney",money,x,y);
+				self _create_menu_text("hudMoney",money,x,y,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,(1,1,1));;
 			}
 			wait 0.1;
 			self _destroy_menu("hudMoney");
@@ -1149,7 +1160,7 @@ _buy_menu_main(){
 			wait 0.05; 
 		}
 		//cl("^3self.buyMenuShowNext");
-		wait 0.1;
+		wait 0.05;
 		//while(isAlive(self) && self UseButtonPressed()){ wait 0.05; }
 	}
 }

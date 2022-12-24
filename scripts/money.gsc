@@ -699,6 +699,7 @@ _buy(){
 						//self SetSpawnWeapon(self.hasChosen[i]);
 						//cl("33"+self.name+" bought: "+self.hasChosen[i]);
 						//cl("33"+self.name+" has ammo "+self getAmmoCount(self.hasChosen[i]));
+						self.spentMoney=true;
 						while (self AttackButtonPressed()){ wait 0.05; } 
 					} else {
 						self.notEnoughMoney=true;

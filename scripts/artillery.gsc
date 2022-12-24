@@ -140,8 +140,8 @@ roundThink( ent )
 						);
 					}
 				}
-				earthquake( 3.4, 0.7, collision[ "position" ], 280 );
-				earthquake( 0.5, 3.7, collision[ "position" ], 6800 );
+				earthquake( 3.4, 0.7, collision[ "position" ], 580 );
+				earthquake( 0.1, 3.7, collision[ "position" ], 6800 );
 				maps\mp\gametypes\_hardpoints::playSoundinSpace( "exp_suitcase_bomb_main", collision[ "position" ] );
 				
 				if( isDefined( ent ) )

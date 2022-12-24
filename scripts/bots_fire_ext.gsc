@@ -1,5 +1,6 @@
 #include maps\mp\_load;
 #include maps\mp\_utility;
+#include scripts\cl;
 
 init()
 {
@@ -44,13 +45,13 @@ _bot_fire(){
 		if (getDvarInt("bots_fire_ext")>0 && getDvar("bots_play_fire") != "1" && getDvar("bots_play_move") == "1"){
 			if(isAlive(self)){
 				if (isDefined(self.bot.script_target)){
-					//cl("^1"+self.bot.script_target.name);
+					//cl("33"+self.name+" target model: "+self.bot.script_target.model);
 					if (self.bot.script_target.model == "vehicle_mi24p_hind_desert" || self.bot.script_target.model == "vehicle_cobra_helicopter_fly") { 
-						//cl("^3"+self.bot.script_target.model);
+						//cl("33"+self.bot.script_target.model);
 						self _bot_press_fire(0.3,self.bot.script_target);
 					}
 				}				
-				if (isDefined(self.bot.after_target)) { 
+				else if (isDefined(self.bot.after_target)) { 
 					//cl("^3"+self.bot.after_target.model);
 					//isSubStr
 					//vehicle_mi24p_hind_desert
@@ -62,16 +63,22 @@ _bot_fire(){
 					if (isDefined(level.classBoltSniper)) { 
 						for (i=0;i<level.classBoltSniper.size;i++){
 							if (isSubStr( self GetCurrentWeapon(), level.classBoltSniper[i])){ 
-								if(!isDefined(stance)) { 
-									stance=stances[randomIntRange(0,3)]; 
-									self botAction("+go"+stance);
-									self botAction("-ads");
-								}
+								stance=stances[randomIntRange(0,3)]; 
+								self botAction("+go"+stance);
+								//self botAction("-ads");
 								self.bot.stop_move=true; break;
  							}
 						}
+					} 
+					if(dist>600){
+						stance=stances[randomIntRange(0,2)]; 
+						self botAction("+go"+stance);
+						self botAction( "-gostand" );
+						self.bot.stop_move=true;
+						//cl("33"+self.name+" stance:"+stance);
 					}
-					self botAction( "-gocrouch" );
+					//self botAction( "-gocrouch" );
+					//self botAction( "-goprone" );
 					delay=randomFloatRange(0.1,0.2)+(dist/4*0.001);
 					self _bot_press_fire(delay,self.bot.after_target);
 				} else {
@@ -106,9 +113,4 @@ _bot_press_fire(delay,target)
 	self botAction("-fire");
 	if(duration) { wait duration/2; }
 	target = undefined;
-}
-
-cl(txt){
-	if (isDefined(txt)){ print("^2-- "+txt+" -- \n"); }
-	else { print("^3!! undefined !! \n"); }
 }

@@ -1,4 +1,4 @@
-//
+#include scripts\cl;
 init()
 {
 	//if (getdvarint("developer")<1){ return; }
@@ -32,6 +32,8 @@ _give_chopper_hardpoint()
 		self waittill("spawned_player");
 		if(isAlive(self)){
 			self maps\mp\gametypes\_hardpoints::giveHardpointItem( "helicopter_mp" );
+			//self giveWeapon("helicopter_mp");
+			//self SetWeaponAmmoStock("helicopter_mp",1);
 			cl(self.name+" is given hardpoint "+self.pers["hardPointItem"]);
 			while (isDefined(self.pers["hardPointItem"])) { wait 1; }
 			cl(self.name+" used hardpoint");
@@ -77,18 +79,27 @@ _fire_on_enemies(){
 					}
 				}
 				
-				if(isDefined(target)){
-					choppers[i] setgoalyaw (target.angles[1]);
+				if(isDefined(choppers[i].hasTarget) && isPlayer(choppers[i].hasTarget)){
+					player=choppers[i].hasTarget;
+					if(isAlive(player) && player.isbot){ 
+						player.bot.script_target=choppers[i]; 
+					}
+					cl("11"+player.name);
+					//choppers[i] setgoalyaw (target.angles[1]);
 				}
+				
 				/*if(!isDefined(target)){
 					for(i=0;i<players.size;i++){ 
 						dist = distance( choppers[i].origin, players[i].origin );
 						if(choppers[i].team != players[i].team){
 							if(dist<closest){ 
 								closest = dist; target = players[i];
-								choppers[i].primaryTarget = players[i];
-								choppers[i].secondaryTarget = players[i];
+								choppers[i].primaryTarget = target;
+								choppers[i].secondaryTarget = target;
+								if(isPlayer(target) && isAlive(target) && target.isbot){ target.bot.script_target=choppers[i]; }
 								//choppers[i] setgoalyaw (choppers[i].angles[0]+40);
+								//cl("chopper.primaryTarget:"+choppers[i].primaryTarget.name);
+								//cl("chopper.secondaryTarget:"+choppers[i].secondaryTarget.name);
 							}
 						}
 					}
@@ -164,7 +175,7 @@ _fire_missile( sMissileType, iShots, eTarget, team ){
 		if ( nextMissileTag >= tags.size )
 			nextMissileTag = 0;
 		
-		self playSound("at4_df4_fire");
+		//self playSound("at4_df4_fire");
 		
 		if ( isdefined( eTarget ) )
 		{
@@ -179,9 +190,4 @@ _fire_missile( sMissileType, iShots, eTarget, team ){
 		if ( i < iShots - 1 )
 			wait weaponShootTime;
 	}
-}
-
-cl(txt){
-	if (isDefined(txt)){ print("-- "+txt+" -- \n"); }
-	else { print("!! undefined !! \n"); }
 }
