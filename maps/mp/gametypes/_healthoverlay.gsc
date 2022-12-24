@@ -132,7 +132,7 @@ playerHealthRegen()
 			if (gettime() - hurttime < level.playerHealth_RegularRegenDelay)
 				continue;
 			
-			if ( level.healthRegenDisabled )
+			if ( level.healthRegenDisabled || isDefined(self.lastStand))
 				continue;
 
 			if (gettime() - lastSoundTime_Recover > level.playerHealth_RegularRegenDelay)

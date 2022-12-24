@@ -64,7 +64,7 @@ finalkillcam( attacker, attackerNum, deathtime, victim)
     //print (victim getEntityNumber()+"\n");
     victimNum = victim getEntityNumber();
     
-    self SetClientDvar("ui_ShowMenuOnly", "none");
+    //self SetClientDvar("ui_ShowMenuOnly", "none");
     self scripts\main::_film_tweaks(1,0.05,"1 0.6 0.6","1 0.6 0.6",0.6,1,1,0,1);
 
     camtime = 5;

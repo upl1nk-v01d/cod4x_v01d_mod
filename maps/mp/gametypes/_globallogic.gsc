@@ -4855,6 +4855,7 @@ Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDi
 		lpattackname = attacker.name;
 
 		if ( attacker == self ) // killed himself
+		//if ( attacker == self || isDefined(self.lastStand))
 		{
 			doKillcam = true;
 			
@@ -4894,8 +4895,12 @@ Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDi
 			if( isDefined( self.friendlydamage ) )
 				self iPrintLn(&"MP_FRIENDLY_FIRE_WILL_NOT");
 		}
+		//else if (isDefined(self.lastStand)){ 
+			//lpattacknum = attacker getEntityNumber(); 
+		//	doKillcam = true;
+		//}
 		else
-		//else if(attacker != self && isDefined(self.lastStand))
+		//else if(attacker != self || isDefined(self.lastStand))
 		{
 			prof_begin( "PlayerKilled attacker" );
 

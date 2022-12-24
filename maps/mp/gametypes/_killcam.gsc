@@ -37,7 +37,7 @@ killcam(
 	if(self.isbot){ return; }
 	
 	//self scripts\menus::_create_menu_bg("hudWelcomeBG","CENTER","CENTER",0,0,400,400,(1,1,1),1,1,"black",50);
-	self SetClientDvar("ui_ShowMenuOnly", "none");
+	//self SetClientDvar("ui_ShowMenuOnly", "none");
 	//self _film_tweaks(1,0,"1 1 1","1 1 1",0.4,1,1);
 	self scripts\main::_film_tweaks(1,0.05,"1 0.6 0.6","1 0.6 0.6",0.6,1,1,0,1);
 
