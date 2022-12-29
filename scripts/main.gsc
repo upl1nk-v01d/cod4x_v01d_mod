@@ -23,24 +23,25 @@ _template(){
 init()
 {
 
-	level thread scripts\bots_nav::init();
 	level thread scripts\bots_aim_ext::init();
 	level thread scripts\bots_fire_ext::init();
 	level thread scripts\chopper_ext::init();
-	level thread scripts\tactical::init();
 	level thread scripts\money::init();
 	level thread scripts\menus::init();
+	level thread scripts\tactical::init();
+	//level thread scripts\bots_nav::init();
 
-	if (getDvar("v01d_version") == "") { setDvar("v01d_version", "v1.83"); }
+	if (getDvar("v01d_version") == "") { setDvar("v01d_version", "v1.86"); }
 
 	//if (!getdvarint("developer")>0) { return; }
 	
-	if (getDvar("g_gametype") != "sab") { return; }
+	if (getDvar("g_gametype") == "") { setDvar("g_gametype","sab"); }
+	//if (getDvar("g_gametype") != "sab") { return; }
 	
 	level._maps = StrTok("mp_ancient_ultimate,12,mp_carentan,14,mp_rasalem,12,mp_efa_lake,10,mp_bo2carrier,12,mp_bog,16,mp_summit,18,mp_backlot,16,mp_harbor_v2,16,mp_sugarcane,12,mp_csgo_assault,12,mp_csgo_inferno,12,mp_csgo_office,12,mp_csgo_overpass,12,mp_csgo_mirage,12,mp_finca,12,mp_csgo_safehouse,10,mp_csgo_cbble,12,mp_csgo_shortdust,12,mp_csgo_stmarc,12,mp_ins_panj,10,mp_creek,12,mp_csgo_mirage,12,mp_csgo_overpass,12,mp_ins_heights,12,mp_ins_peak,12", "," );
 	//level._weapons = StrTok("knife_mp,ak74u_mp,barrett_mp,dragunov_mp,g3_mp,m14_mp,m21_mp,m4_mp,mp44_mp,remington700_mp,skorpion_mp,uzi_mp,m1014_mp", "," );
 	level._gametypes = StrTok("mp_csgo_assault,war,mp_csgo_inferno,dm", "," );
-	level._weapons = StrTok("knife_mp,tac330_mp,tac330_sil_mp,svg100_mp,rw1_mp,ak74u_mp,barrett_mp,dragunov_mp,g3_mp,m14_mp,m21_mp,m4_mp,mp44_mp,remington700_mp,skorpion_mp,uzi_mp,m1014_mp,law_mp,at4_bo_mp,mm1_mp,striker_mp", "," );
+	level._weapons = StrTok("knife_mp,tac330_sil_mp,svg100_mp,rw1_mp,ak74u_mp,dragunov_mp,g3_mp,m14_mp,m21_mp,m4_mp,mp44_mp,remington700_mp,uzi_mp,m1014_mp,law_mp,at4_bo_mp,mm1_mp,striker_mp", "," );
 	for (i=0;i<level._weapons.size;i++){
 		PrecacheItem(level._weapons[i]);
 		cl ("Weapon precached: " + level._weapons[i]);
@@ -185,6 +186,7 @@ init()
 	level thread _explosives_array();
 	level thread _last_allie_taunting();
 	level thread _round_time_passed();
+	//level thread _bomb_objective_blink();
 	
 	level thread _t1();
 	level thread _t2();
@@ -333,9 +335,11 @@ _player_collision(timer){
 }
 
 _player_connecting_loop(){
-	//level endon ( "disconnect" );
-	//level endon( "intermission" );
-	//level endon( "game_ended" );	if (!isDefined(game["nextMap"])){ game["nextMap"]=""; }
+	level endon ( "disconnect" );
+	level endon( "intermission" );
+	level endon( "game_ended" );	
+	
+	if (!isDefined(game["nextMap"])){ game["nextMap"]=""; }
 
 	//if (getdvarint("developer")>0){ return; }
 	//if(self.isbot){ return; }
@@ -957,13 +961,13 @@ _maps_randomizer(){
 			level waittill("end_killcam"); 
 			cl("33_maps_randomizer-fk ended");			
 			cl("22next map: "+game["nextMap"]);
-			wait getDvarFloat( "scr_intermission_time" )-1.5;
-			exec("map " + game["nextMap"]);
-			game["nextMap"]="";
-			for(i=0;i<level._gametypes;i+=2){ 
+			for(i=0;i<level._gametypes.size;i+=2){ 
 				if(level._gametypes[i]==game["nextMap"]){ setDvar("g_gametype",level._gametypes[i+1]); break; }
 				else{ setDvar("g_gametype","sab"); }
 			}
+			wait getDvarFloat( "scr_intermission_time" )-1.5;
+			exec("map " + game["nextMap"]);
+			game["nextMap"]="";
 		}
 	}
 }
@@ -1245,6 +1249,8 @@ _projectiles_monitor(weap,wname){
 					if(isDefined(weap)){ weap playSound("em1_el_zap"); }
 				}
 				players[i] thread _blast(delay,dist,maxDist,blastOrigin,attacker,weap);
+				earthquake( 0.5, 0.75, blastOrigin, 1000 );
+				earthquake( 0.1, 3.7, blastOrigin, 3500 );
 				//players[i] setVelocity(0,0,400);
 			}
 		}
@@ -1327,6 +1333,8 @@ _grenade_monitor(weap){
 			if(dist<maxDist){
 				//cl("^2"+players[i].blastName);
 				players[i] thread _blast(delay,dist,maxDist,blastOrigin,attacker,self.grenade);
+				earthquake( 0.3, 0.75, blastOrigin, 1000 );
+				earthquake( 0.1, 3.7, blastOrigin, 3000 );
 				//players[i] setVelocity(0,0,400);
 			}
 		}
@@ -1356,6 +1364,8 @@ _bomb_monitor(){
 				//cl("^2"+players[i].blastName);
 				players[i].blastName="bomb";
 				players[i] thread _blast(delay,dist,maxDist,blastOrigin,undefined);
+				earthquake( 0.5, 1.75, blastOrigin, 1000 );
+				earthquake( 0.2, 3.7, blastOrigin, 4800 );
 				//players[i] setVelocity(0,0,400);
 			}
 		}
@@ -1868,7 +1878,7 @@ _killed(eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, t
 		//cl(eInflictor.classname); //script_vehicle
 		//cl(eInflictor.name); //
 		//cl("^2"+vDir); //
-		
+				
 		self.kb = eAttacker;
 		
 		if(isPlayer(eAttacker) && sMeansOfDeath == "MOD_MELEE") //
@@ -1901,6 +1911,7 @@ _killed(eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, t
 		}
 		
 		if(isDefined(sMeansOfDeath) && sMeansOfDeath == "MOD_HEAD_SHOT"){ self.headShot=true; }
+		if(isDefined(eAttacker.isbot) && eAttacker.isbot){ eAttacker.pers["bots"]["skill"]["aim_time"]=3; }
 	}
 	
 	self StartRagdoll(0);
@@ -2292,12 +2303,21 @@ _dvar_map_restart(){
 		dvar = getDvar("m");
 		m=getDvar("mapname");
 		if(dvar != ""){
+			//if(dvar == "r"){ cl("restarting map "+m); exitLevel(true); }
 			if(dvar == "r"){ cl("restarting map "+m); exec("map " + m); }
-			if(dvar == "rr"){ cl("rotating map "+game["nextMap"]); 
-				for(i=0;i<level._gametypes;i+=2){ 
-				if(level._gametypes[i]==game["nextMap"]){ setDvar("g_gametype",level._gametypes[i+1]); break; }
-				else{ setDvar("g_gametype","sab"); }
-			}
+			if(dvar == "rr"){ 
+				cl("33checking nextMap before map forced rotate...");
+				for(i=0;i<level._gametypes.size;i+=2){ 
+					if(level._gametypes[i]==game["nextMap"]){ 
+						setDvar("g_gametype",level._gametypes[i+1]);
+						break;
+					} else {
+						setDvar("g_gametype","sab");
+					}
+				}
+				cl("33rotating map to \""+game["nextMap"]+"\"");
+				cl("33g_gametype will be \""+getDvar("g_gametype")+"\"");
+				wait 1;
 				exec("map " + game["nextMap"]); 
 			}
 			else if(dvar == "f"){ cl("fast restarting map"); Map_Restart(false); }
@@ -2508,6 +2528,8 @@ _init_bots_dvars(){
 }
 
 _add_some_bots(bots){
+	wait 1;
+	if(isDefined(level.doNotAddBots)){ return; }
 	setDvar( "testclients_doreload", true );
 	wait 0.1;
 	setDvar( "testclients_doreload", false );
@@ -2769,6 +2791,39 @@ _sab_bomb_visibility(){
 		
 		wait 0.05;
 	}
+}
+
+_bomb_objective_blink(){
+	//level endon( "disconnect" );
+	//level endon( "game_ended" );
+	//level endon( "intermission" );
+	
+	a=1; s="active";
+	cl("33_bomb_objective_blink started");
+	while(level.bombPlanted != true){ wait 0.5; }
+	cl("33Bomb planted!");
+	while(level.tp>5){
+		if(isDefined(level.bombPlantedBy)){
+			players = getentarray( "player", "classname" );
+			for(i=0;i<players.size;i++){ 
+				if(!players[i].isbot && players[i].pers["team"]=="axis"){
+					objective_state(players[i].objIDAxis, s);
+					objective_state(players[i].objIDAllies, s);
+					//cl("players[i].objIDAxis:"+players[i].objIDAllies);
+				}
+			}
+			if(level.bombPlantedBy == "axis"){
+				//cl("11axis bomb blinking!");
+			} else if(level.bombPlantedBy == "allies"){
+				//cl("44allies bomb blinking!");
+			}
+			wait 0.5;
+			if(a==1){ a=0; } else { a=1; }
+			if(s=="active"){ s="invisible"; } else { s="active"; }
+			//cl("11a:"+a);
+		}
+	}
+	cl("33_bomb_objective_blink ended");
 }
 
 _randomize_bomb_pos(){
@@ -3181,6 +3236,7 @@ _useSoldier(){
 							self.commanded.toCommander = self;
 							self.commanded.getInPos = undefined;
 							self.commanded PingPlayer();	
+							self.commanded.script_target = self;
 							self thread _set_hud_wpt("commanded","compass_waypoint_defend", 8,8,0.5,undefined,undefined,undefined,self.commanded,1,1);
    							self iprintln("^3You commanded "+self.commanded.name+"\n");
 							self _commander_snd(); 
@@ -3576,8 +3632,9 @@ _commander_snd(){
 				self playSound(self.bc);
 				break;
 			case "allies":
-	          	self playSound("ct_taunt"+randomIntRange(1, 10));
-				//self playSound("ct_taunt");
+	          	v1=randomIntRange(1,4);
+				v2=randomIntRange(1,10);
+				self playSound("ct_taunt"+v1+"_"+v2);
 				break;
 			default:
 				break;
@@ -3634,6 +3691,7 @@ _damaged(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint
 	if (isPlayer(self) && isAlive(self) && isDefined(iDamage) && iDamage>0){
 		self notify("stop_location_selection");
 		if (isDefined(eAttacker) && isPlayer(eAttacker)){ 
+			if(isDefined(eAttacker.isbot) && eAttacker.isbot){ eAttacker.pers["bots"]["skill"]["aim_time"]=3; }
 			weapon=eAttacker GetCurrentWeapon();
 			dist=distance(self.origin, eAttacker.origin);
 			if(sMeansOfDeath=="MOD_MELEE"){
@@ -3687,12 +3745,13 @@ _damaged(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint
 		}
 
 		//if (isDefined(self.lastStand)) { 
-		if (isDefined(self.lastStand)) { 
+		if (iDamage>=self.health) { 
 			self thread _suicide_pd(); 
 			self setClientDvar("m_pitch",0.002);
 			self setClientDvar("m_yaw",0.002);
 			//cl("33"+self.name+" has perk specialty_pistoldeath");
 		}
+		
 		if(self.isbot){ self botAction("-ads"); }
 		else { self allowADS(0); self allowADS(1); }
 		
@@ -3740,8 +3799,7 @@ _suicide_pd(){
 	self suicide();
 }
 
-_fs()
-{
+_fs(){
 	//wait 0.05;
 	//self endon ( "death" );
 	self endon ( "disconnect" );
@@ -3808,6 +3866,7 @@ _fs()
 			//self.pers["team"]="axis";
 			//self.sessionteam="axis";
 			self.sessionstate = "spectator";
+			self thread maps\mp\gametypes\_spectating::setSpectatePermissions();
 			//self notify("player_spawned");
 			//self suicide();
 		}
@@ -3819,9 +3878,11 @@ _fs()
 }
 
 _check_sleepers(){
-	self endon("game_ended");
 	self endon("disconnect");
-	//self endon ("death");
+	self endon("game_ended");
+	self endon("intermission");
+	self endon ("death");
+	
 	if (getdvarint("developer")>0){ return; }
 	if (self.isbot) { return; }
 	
@@ -3829,7 +3890,7 @@ _check_sleepers(){
 
 	if(isAlive(self)){
 		self.sleeping = 0;
-		sleepTime = 5;
+		sleepTime = 7;
 		self.pers["sleeping"] = false;
 		distance=0;
 		max_distance = 20;
@@ -3857,7 +3918,11 @@ _check_sleepers(){
 			
 				if(self.sleeping == sleepTime && self.pers["sleeping"])
 				{
-					self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( "^2No sleeping allowed!", "^3You have ^5"+ sleepTime +" seconds ^3to move", "", (1.0, 0.0, 0.0) );
+					str1="No sleeping allowed";
+					str2="You have "+(sleepTime-2)+" seconds to move";
+					self thread scripts\menus::_show_hint_msg(str1,0,2,320,70,0,0,"left","middle",0,0,"objective",1.6,3.6,(0.2,1,0.2),1,(0.2,0.3,0.7),1,1,true,undefined);
+					self thread scripts\menus::_show_hint_msg(str2,0.3,2,320,110,0,0,"left","middle",0,0,"objective",1.6,2.6,(1,0.2,0.2),1,(0.2,0.3,0.7),1,1,true,undefined);
+					//self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( "^2No sleeping allowed!", "^3You have ^5"+ sleepTime +" seconds ^3to move", "", (1.0, 0.0, 0.0) );
 					self playLocalSound(game["voice"][self.pers["team"]]+"new_positions");		
 				}
 				else if(self.sleeping == (sleepTime*2) && self.pers["sleeping"])
