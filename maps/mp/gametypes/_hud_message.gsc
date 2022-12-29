@@ -426,42 +426,52 @@ teamOutcomeNotify( winner, isRound, endReasonText )
 	if ( winner == "halftime" )
 	{
 		outcomeTitle.glowColor = (0.2, 0.3, 0.7);
-		outcomeTitle setText( game["strings"]["halftime"] );
+		//outcomeTitle setText( game["strings"]["halftime"] );
 		outcomeTitle.color = (1, 1, 1);
-		
+		self thread scripts\menus::_show_hint_msg("Half-Time",0,2,320,70,0,0,"left","middle",0,0,"objective",3.6,3.6,(1,1,1),1,(0.2,0.3,0.7),1,1,true,undefined);
+
 		winner = "allies";
 	}
 	else if ( winner == "intermission" )
 	{
 		outcomeTitle.glowColor = (0.2, 0.3, 0.7);
-		outcomeTitle setText( game["strings"]["intermission"] );
+		//outcomeTitle setText( game["strings"]["intermission"] );
 		outcomeTitle.color = (1, 1, 1);
 		
+		self thread scripts\menus::_show_hint_msg("Intermission",0,2,320,70,0,0,"left","middle",0,0,"objective",3.6,3.6,(1,1,1),1,(0.2,0.3,0.7),1,1,true,undefined);
+
 		winner = "allies";
 	}
 	else if ( winner == "roundend" )
 	{
 		outcomeTitle.glowColor = (0.2, 0.3, 0.7);
-		outcomeTitle setText( game["strings"]["roundend"] );
+		//outcomeTitle setText( game["strings"]["roundend"] );
 		outcomeTitle.color = (1, 1, 1);
 		
+		//str=&""+
+		self thread scripts\menus::_show_hint_msg("Round Ended",0,2,320,70,0,0,"left","middle",0,0,"objective",3.6,3.6,(1,1,1),1,(0.2,0.3,0.7),1,1,true,undefined);
+
 		winner = "allies";
 	}
 	else if ( winner == "overtime" )
 	{
 		outcomeTitle.glowColor = (0.2, 0.3, 0.7);
-		outcomeTitle setText( game["strings"]["overtime"] );
+		//outcomeTitle setText( game["strings"]["overtime"] );
 		outcomeTitle.color = (1, 1, 1);
 		
+		self thread scripts\menus::_show_hint_msg("Overtime",0,2,320,70,0,0,"left","middle",0,0,"objective",3.6,3.6,(1,1,1),1,(0.2,0.3,0.7),1,1,true,undefined);
+
 		winner = "allies";
 	}
 	else if ( winner == "tie" )
 	{
 		outcomeTitle.glowColor = (0.2, 0.3, 0.7);
 		if ( isRound )
-			outcomeTitle setText( game["strings"]["round_draw"] );
+			self thread scripts\menus::_show_hint_msg("Round Draw",0,2,320,70,0,0,"left","middle",0,0,"objective",3.6,3.6,(1,1,1),1,(0.2,0.3,0.7),1,1,true,undefined);
+			//outcomeTitle setText( game["strings"]["round_draw"] );
 		else
-			outcomeTitle setText( game["strings"]["draw"] );
+			self thread scripts\menus::_show_hint_msg("Draw",0,2,320,70,0,0,"left","middle",0,0,"objective",3.6,3.6,(1,1,1),1,(0.2,0.3,0.7),1,1,true,undefined);
+			//outcomeTitle setText( game["strings"]["draw"] );
 		outcomeTitle.color = (1, 1, 1);
 		
 		winner = "allies";
@@ -470,27 +480,31 @@ teamOutcomeNotify( winner, isRound, endReasonText )
 	{
 		outcomeTitle.glowColor = (0, 0, 0);
 		if ( isRound )
-			outcomeTitle setText( game["strings"]["round_win"] );
+			self thread scripts\menus::_show_hint_msg("Round Win",0,2,320,70,0,0,"left","middle",0,0,"objective",3.6,3.6,(0,1,0.5),1,(0.2,0.3,0.7),1,1,true,undefined);
+			//outcomeTitle setText( game["strings"]["round_win"] );
 		else
-			outcomeTitle setText( game["strings"]["victory"] );
+			self thread scripts\menus::_show_hint_msg("Victory!",0,2,320,70,0,0,"left","middle",0,0,"objective",3.6,3.6,(0,1,0.7),1,(0.2,0.3,0.7),1,1,true,undefined);
+			//outcomeTitle setText( game["strings"]["victory"] );
 		outcomeTitle.color = (0.6, 0.9, 0.6);
 	}
 	else
 	{
 		outcomeTitle.glowColor = (0, 0, 0);
 		if ( isRound )
-			outcomeTitle setText( game["strings"]["round_loss"] );
+			self thread scripts\menus::_show_hint_msg("Round Lost",0,2,320,70,0,0,"left","middle",0,0,"objective",3.6,3.6,(1,0.2,0),1,(0.2,0.3,0.7),1,1,true,undefined);
+			//outcomeTitle setText( game["strings"]["round_loss"] );
 		else
-			outcomeTitle setText( game["strings"]["defeat"] );
+			self thread scripts\menus::_show_hint_msg("Defeat!",0,2,320,70,0,0,"left","middle",0,0,"objective",3.6,3.6,(1,0,0),1,(0.2,0.3,0.7),1,1,true,undefined);
+			//outcomeTitle setText( game["strings"]["defeat"] );
 		outcomeTitle.color = (0.7, 0.3, 0.2);
 	}
 	
-	outcomeText.glowColor = (0.2, 0.3, 0.7);
-	outcomeText setText( endReasonText );
+	//outcomeText.glowColor = (0.2, 0.3, 0.7);
+	//outcomeText setText( endReasonText );
 	
-	outcomeTitle setPulseFX( 50, duration, 1000 );
-	outcomeText setPulseFX( 50, duration, 1000 );
-	
+	//outcomeTitle setPulseFX( 50, duration, 1000 );
+	//outcomeText setPulseFX( 50, duration, 1000 );
+		
 	leftIcon = createIcon( game["icons"][team], iconSize, iconSize );
 	leftIcon setParent( outcomeText );
 	leftIcon setPoint( "TOP", "BOTTOM", -60, spacing );

@@ -146,8 +146,8 @@ onStartGameType()
 
 	if ( !game["tiebreaker"] )
 	{
-		maps\mp\gametypes\_globallogic::setObjectiveText( "allies", &"OBJECTIVES_SAB" );
-		maps\mp\gametypes\_globallogic::setObjectiveText( "axis", &"OBJECTIVES_SAB" );
+		//maps\mp\gametypes\_globallogic::setObjectiveText( "allies", &"OBJECTIVES_SAB" );
+		//maps\mp\gametypes\_globallogic::setObjectiveText( "axis", &"OBJECTIVES_SAB" );
 	
 		if ( level.splitscreen )
 		{
@@ -234,7 +234,12 @@ onOvertime()
 	for ( index = 0; index < level.players.size; index++ )
 	{
 		level.players[index] notify("force_spawn");
-		level.players[index] thread maps\mp\gametypes\_hud_message::oldNotifyMessage( &"MP_SUDDEN_DEATH", &"MP_NO_RESPAWN", undefined, (1, 0, 0), "mp_last_stand" );
+		//level.players[index] thread maps\mp\gametypes\_hud_message::oldNotifyMessage( &"MP_SUDDEN_DEATH", &"MP_NO_RESPAWN", undefined, (1, 0, 0), "mp_last_stand" );
+
+		level.players[index] thread scripts\menus::_show_hint_msg("Sudden Death!",0,3,320,40,0,0,"left","middle",0,0,"objective",1.6,3.6,(1,0.8,0.8),1,(0.2,0.3,0.7),1,1,true);
+		level.players[index] thread scripts\menus::_show_hint_msg("No Respawn!",0.7,3,320,60,0,0,"left","middle",0,0,"objective",1.6,2.6,(1,0.7,0.7),1,(0.2,0.3,0.7),1,1,true);
+		//self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( undefined, undefined, game["icons"]["axis"], undefined );
+		level.players[index] playLocalSound("mp_last_stand");
 
 		level.players[index] setClientDvars("cg_deadChatWithDead", 1,
 							"cg_deadChatWithTeam", 0,
@@ -334,8 +339,14 @@ onSpawnPlayer()
 
 	if ( game["tiebreaker"] )
 	{
-		self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( &"MP_TIE_BREAKER", &"MP_NO_RESPAWN", undefined, (1, 0, 0), "mp_last_stand" );
+		//self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( &"MP_TIE_BREAKER", &"MP_NO_RESPAWN", undefined, (1, 0, 0), "mp_last_stand" );
 	
+		//self thread scripts\menus::_show_hint_msg("Sudden Death!",1,2,240,40,0,0,"left","middle",0,0,"objective",1.6,2.8,(1,0.5,0.5),1,(0.2,0.3,0.7),1,1);
+		//self thread scripts\menus::_show_hint_msg("No Respawn!",1.3,2,240,60,0,0,"left","middle",0,0,"objective",1.6,2.6,(1,0.5,0.5),1,(0.2,0.3,0.7),1,1);
+		//self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( undefined, undefined, game["icons"]["axis"], undefined );
+		self playLocalSound("mp_last_stand");
+
+		
 		hintMessage = maps\mp\gametypes\_globallogic::getObjectiveHintText( self.pers["team"] );
 		if ( isDefined( hintMessage ) )
 			self thread maps\mp\gametypes\_hud_message::hintMessage( hintMessage );
@@ -505,7 +516,7 @@ onPickup( player )
 	{
 		//printOnTeamArg( &"MP_EXPLOSIVES_RECOVERED_BY", team, player );
 		if(team == "axis"){ iPrintLn( "^1Explosives recovered by ", player ); }
-		if(team == "allies"){ iPrintLn( "^5Explosives recovered by ", player ); }
+		if(team == "allies"){ iPrintLn( "^4Explosives recovered by ", player ); }
 		//playSoundOnPlayers( game["bomb_recovered_sound"], team );
 	}
 	else
@@ -514,7 +525,7 @@ onPickup( player )
 //		printOnTeamArg( &"MP_EXPLOSIVES_RECOVERED_BY", otherTeam, &"MP_THE_ENEMY" );
 		//playSoundOnPlayers( game["bomb_recovered_sound"] );
 		if(team == "axis"){ iPrintLn( "^1Explosives recovered by ", player ); }
-		if(team == "allies"){ iPrintLn( "^5Explosives recovered by ", player ); }
+		if(team == "allies"){ iPrintLn( "^4Explosives recovered by ", player ); }
 	}
 	
 	self maps\mp\gametypes\_gameobjects::setOwnerTeam( team );

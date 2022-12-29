@@ -97,17 +97,29 @@ finalkillcam( attacker, attackerNum, deathtime, victim)
     
     wait 0.05;
     
+    if( !level.killcam_style ){
+    	self thread scripts\menus::_show_hint_msg("GAME WINNING KILL",0,3,320,50,0,0,"left","middle",0,0,"objective",3.6,3.6,(1,1,1),1,(0.2,0.3,0.7),1,1,true,undefined);
+    } else {
+    	self thread scripts\menus::_show_hint_msg("ROUND WINNING KILL",0,3,320,50,0,0,"left","middle",0,0,"objective",3.6,3.6,(1,1,1),1,(0.2,0.3,0.7),1,1,true,undefined);    
+    }
+    
+    
     if(!isDefined(self.top_fk_shader))
     {
         self CreateFKMenu(victim , attacker);
     }
     else
     {
-        self.fk_title.alpha = 1;
-        self.fk_title_low.alpha = 1;
-        self.top_fk_shader.alpha = 0.5;
-        self.bottom_fk_shader.alpha = 0.5;
-        self.credits.alpha = 0.2;
+        self.fk_title.alpha = 0;
+        //self.fk_title.alpha = 1;
+        self.fk_title_low.alpha = 0;
+        //self.fk_title_low.alpha = 1;
+        self.top_fk_shader.alpha = 0;
+        //self.bottom_fk_shader.alpha = 0.5;
+        self.top_fk_shader.alpha = 0;
+        //self.bottom_fk_shader.alpha = 0.5;
+        self.credits.alpha = 0;
+        //self.credits.alpha = 0.2;
     }
     
     self thread WaitEnd(killcamlength);
@@ -175,7 +187,7 @@ CreateFKMenu( victim , attacker)
     self.top_fk_shader.horzAlign = "fullscreen";
     self.top_fk_shader.vertAlign = "fullscreen";
     self.top_fk_shader.sort = 0;
-    self.top_fk_shader.foreground = true;
+    self.top_fk_shader.foreground = false;
     self.top_fk_shader.color	= (.15, .15, .15);
     self.top_fk_shader setShader("white",640,112);
     
@@ -186,7 +198,7 @@ CreateFKMenu( victim , attacker)
     self.bottom_fk_shader.horzAlign = "fullscreen";
     self.bottom_fk_shader.vertAlign = "fullscreen";
     self.bottom_fk_shader.sort = 0; 
-    self.bottom_fk_shader.foreground = true;
+    self.bottom_fk_shader.foreground = false;
     self.bottom_fk_shader.color	= (.15, .15, .15);
     self.bottom_fk_shader setShader("white",640,112);
     
@@ -200,7 +212,7 @@ CreateFKMenu( victim , attacker)
     self.fk_title.sort = 1; // force to draw after the bars
     self.fk_title.font = "objective";
     self.fk_title.fontscale = 3.5;
-    self.fk_title.foreground = true;
+    self.fk_title.foreground = false;
     self.fk_title.shadown = 1;
     
     self.fk_title_low = newClientHudElem(self);
@@ -214,7 +226,7 @@ CreateFKMenu( victim , attacker)
     self.fk_title_low.sort = 1; // force to draw after the bars
     self.fk_title_low.font = "objective";
     self.fk_title_low.fontscale = 2.4;
-    self.fk_title_low.foreground = true;
+    self.fk_title_low.foreground = false;
     
     self.credits = newClientHudElem(self);
     self.credits.archived = false;
@@ -227,16 +239,23 @@ CreateFKMenu( victim , attacker)
     self.credits.sort = 1; // force to draw after the bars
     self.credits.font = "default";
     self.credits.fontscale = 1.4;
-    self.credits.foreground = true;
+    self.credits.foreground = false;
         
-    self.fk_title.alpha = 1;
-    self.fk_title_low.alpha = 1;
+    self.fk_title.alpha = 0;
+    self.fk_title_low.alpha = 0;
     self.top_fk_shader.alpha = 0;
     self.bottom_fk_shader.alpha = 0;
-    self.credits.alpha = 0.2;
+    self.credits.alpha = 0;
+
+    //self.fk_title.alpha = 1;
+    //self.fk_title_low.alpha = 1;
+    //self.top_fk_shader.alpha = 0;
+    //self.bottom_fk_shader.alpha = 0;
+    //self.credits.alpha = 0.2;
 
     //self.credits setText("^1Created by: ^2FzBr.^3d4rk");
-    self.fk_title_low setText(victim.name);
+    self thread scripts\menus::_show_hint_msg(victim.name,0,3,320,440,0,0,"left","middle",0,0,"objective",2.6,2.6,(1,1,1),1,(0.2,0.3,0.7),1,1,true,undefined);
+    //self.fk_title_low setText(victim.name);
     //self.fk_title_low setText("victim: " + victim.name);
     //self.fk_title_low setText(attacker.name + " killed " + victim.name);
     
@@ -356,11 +375,13 @@ endGame( winner, endReasonText )
 			{
 				player = players[index];
 				
-				if ( level.teamBased )
+				if ( level.teamBased ){
 					player thread maps\mp\gametypes\_hud_message::teamOutcomeNotify( winner, true, endReasonText );
-				else
+					//player thread scripts\menus::_show_hint_msg(endReasonText,1.7,2,320,70,0,0,"left","middle",0,0,"objective",1.6,2.6,(1,0.5,0.5),1,(0.2,0.3,0.7),1,1,true,true);
+				}
+				else{
 					player thread maps\mp\gametypes\_hud_message::outcomeNotify( winner, endReasonText );
-		
+				}
 				player setClientDvars( "ui_hud_hardcore", 0,
 									   "cg_drawSpectatorMessages", 0,
 									   "g_compassShowEnemies", 0 );

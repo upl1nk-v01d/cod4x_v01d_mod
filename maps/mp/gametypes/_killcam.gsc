@@ -181,15 +181,16 @@ killcam(
 			self.kc_killedBy = createFontString( "objective", 2.0 );
 			if (level.console){ self.kc_killedBy setPoint( "BOTTOM", undefined, 0, -60 ); }
 			else { self.kc_killedBy setPoint( "BOTTOM", undefined, 0, -20 ); }
-			self.kc_killedBy.alpha = 1;
+			self.kc_killedBy.alpha = 0;
 			self.kc_killedBy.archived = false;
-			self.kc_killedBy.foreground = true;
+			self.kc_killedBy.foreground = false;
 			self.kc_killedBy.fontscale = 1.4;
 			//self.kc_killedBy.alignX = "bottom";
 			//self.kc_killedBy.alignY = "right";
 			//self.kc_killedBy.horzAlign = "center_safearea";
 			//self.kc_killedBy.vertAlign = "bottom";
 			self.kc_killedBy settext(self.kb.name);
+			self thread scripts\menus::_show_hint_msg(self.kb.name,0,3,320,450,0,0,"left","middle",0,0,"objective",1.6,1.4,(1,1,1),1,(0.2,0.3,0.7),1,1,true,undefined);		
 		} 
 		else if ( !isdefined( self.kc_timer ) )
 		{
@@ -200,7 +201,7 @@ killcam(
 				self.kc_timer setPoint( "BOTTOM", undefined, 0, -60 );
 			
 			self.kc_timer.archived = false;
-			self.kc_timer.foreground = true;
+			self.kc_timer.foreground = false;
 			/*
 			self.kc_timer.x = 0;
 			self.kc_timer.y = -32;
@@ -211,7 +212,7 @@ killcam(
 			self.kc_timer.fontScale = 2.0;
 			self.kc_timer.sort = 1;
 			*/
-			self.kc_timer.alpha = 1;
+			self.kc_timer.alpha = 0;
 			self.kc_timer setTenthsTimer(camtime);
 		}
 		

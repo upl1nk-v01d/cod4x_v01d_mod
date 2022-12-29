@@ -665,7 +665,15 @@ spawnPlayer()
 				level.playedStartingMusic = true;
 		}
 		
-		thread maps\mp\gametypes\_hud_message::oldNotifyMessage( game["strings"][team + "_name"], undefined, game["icons"][team], game["colors"][team] );
+		if(self.pers["team"] == "axis"){ 
+			self thread scripts\menus::_show_hint_msg("Terrorists",1,2,320,40,0,0,"left","middle",0,0,"objective",3.6,2.6,(1,0.5,0.2),1,(0.2,0.3,0.7),1,1,true);
+			self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( undefined, undefined, game["icons"]["axis"], undefined );
+		} else if(self.pers["team"] == "allies"){
+			self thread scripts\menus::_show_hint_msg("Marines",1,2,320,40,0,0,"left","middle",0,0,"objective",3.6,2.6,(0.2,0.7,1),1,(0.2,0.3,0.7),1,1,true);
+			self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( undefined, undefined, game["icons"]["allies"], undefined );
+		}
+	
+		//thread maps\mp\gametypes\_hud_message::oldNotifyMessage( game["strings"][team + "_name"], undefined, game["icons"][team], game["colors"][team] );
 		//thread maps\mp\gametypes\_hud_message::oldNotifyMessage( game["strings"][team + "_name"], undefined, game["icons"][team], game["colors"][team], music );
 		if ( isDefined( game["dialog"]["gametype"] ) && (!level.splitscreen || self == level.players[0]) )
 			self leaderDialogOnPlayer( "gametype" );
@@ -689,7 +697,14 @@ spawnPlayer()
 					level.playedStartingMusic = true;
 			}
 			
-			thread maps\mp\gametypes\_hud_message::oldNotifyMessage( game["strings"][team + "_name"], undefined, game["icons"][team], game["colors"][team] );
+			if(self.pers["team"] == "axis"){ 
+				self thread scripts\menus::_show_hint_msg("Terrorists",1,2,320,40,0,0,"left","middle",0,0,"objective",3.6,2.6,(1,0.5,0.2),1,(0.2,0.3,0.7),1,1,true);
+				self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( undefined, undefined, game["icons"]["axis"], undefined );
+			} else if(self.pers["team"] == "allies"){
+				self thread scripts\menus::_show_hint_msg("Marines",1,2,320,40,0,0,"left","middle",0,0,"objective",3.6,2.6,(0.2,0.7,1),1,(0.2,0.3,0.7),1,1,true);
+				self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( undefined, undefined, game["icons"]["allies"], undefined );
+			}
+			
 			//thread maps\mp\gametypes\_hud_message::oldNotifyMessage( game["strings"][team + "_name"], undefined, game["icons"][team], game["colors"][team], music );
 			if ( isDefined( game["dialog"]["gametype"] ) && (!level.splitscreen || self == level.players[0]) )
 			{
@@ -5344,14 +5359,14 @@ Callback_PlayerLastStand( eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon,
 
 	notifyData = spawnStruct();
 	notifyData.titleText = undefined;
-	//notifyData.titleText = game["strings"]["last_stand"]; //"Last Stand!";
+	notifyData.titleText = game["strings"]["last_stand"]; //"Last Stand!";
 	notifyData.iconName = undefined;
-	//notifyData.iconName = "specialty_pistoldeath";
+	notifyData.iconName = "specialty_pistoldeath";
 	notifyData.glowColor = (1,0,0);
 	notifyData.sound = "mp_last_stand";
 	notifyData.duration = 2.0;
 
-	self thread maps\mp\gametypes\_hud_message::notifyMessage( notifyData );
+	//self thread maps\mp\gametypes\_hud_message::notifyMessage( notifyData );
 
 	grenadeTypePrimary = "frag_grenade_mp";
 
