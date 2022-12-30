@@ -1,5 +1,6 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
+#include scripts\cl;
 
 init()
 {
@@ -66,18 +67,37 @@ init()
 		level.weaponlist[level.weaponlist.size] = level.weaponIDs[i];
 	}
 
+	precached=0;
+
+level.botsWeapons=[];	level.skipPrecacheItem=StrTok("m16_mp,m16_reflex_mp,m16_silencer_mp,m16_acog_mp,m16_gl_mp,barrett_mp,barrett_acog_mp,skorpion_silencer_mp,skorpion_acog_mp,skorpion_reflex_mp,uzi_reflex_mp,uzi_silencer_mp,uzi_acog_mp,ak74u_silencer_mp,ak74u_acog_mp,m14_reflex_mp,p90_reflex_mp,ak47_reflex_mp,g3_reflex_mp,g36c_reflex_mp,m4_reflex_mp,m1014_grip_mp,m1014_reflex_mp,winchester1200_grip_mp,winchester1200_reflex_mp,rpd_acog_mp,rpd_grip_mp,rpd_reflex_mp,saw_acog_mp,saw_grip_mp,saw_reflex_mp,m60e4_acog_mp,m60e4_grip_mp,m60e4_reflex_mp", "," ); // those weapons will be not available in-game
 	// based on weaponList array, precache weapons in list
 	for ( index = 0; index < level.weaponList.size; index++ )
 	{
+		skip=undefined;
+		for(j=0;j<level.skipPrecacheItem.size;j++){
+			if(level.skipPrecacheItem[j] == level.weaponList[index]){ 
+				skip=true;
+				cl("33Skipped item precache: " + level.skipPrecacheItem[j]);
+				break;
+			}
+		}
+		if(isDefined(skip)){ continue; }
 		precacheItem( level.weaponList[index] );
+		level.botsWeapons[level.botsWeapons.size]=level.weaponList[index];
+		precached++;
+		cl("Precached nr "+precached+" weapon: " + level.weaponList[index]);
 		//println( "Precached weapon: " + level.weaponList[index] );	
 	}
-
-	precacheItem( "frag_grenade_short_mp" );
 	
-	precacheItem( "destructible_car" );	
+	precacheItem( "frag_grenade_short_mp" ); precached++;
+	cl("Precached nr "+precached+" frag_grenade_short_mp");
+
+	precacheItem( "destructible_car" ); precached++;
+	cl("Precached nr "+precached+" destructible_car");
 	
 	precacheModel( "weapon_rpg7_stow" );
+	
+	cl("33Totally precached precached "+precached+" items!");
 	
 	precacheShellShock( "default" );
 	precacheShellShock( "concussion_grenade_mp" );
