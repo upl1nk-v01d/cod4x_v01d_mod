@@ -44,7 +44,7 @@ init()
 	level._weapons = StrTok("knife_mp,tac330_sil_mp,svg100_mp,rw1_mp,ak74u_mp,dragunov_mp,g3_mp,m14_mp,m21_mp,m4_mp,mp44_mp,remington700_mp,uzi_mp,m1014_mp,law_mp,at4_bo_mp,mm1_mp,striker_mp", "," );
 	for (i=0;i<level._weapons.size;i++){
 		PrecacheItem(level._weapons[i]);
-		cl ("Weapon precached: " + level._weapons[i]);
+		//cl ("Weapon precached: " + level._weapons[i]);
 	}
 	level.hudMarkers = [];
 	level.slowMo=false;
@@ -219,7 +219,6 @@ init()
 		player thread _grenade_owner();
 		player thread _projectiles_owner();
 		player thread _menu_response();
-		player thread _hp_weapons_list();
 
 		//tm++;  ctm++;
 		//if (tm > 13) { tm=1; }
@@ -395,6 +394,7 @@ _player_spawn_loop(){
 		//self thread _bot_explosives_pickup();
 		self thread _weapon_cock_sound();
 		self thread _player_mouse();
+		self thread _hp_weapons_list();
 		
 		//self thread _dev_coords();
 		//self thread _dev_weapon_test();
@@ -680,10 +680,10 @@ _hp_weapons_list(){
 			for(i=0;i<weaponsList.size;i++){
 				//cl("33"+weaponsList[i]);
 				if(isDefined(weaponsList[i])){
-					if (isSubStr(weaponsList[i], "radar_mp") && self getAmmoCount(weaponsList[i]>0)){ self setClientDvar( "ui_uav_client", 1 ); }
-					if (isSubStr(weaponsList[i], "airstrike_mp") && self getAmmoCount(weaponsList[i]>0)){ self setClientDvar( "ui_airstrike_client", 1 ); }
-					if (isSubStr(weaponsList[i], "helicopter_mp") && self getAmmoCount(weaponsList[i]>0)){ self setClientDvar( "ui_helicopter_client", 1 ); }
-					if (isSubStr(weaponsList[i], "artillery_mp") && self getAmmoCount(weaponsList[i]>0)){ self setClientDvar( "ui_artillery_client", 1 ); }
+					if (isSubStr(weaponsList[i], "radar_mp") && self getAmmoCount(weaponsList[i]>0)){ self setClientDvar( "ui_uav_client", 1 ); } else { self setClientDvar( "ui_uav_client", 0 ); }
+					if (isSubStr(weaponsList[i], "airstrike_mp") && self getAmmoCount(weaponsList[i]>0)){ self setClientDvar( "ui_airstrike_client", 1 ); } else { self setClientDvar( "ui_airstrike_client", 0 ); }
+					if (isSubStr(weaponsList[i], "helicopter_mp") && self getAmmoCount(weaponsList[i]>0)){ self setClientDvar( "ui_helicopter_client", 1 ); } else { self setClientDvar( "ui_helicopter_client", 0 ); }
+					if (isSubStr(weaponsList[i], "artillery_mp") && self getAmmoCount(weaponsList[i]>0)){ self setClientDvar( "ui_artillery_client", 1 ); } else { self setClientDvar( "ui_artillery_client", 0 ); }
 				}
 			}
 		}
@@ -2107,10 +2107,12 @@ _dev_weapon_test(){
 	if (getdvarint("bots_main_debug")>0) { return; }  
 	if(self.isbot){ return; }
 	
-	give = "at4_bo";
+	give = "winchester1200_reflex";
 
 	wait 1;
 	give+="_mp";
+	
+	cl("33_dev_weapon_test on "+self.name);
 	
 	for(;;){
 		if (isAlive(self)){
@@ -2124,7 +2126,7 @@ _dev_weapon_test(){
 				//self SetActionSlot( 1, "", give );
 
 				//self setActionSlot(4,"weapon",give);
-				//self switchToWeapon("airstrike_mp");
+				self switchToWeapon(give);
 				//self SetSpawnWeapon(give);
 			}
 		}
@@ -3961,18 +3963,27 @@ _changeBotWeapon(){
 	self endon("game_ended");
 	self endon("disconnect");
 	if(!self.isbot) { return; }
-	wait 1;
-	if (randomFloatRange(0.1, 2.0) < 1.3){
-		self takeAllWeapons(); 
-		i=randomIntRange(0,level._weapons.size);
-		if(level._weapons[i] != "knife_mp"){
-			self GiveWeapon( level._weapons[i] );
-			self setSpawnWeapon(level._weapons[i]);
-			self giveMaxAmmo(level._weapons[i]);
-			//cl(self.name + " the " + level._weapons[i] + " is given"); 
+	wait 0.1;
+	self takeAllWeapons(); 
+	wait 0.5;
+	wait randomFloatRange(0.3,2);
+	for(i=0;i<2;i++){	//give 2 weapons to bots
+		w1=randomIntRange(0,level._weapons.size);
+		w2=randomIntRange(0,level.botsWeapons.size);
+		if(randomIntRange(0,5)<3){
+			if(level._weapons[w1] != "knife_mp"){
+				self GiveWeapon( level._weapons[w1] );
+				self switchToWeapon(level._weapons[w1]);
+				self giveMaxAmmo(level._weapons[w1]);
+				//cl(self.name + " the " + level._weapons[w1] + " is given from level._weapons"); 
+			} else { i=-1; }
+		} else {
+			self GiveWeapon( level.botsWeapons[w2] );
+			self switchToWeapon(level.botsWeapons[w2]);
+			self giveMaxAmmo(level.botsWeapons[w2]);
+			//cl(self.name + " the " + level.botsWeapons[w2] + " is given from level.botsWeapons"); 
 		}
 	}
-
 }
 
 _melee()
