@@ -49,6 +49,7 @@ init()
 	}
 	level.hudMarkers = [];
 	level.slowMo=false;
+	level.gracePeriod = 90;
 	
 	//for(i=0;i<level._gametypes;i+=2){ 
 	//	if(level._gametypes[i]==getDvar("mapname")){ setDvar("g_gametype",level._gametypes[i+1]); break; }
@@ -967,9 +968,10 @@ _maps_randomizer(){
 			level waittill("end_killcam"); 
 			cl("33_maps_randomizer-fk ended");			
 			cl("22next map: "+game["nextMap"]);
+			if(getDvar("g_gametype")!="sab"){ setDvar("g_gametype","sab"); }
 			for(i=0;i<level._gametypes.size;i+=2){ 
 				if(level._gametypes[i]==game["nextMap"]){ setDvar("g_gametype",level._gametypes[i+1]); break; }
-				else{ setDvar("g_gametype","sab"); }
+				//else{ setDvar("g_gametype","sab"); }
 			}
 			wait getDvarFloat( "scr_intermission_time" )-1.5;
 			exec("map " + game["nextMap"]+" 0");
@@ -1927,11 +1929,11 @@ _killed(eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, t
 	}
 
 	//self finishPlayerDamage( eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, psOffsetTime );
-	//if(isAlive(self)){
+	if(isDefined(level.originalcallbackPlayerKilled)){
 		self [[level.originalcallbackPlayerKilled]](eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, timeOffset, deathAnimDuration);
-	//}
+	}
 	
-	wait (0.10);
+	//wait (0.10);
 }
 
 _linkto(ent, del, dur){
@@ -2682,7 +2684,7 @@ _bomb_file(mapname)
 
 _sab_bomb_visibility(){
 	level endon ( "disconnect" );
-	//wait 1;
+	wait 1;
 	//alpha_axis=0; alpha_allies=0;
 	axisGotRadar=false;
 	alliesGotRadar=false;
@@ -3063,7 +3065,7 @@ _recoil(){
 				//cl("^1ammocount_old: "+ammocount_old);
 				if(ammocount == ammocount_old) { continue; }
 				else if (isDefined(wclass) && (wclass == "pistol" || wclass == "bolt")){
-					self thread _firing(k*0.8);
+					//self thread _firing(k*0.8);
 					//cl("^1"+self.name+" pistol/bolt: "+ammocount); 
 					ammocount_old = ammocount;
 					self.hasFiredInterval = 1000/((gettime() - self.hasFiredIntervalPrev)+0.1);
@@ -3074,7 +3076,7 @@ _recoil(){
 					self.firingXP+=0.01;
 				}
 				else { 
-					self thread _firing(k*0.5);
+					//self thread _firing(k*0.5);
 					//cl("^3"+self.name+" ammocount "+ammocount); 
 					ammocount_old = ammocount;
 					self.hasFiredInterval = 1000/((gettime() - self.hasFiredIntervalPrev)+0.1);
@@ -3759,7 +3761,7 @@ _damaged(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint
 
 		//if (isDefined(self.lastStand)) { 
 		if (iDamage >= self.health+1) {
-			self thread _suicide_pd(); 
+			self thread _suicide_pd(30); 
 			self setClientDvar("m_pitch",0.002);
 			self setClientDvar("m_yaw",0.002);
 			//cl("33"+self.name+" has perk specialty_pistoldeath");
@@ -3791,12 +3793,14 @@ _moveSpeed(){
 	}
 }
 
-_suicide_pd(){
-	//self endon ( "death" );
+_suicide_pd(seconds){
+	self endon ( "death" );
 	self endon ( "disconnect" );
 	self endon( "intermission" );
 	self endon( "game_ended" );
 
+	if(!isDefined(seconds)){ seconds=30; }
+	
 	weaponslist = self GetWeaponsList();
 	weapon = self getCurrentWeapon();
 	//cl(weapon);
@@ -3808,8 +3812,11 @@ _suicide_pd(){
 	self SetWeaponAmmoClip( "frag_grenade_mp", 1 );
 	self SwitchToOffhand( "frag_grenade_mp" );
 	self SwitchToWeapon( "frag_grenade_mp" );
-	wait 6;
+	self thread _flash("blur",4,1,30,1);
+	self thread _flash("bright",4,1,30,1);
+	wait seconds;
 	self suicide();
+	//if(isAlive(self)) { self suicide(); }
 }
 
 _fs(){
@@ -3858,10 +3865,11 @@ _fs(){
 		if (game["isJoinedSpectators"][self.name]==false){
 		//if (self.pers["team"]!="spectator"  || self.sessionstate!="spectator"){
 			self [[level.class]]("custom1");
-			if(level.tp<120){ 
+			if(level.tp<level.gracePeriod){ 
 				self.pers["team"]=self.sessionteam;
 				self.pers["lives"]=getDvarInt("scr_sab_numlives");
-				if(level.tp>15 && self.hasSpawned!=true){ self [[level.spawnPlayer]](); self.pers["lives"]=1; }
+				//if(level.tp>15 && self.hasSpawned!=true){ self [[level.spawnPlayer]](); self.pers["lives"]=1; }
+				if(level.tp>30 && self.hasSpawned!=true){ self.pers["lives"]=1; }
 				else { self.pers["lives"] = getDvarInt("scr_sab_numlives")-1; }
 				//self.sessionstate = "playing";
 				//self notify("spawned");
@@ -4129,6 +4137,8 @@ _quick_killcam(victim, attackerNum, killcamentity, sWeapon, attacker){
 }
 
 _flash(type,amp,dur,t1,t2){
+	self endon("disconnect");
+
 	if (self.isbot) { return; }
 	if(!isDefined(dur)){ dur=0; }
 	if(!isDefined(amp)){ amp=2; }
