@@ -6,6 +6,7 @@
 init(){
 	//if (!getdvarint("developer")>0){ return; }
 	if (getdvarint("bots_main_debug")>0){ return; }
+	if (getdvarint("dev")>0){ return; }
 	
 	if (!isDefined(game["hasReadMOTD"])){ game["hasReadMOTD"]=[]; }
 	if (!isDefined(game["hasReadHintMessage"])){ game["hasReadHintMessage"]=[]; }
@@ -42,6 +43,7 @@ _connected_loop(){
 		player thread _welcome_msg();
 		player thread _spawn_loop();
 		player thread _map_datetime_menu();
+		player thread _dev_test_hud();
 		//player _show_message(1,"test test test test",2,(1,1,0),1,(1,1,0),1,"center","middle",-200,-80,"default",1.4,1.6,0);
 		//wait 0.5;
 		//player _show_message(1,"test test test test",2,(1,1,0),1,(1,1,0),1,"center","middle",-200,-60,"default",1.4,1.6,0);
@@ -49,6 +51,18 @@ _connected_loop(){
 		//player thread _keystrokes();
 		//wait 0.1;
 		//player setClientDvar( "ui_lobbypopup", "summary" );
+		
+	}
+}
+
+_dev_test_hud(){
+	if(!self.isbot){
+		wait 0.5;
+
+		//self thread scripts\menus::_show_hint_msg("GAME WINNING KILL",0,3,320,50,0,0,"left","middle",0,0,"objective",1.6,3.6,(1,1,1),1,(0.2,0.3,0.7),1,1,true,undefined);
+		//str=game["strings"]["roundend"];
+		//self thread scripts\menus::_show_hint_msg(str,1.7,2,320,70,0,0,"left","middle",0,0,"objective",1.6,2.6,(1,0.5,0.5),1,(0.2,0.3,0.7),1,1,true,true);
+		//iPrintLn( &"MP_EXPLOSIVES_PLANTED_BY", self );
 	}
 }
 
@@ -76,8 +90,8 @@ _spawn_loop(){
 			//self _show_message(1,"press ADS button to return",2,(1,1,0),1,(1,1,0),1,"center","middle",-200,-80,"default",1.4,1.6,1);
 			//self thread _show_message(0,"TEST TEST TEST",1,1,1,0,1,-200,-80);
 			
-			self _show_hint_msg("press FIRE button to select",1,2,-20,300,0,0,"left","middle",0,0,"default",1.6,1.6,(1,1,0),1,(1,1,0),1,1);
-			self _show_hint_msg("press ADS button to return",1,2,-20,310,0,0,"left","middle",0,0,"default",1.6,1.6,(1,1,0),1,(1,1,0),1,1);
+			self thread _show_hint_msg("press FIRE button to select",1,3,0,300,0,0,"left","middle",0,0,"default",1.6,1.6,(1,1,0),1,(1,1,0),0.5,1);
+			self thread _show_hint_msg("press ADS button to return",1.3,3,0,318,0,0,"left","middle",0,0,"default",1.6,1.6,(1,1,0),1,(1,1,0),0.5,1);
 			//_show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort){
 			//delay,txt,dur,r,g,b,a,ox,oy
 			game["hasReadHintMessage"][self.name]=true;
@@ -134,8 +148,8 @@ _create_menu_text(hud,arr,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,sele
 	if(!isDefined(h)){ h=0; }
 	if(!isDefined(ox)){ ox=0; }
 	if(!isDefined(oy)){ oy=0; }
-	if(!isDefined(ax)){ ax="center"; } //left center right
-	if(!isDefined(ay)){ ay="middle"; } //top middle bottom
+	if(!isDefined(ax)){ ax="left"; } //left center right
+	if(!isDefined(ay)){ ay="top"; } //top middle bottom
 	if(!isDefined(color)){ color=(1,1,1); }
 	if(!isDefined(a)){ a=1; }
 	if(!isDefined(ft)){ ft="default"; }
@@ -153,6 +167,8 @@ _create_menu_text(hud,arr,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,sele
 	//cl("^3arr.size:"+arr.size);
 	//cl("^3size:"+size);
 	//cl("^3div:"+div);
+	
+	x+=ox; y+=oy;
 	for(i=0;i<size;i++){
 		//cl("33i:"+i);
 		self.money[hud][i] = undefined;
@@ -161,8 +177,8 @@ _create_menu_text(hud,arr,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,sele
 		self.money[hud][i].y = y;
 		self.money[hud][i].width = w;
 		self.money[hud][i].height = h;
-		self.money[hud][i].xOffset = ox;
-		self.money[hud][i].yOffset = oy;
+		//self.money[hud][i].xOffset = ox;
+		//self.money[hud][i].yOffset = oy;
 		self.money[hud][i].alignX = ax; //left center right
 		self.money[hud][i].alignY = ay; //top middle bottom
 	
@@ -186,10 +202,11 @@ _create_menu_text(hud,arr,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,sele
 		self.money[hud][i].fontscale = fsc;
 		self.money[hud][i].font = ft;
 		self.money[hud][i].color = color;
-		//self.money[hud][i].archived = false;
+		self.money[hud][i].archived = false; //this was a pain to find out why in killcam no text alpha
 		//self.money[hud][i].children = [];		
 		//self.money[hud][i] setParent(level.uiParent);
 		self.money[hud][i].hidden = false;
+		self.money[hud][i].hideWhenInMenu = false;
 		//self.money[hud][i] setpoint(ax, ay, ox, oy+i*10);
 		//self.money[hud][i] setSize( 640, 480 );
 		if(isDefined(selector) && selector-1 == i) { 
@@ -376,9 +393,9 @@ _get_motd_txt(d){
 	line = FS_ReadLine(csv);
 	lines[0]="^2"+realDate+"\n";
 	lines[1]="\n\n";
-	while (isDefined(line) && line != ""){
+	while (isDefined(line)){
 		cl("^3line: " + line);
-		if (line == "") { continue; }
+		//if (line == "") { lines[1]+="\n"; }
 		lines[1]+=line+"\n";
 		line = FS_ReadLine(csv);
 	}
@@ -537,13 +554,13 @@ _show_message(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,color,a,gc,ga,ft,fsz,fsc,sort){
 	cl("33ended show_message");
 }
 
-_show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort){
+_show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,cx,cy,override){
 	self endon ( "disconnect" );
 	//self endon ( "death" );
-	self endon( "intermission" );
-	self endon( "game_ended" );
+	//self endon( "intermission" );
+	//self endon( "game_ended" );
 	if (self.isbot){ return; }
-	if (!isDefined(self.buyMenuShow)){ return; }
+	//if (!isDefined(self.buyMenuShow)){ return; }
 	//if (!isDefined(txt)){ return; }
 	if (!isDefined(txt)){ cl("11no txt defined!"); return; }
 	if (!isDefined(delay)){ delay=1; }
@@ -565,20 +582,23 @@ _show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort){
 	if (!isDefined(fsc)){ fsc=1.4; }
 	if (!isDefined(sort)){ sort=1; }
 	
-	_a=a;
+	level.msgID++;
+	_a=a; msgID=level.msgID;
 	hudHint=[];
 	hudHint[0]="";
-	self.showHint=true;
+	//self.showHint=true;
 	wait delay;
 	size=0;
 	blob="asdfghjklqwertyuiopzxcvbnm";
 	c=3;
 	ntxt=txt;
 	//cl("^3_show_hint_msg");
-	cl("33hintmsg:"+txt);
-	//cl("33"+size);
+	//cl("33hintmsg:"+txt);
+	//cl("33"+txt.size);
 	
-	//while(_a<a){
+	if(isDefined(cx)){ x=x-(txt.size*fsc*6.45)/2; }
+	if(isDefined(cy)){ y=y-(txt.size*fsc*6.45)/2; }
+	
 	while(size<txt.size){
 		r=randomIntRange(0,blob.size);
 		//blob[size]=rarr[r];
@@ -591,15 +611,16 @@ _show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort){
 		//txt[size]=blob[r];
 		for(i=0;i<size;i++){ ntxt+=txt[i]; }
 		if(size<txt.size){ hudHint[0]=ntxt+blob[r]; } else { hudHint[0]=ntxt; }
-		self _create_menu_text("hudHint",hudHint,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort);
+		if(isDefined(override)){ a-=0.1; dur=0; }
+		self _create_menu_text("hudHint"+msgID,hudHint,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort);
 		//self _create_menu_text("hudHint",hudHint,"default", 1.6,1.4,(r,g,b),_a,(0,0,0),0,300,300,"center","middle",ox,oy,1);
 		//_create_menu_text(hud,arr,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,selector,scolor,div,skip);		
 		self playLocalSound("mouse_click");
-		if(a<_a){ _a+=0.1; }
+		//if(a<_a){ _a+=0.1; }
 		wait 0.05;
 		c--;
-		if(size == txt.size){ wait 2; }
-		self _destroy_menu("hudHint"); 
+		if(size == txt.size){ wait dur; }
+		self _destroy_menu("hudHint"+msgID); 
 	}
 	//wait 1;
 	//while(_a>0){
@@ -613,16 +634,17 @@ _show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort){
 		for(i=0;i<size-1;i+=2){ ntxt+=txt[i]; ntxt+=txt[i+1]; }
 		ntxt+=blob[r];
 		hudHint[0]=ntxt;
-		self _create_menu_text("hudHint",hudHint,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort);
+		if(isDefined(override)){ a-=0.1; }
+		self _create_menu_text("hudHint"+msgID,hudHint,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort);
 		//_create_menu_text(hud,arr,ft,fsz,fsc,color,a,gc,ga,x,y,ax,ay,ox,oy,sort,selector,scolor,div,skip){		
 		self playLocalSound("mouse_click");
-		if(ntxt.size==txt.size+3){ wait dur; }
+		//if(ntxt.size==txt.size+3){ wait dur; }
 		//if(a==_a){ wait dur; }
 		//if(a>0){ a-=0.1; }
 		wait 0.05;
 		size--;
 		//if(size == txt.size){ wait 1; }
-		self _destroy_menu("hudHint"); 
+		self _destroy_menu("hudHint"+msgID); 
 	}
 	//cl("33"+self.name+" hud ended");
 }
@@ -720,7 +742,7 @@ _welcome_msg(){
 				//_create_menu_bg(bg,x,y,w,h,ox,oy,ax,ay,color,a,sort,sh,aperc){
 				//if(r==1){ wait 2; }
 				//self _create_menu_text("hudWelcome",txt,"default", 1.6,1.4,(1,1,1),0,"middle","middle",0,0,1,1);
-				if(game["hasReadMOTD"][self.name]==true){
+				if(level.gameEnded || game["hasReadMOTD"][self.name]==true){
 					if(r>0){ r-=0.1;g-=0.1;b-=0.1;a-=0.1; }
 					if(w>1){ w-=30; }
 					if(h>1){ h-=20; }
@@ -735,10 +757,12 @@ _welcome_msg(){
 			}
 		}
 	}
-	self notify("hasReadMOTD");
-	cl("22hasReadMOTD");
-	while(level.inPrematchPeriod){ wait 0.1; }
-	self freezeControls(false);
+	if(!level.gameEnded){ 
+		self notify("hasReadMOTD");
+		cl("22hasReadMOTD");
+		while(level.inPrematchPeriod){ wait 0.1; }
+		self freezeControls(false);
+	}
 }
 
 _accept(){
@@ -829,7 +853,7 @@ _money_menu(){
 	self waittill("spawned_player");
 
 	r=1;g=1;b=1;a=1;c=0;
-	x=710;y=460;
+	x=740;y=460; ax="right";
 	money=[];
 	
 	while(1){
@@ -840,19 +864,19 @@ _money_menu(){
 			if(isDefined(self.notEnoughMoney)){
 				if(c<10){
 					//_create_menu_text(hud,arr,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,selector,scolor,div,skip){
-					if(c%2==0){ self _create_menu_text("hudMoney",money,x,y,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,(1,0,0)); }
-					else { self _create_menu_text("hudMoney",money,x,y,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,(1,1,1)); }
+					if(c%2==0){ self _create_menu_text("hudMoney",money,x,y,undefined,undefined,ax,undefined,undefined,undefined,undefined,undefined,undefined,(1,0,0)); }
+					else { self _create_menu_text("hudMoney",money,x,y,undefined,undefined,ax,undefined,undefined,undefined,undefined,undefined,undefined,(1,1,1)); }
 					c++;
 				} else { self.notEnoughMoney=undefined; c=0; }
 			} else if(isDefined(self.spentMoney)){
 				//_create_menu_text(hud,arr,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,selector,scolor,div,skip){
-				self _create_menu_text("hudMoney",money,x,y,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,(1,0,0));
+				self _create_menu_text("hudMoney",money,x,y,undefined,undefined,ax,undefined,undefined,undefined,undefined,undefined,undefined,(1,0,0));
 				wait 0.1;
 				self _destroy_menu("hudMoney");
-				self _create_menu_text("hudMoney",money,x,y,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,(1,1,1));
+				self _create_menu_text("hudMoney",money,x,y,undefined,undefined,ax,undefined,undefined,undefined,undefined,undefined,undefined,(1,1,1));
 				self.spentMoney=undefined;
 			} else {
-				self _create_menu_text("hudMoney",money,x,y,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,(1,1,1));;
+				self _create_menu_text("hudMoney",money,x,y,undefined,undefined,ax,undefined,undefined,undefined,undefined,undefined,undefined,(1,1,1));;
 			}
 			wait 0.1;
 			self _destroy_menu("hudMoney");
@@ -901,7 +925,13 @@ _buy_menu_show(arr,prev,next,div){
 				//cl(self.buyMenuShow[1]);
 				for(i=0;i<self.buyMenuShow.size;i+=3){
 					if(isDefined(self.buyMenuShow[i]) && isDefined(self.buyMenuShow[i+2])){
+						/*str="";
+						for(j=0;self.buyMenuShow[i+2].size;j++){
+							str+=self.buyMenuShow[i+2][j];
+							if(self.buyMenuShow[i+2][j]=="_"){ break; }
+						}*/
 						if(isSubStr(self.buyMenuShow[i+2],"_mp") && !isSubStr(self.buyMenuShow[i+2],"c4") && !isSubStr(self.buyMenuShow[i+2],"claymore") && !isSubStr(self.buyMenuShow[i+2],"grenade") && !isSubStr(self.buyMenuShow[i],"1 CLIP") && isDefined(self _check_weapon_in_list(self.buyMenuShow[i+2]))){ 
+						//if(isSubStr(self.buyMenuShow[i+2],"_mp") && !isSubStr(self.buyMenuShow[i+2],"c4") && !isSubStr(self.buyMenuShow[i+2],"claymore") && !isSubStr(self.buyMenuShow[i+2],"grenade") && !isSubStr(self.buyMenuShow[i],"1 CLIP") && isDefined(self _check_weapon_in_list(self.buyMenuShow[i+2]))){ 
 							//clipSize=WeaponClipSize(self.buyMenuShow[i+2]);
 							//self.buyMenuShow[i]+=" [AMMO | 1 CLIP = "+(clipSize*1.5)+"$]"; 
 							self.buyMenuShow[i]+=" [AMMO | 1 CLIP = "+(int(self.buyMenuShow[i+1])/10)+"$]"; 
@@ -1102,14 +1132,16 @@ _buy_menu_main(){
 	if(self.pers["team"] == "axis"){
 		buyMenuMain = StrTok("Pistols,SMGs,MGs,Rifles,Snipers,RPGs,GLs,Grenades",",");
 		buyMenuAmmo = StrTok(self _buy_weapons_ammo(),",");
-		buyMenuPistols = StrTok("Beretta Silenced,138,beretta_silencer_mp,Desert Eagle,230,deserteagle_mp,Desert Eagle Gold,400,deserteaglegold_mp,RW1,450,rw1_mp",",");
+		buyMenuPistols = StrTok("Beretta Silenced,138,beretta_silencer_mp,Desert Eagle,230,deserteagle_mp,Desert Eagle Gold,400,deserteaglegold_mp,RW1,450,winchester1200_grip_mp",",");
+		//buyMenuPistols = StrTok("Beretta Silenced,138,beretta_silencer_mp,Desert Eagle,230,deserteagle_mp,Desert Eagle Gold,400,deserteaglegold_mp,RW1,450,rw1_mp",",");
 		buyMenuSMGs = StrTok("Uzi,320,uzi_mp,Skorpion,440,skorpion_mp,AK74U,580,ak74u_mp",",");
 		buyMenuMGs = StrTok("SAW,1200,saw_mp,RPD,1300,rpd_mp",",");
 		buyMenuRifles = StrTok("AK47,640,ak47_mp,AK47 GL,800,ak47_gl_mp",",");
-		buyMenuSnipers = StrTok("G3,430,g3_acog_mp,Dragunov,640,dragunov_mp",",");
+		buyMenuSnipers = StrTok("G3,430,g3_acog_mp,Dragunov,640,dragunov_mp,SVG-100,1200,barrett_mp",",");
 		buyMenuRPGs = StrTok("RPG,1200,rpg_mp",",");
 		//buyMenuRPGs = StrTok("RPG,2300,rpg_mp,LAW,2500,law_mp,AT4,2600,at4_mp",",");
-		buyMenuGLs = StrTok("MM1,2400,mm1_mp",",");
+		buyMenuGLs = StrTok("MM1,2400,barrett_acog_mp",",");
+		//buyMenuGLs = StrTok("MM1,2400,mm1_mp",",");
 		buyMenuGrenades = StrTok("Frag Grenade,15,frag_grenade_mp",",");
 		buyMenuExplosives = StrTok("Claymore,100,claymore_mp,C4,400,c4_mp",",");
 		//buyMenuGrenades = StrTok("Smoke Grenade,10,smoke_grenade_mp,Flash Grenade,20,flash_grenade_mp,Concussion Grenade,30,concussion_grenade_mp,Frag Grenade,40,frag_grenade_mp",",");
@@ -1119,11 +1151,15 @@ _buy_menu_main(){
 		buyMenuPistols = StrTok("Colt 45 Silenced,155,colt45_silencer_mp,USP Silenced,167,usp_silencer_mp",",");
 		buyMenuSMGs = StrTok("MP5,550,mp5_silencer_mp,G36C GL,630,g36c_gl_mp,P90,900,p90_silencer_mp",",");
 		buyMenuMGs = StrTok("M60E4,1600,m60e4_mp",",");
-		buyMenuRifles = StrTok("M4 GL,1200,m4_gl_mp,M21,1650,m21_mp,Striker,1800,striker_mp",",");
-		buyMenuSnipers = StrTok("TAC330,2000,tac330_mp,TAC330 Silenced,2300,tac330_sil_mp",",");
+		buyMenuRifles = StrTok("M4 GL,1200,m4_gl_mp,M21,1650,m21_mp,Striker,1800,winchester1200_reflex_mp",","); //M4 is automatic
+		//buyMenuRifles = StrTok("M4 GL,1200,m4_gl_mp,M21,1650,m21_mp,Striker,1800,striker_mp",","); //M4 is automatic
+		buyMenuSnipers = StrTok("TAC330,2000,aw50_mp,TAC330 Silenced,2300,aw50_acog_mp",",");
+		//buyMenuSnipers = StrTok("TAC330,2000,tac330_mp,TAC330 Silenced,2300,tac330_sil_mp",",");
 		//buyMenuRPGs = StrTok("AT4,2600,at4_mp",",");
-		buyMenuRPGs = StrTok("LAW,2200,law_mp,AT4,3200,at4_mp",",");
-		buyMenuGLs = StrTok("MM1,3000,mm1_mp",",");
+		buyMenuRPGs = StrTok("LAW,2200,skorpion_acog_mp,AT4,3200,skorpion_reflex_mp",",");
+		//buyMenuRPGs = StrTok("LAW,2200,law_mp,AT4,3200,at4_mp",",");
+		buyMenuGLs = StrTok("MM1,3000,barrett_acog_mp",",");
+		//buyMenuGLs = StrTok("MM1,3000,mm1_mp",",");
 		buyMenuGrenades = StrTok("Concussion Grenade,20,concussion_grenade_mp,Frag Grenade,35,frag_grenade_mp",",");
 		buyMenuExplosives = StrTok("Claymore,100,claymore_mp,C4,400,c4_mp",",");
 	}

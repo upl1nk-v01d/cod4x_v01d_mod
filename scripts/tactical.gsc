@@ -1,18 +1,30 @@
 #include maps\mp\_load;
 #include maps\mp\_utility;
+#include scripts\cl;
 
 init()
-{
-	setDvar( "bots_play_move", true );
+{	
+	//if(getDvar("dev") == ""){ setDvar("dev",1); }
+	//setDvar( "bots_play_move", 0 );
+	//setDvar( "bots_fire_ext", 0 );
+	//setDvar( "bots_aim_ext", 0 );
+	//level.doNotAddBots=true;
+
+	if (getDvarInt("dev")>0){
+		//setdvar( "developer_script", 1 );
+		//setdvar( "developer", 1 );		
+		//setdvar( "sv_mapRotation", "map " + getDvar( "mapname" ) );
+		//exitLevel( false );
+	}
 	
-	//if (!getdvarint("developer")>0){ return; }
+	//if (!getdvarint("dev")>0){ return; }
 	if (getdvarint("bots_main_debug")>0) { return; }
 	
 	//if (level.waypointCount != 0) { return; }
 	
 	level.nodes = [];
 	level.nodes_quantity = 0;
-	level.node_types = StrTok("no_cover,mg,sniper,grenadier,rocket",",");
+	level.node_types = StrTok("any,mg,sniper,grenadier,rocket",",");
 	
 	level.sniper_weapons = StrTok("tac330_sil_mp,mors_acog_mp,svg100_mp,barrett_mp,dragunov_mp,m40a3_mp,m21_mp",",");
 	level.grenade_weapons = StrTok("mm1_mp",",");
@@ -27,6 +39,7 @@ init()
 	//setDvar( "bots_play_move", false );
 	
 	level thread _load_nodes();
+	//level thread _add_some_bots(2);
 	
 	for(;;)
     {
@@ -70,6 +83,19 @@ _start_tactical()
 	
 }
 
+_add_some_bots(bots){
+	setDvar( "testclients_doreload", true );
+	wait 0.1;
+	setDvar( "testclients_doreload", false );
+	if(!isDefined(bots)){ bots=10; }
+	for(i=0;i<bots/2;i++){
+		setDvar("ab", "axis");
+		wait 1.5;
+		setDvar("ab","allies");
+		wait 1.5;
+	}
+}
+
 _bot_self_nav(){
 	self endon ( "disconnect" );
 	self endon( "intermission" );
@@ -107,15 +133,17 @@ _node_info(){
 	self endon( "intermission" );
 	self endon( "game_ended" );
 	
-	if (!getdvarint("developer")>0){ return; }
+	if (!getDvarInt("dev")>0){ return; }
 	if (self.isbot) { return; }
 	
 	for(;;){
+		self waittill("showNodeInfo");
 		node = self.nodecatch;
+		
 		if(isDefined(node)){
 			self iprintln("^3Node params: nr "+node.id+", pos "+node.pos+",stance:"+node.type+",angles:"+node.angles+",cover:"+node.cover);
 		}
-		wait 1;
+		wait 0.5;
 	}
 
 }
@@ -133,7 +161,7 @@ _add_node(pos)
 	level.nodes[level.nodes_quantity].names = [];
 	level.nodes[level.nodes_quantity].name = undefined;
 	level.nodes[level.nodes_quantity].marked = false;
-	level.nodes[level.nodes_quantity].cover = "no_cover";
+	level.nodes[level.nodes_quantity].cover = "any";
 	//iprintln("node added at "+pos); 
 	cl("node "+level.nodes.size+" added at "+pos+",stance:"+type+",angles:"+angles); 
 	self iprintln("^3Node params: nr "+level.nodes.size+", pos "+pos+",stance:"+type+",angles:"+angles);
@@ -146,7 +174,7 @@ _add_remove_nodes(){
 	self endon( "intermission" );
 	self endon( "game_ended" );
 	
-	if (!getdvarint("developer")>0){ return; }
+	if (!getDvarInt("dev")>0){ return; }
 	if (getdvarint("bots_main_debug")>0) { return; }  
 	if (self.isbot) { return; }
 	
@@ -155,7 +183,7 @@ _add_remove_nodes(){
 	for(;;){
 		c=10; self.execute = false;
 		while ( !self UseButtonPressed() ){	wait (0.05); }
-		wait 1;
+		//wait 1;
 		
 		while ( self UseButtonPressed() && c>0){ 
 			c--; wait 0.05;
@@ -209,6 +237,7 @@ _add_remove_nodes(){
 									if(isDefined(objs[nr].cover)){
 										change = true; cl("^3Node changed to type "+objs[nr].cover);
 										self iprintln("^3Node changed to type "+objs[nr].cover);
+										self notify("showNodeInfo");
 									}
 									break;
 								}
@@ -354,7 +383,7 @@ _bot_take_cover(){
 	for(;;){
 	
 		if (isAlive(self)){
-		
+
 			wait 1;
 			
 			closest = 2147483647;
@@ -399,10 +428,11 @@ _bot_take_cover(){
 						
 						dist = distance(self.origin, level.nodes[i].pos); 
 						
-						if (dist < 1000 && self.hasSniper && level.nodes[i].cover == "sniper") { closest = dist; node=level.nodes[i]; }
-						else if (dist < 1000 && self.hasGrenadeLauncher && level.nodes[i].cover == "grenadier") { closest = dist; node=level.nodes[i]; }
-						else if (dist < 1000 && self.hasRocketLauncher && level.nodes[i].cover == "rocket") { closest = dist; node=level.nodes[i]; }
-						else if (dist < 1000 && self.hasMG && level.nodes[i].cover == "mg") { closest = dist; node=level.nodes[i]; }
+						if (dist < 1000 && self.hasSniper && level.nodes[i].cover == "sniper") { closest = dist; node=level.nodes[i]; break; }
+						else if (dist < 1000 && self.hasMG && level.nodes[i].cover == "mg") { closest = dist; node=level.nodes[i]; break;  }
+						else if (dist < 1000 && self.hasGrenadeLauncher && level.nodes[i].cover == "grenadier") { closest = dist; node=level.nodes[i]; break;  }
+						else if (dist < 1000 && self.hasRocketLauncher && level.nodes[i].cover == "rocket") { closest = dist; node=level.nodes[i]; break;  }
+						else if (dist < 1000 && level.nodes[i].cover == "any") { closest = dist; node=level.nodes[i]; break;  }
 					}
 					
 					if (isDefined(node)){ 
@@ -414,18 +444,21 @@ _bot_take_cover(){
 					
 						cl("^3"+self.name+" is moving to "+self.moveToPos);
 						//self.bot.stop_move=true;
+						//self.bot.isfrozen=true;
+						//self thread _bot_move_to_pos(self.moveToPos);
 						//self botMoveTo(self.moveToPos);
 						//self botLookAt( self.approachNode, self.pers["bots"]["skill"]["aim_time"] );
 						self maps\mp\bots\_bot_utility::ClearScriptGoal();
 						self maps\mp\bots\_bot_utility::SetScriptGoal(self.moveToPos,48);
+						//self.bot.towards_goal=self.moveToPos;
 			
 						while(isDefined(self.moveToPos) && isAlive(self)){
-							dist = distance( self.origin, self.moveToPos ); 
+							dist = distance( self.origin, self.moveToPos );
 							wait 0.2;
 							//cl(self.name+":"+dist);
-							if(dist<=64){ 
+							if(dist<64){ 
 								cl("^3"+self.name+" reached goal at"+self.moveToPos);
-								if(isDefined(self.nodeStance) && self.nodeStance != "no_cover" ){ self botAction( "+go"+ self.nodeStance); }
+								if(isDefined(self.nodeStance) && self.nodeStance != "any" ){ self botAction( "+go"+ self.nodeStance); }
 								else { self botAction( "+gocrouch"); }
 								self maps\mp\bots\_bot_script::CampAtSpot(self.moveToPos, self.moveToPos + AnglesToForward(self.nodeAngles) * 2048);
 								self setPlayerAngles(self.nodeAngles);
@@ -453,12 +486,68 @@ _bot_take_cover(){
 	}
 }
 
+_bot_move_to_pos(pos){
+	self endon ( "disconnect" );
+	self endon( "intermission" );
+	self endon( "game_ended" );
+	self endon( "death" );
+	if (!self.isbot) { return; }
+	
+	while(isDefined(self.moveToPos)){
+		node=undefined;
+		closest=10000000;
+		for( i = 0 ; i < level.nodes.size; i++ ){
+			dist = distance(self.origin, level.nodes[i].pos);
+			if(dist < closest) { 
+				closest = dist; 
+				node=level.nodes[i];
+			}
+		}
+		
+		if (isDefined(node)){ 
+			self.nodeAngles = node.angles;
+			self.nodeStance = node.type;
+			self.nodeCover = node.cover;
+			node.name = self.name;
+		
+			cl("^3"+self.name+" is moving to "+node.pos);
+			self botMoveTo(node.pos);
+			while(isDefined(node.pos) && isAlive(self)){
+				dist = distance(self.origin, node.pos);
+				wait 0.2;
+				//cl(self.name+":"+dist);
+				if(dist<32){ 
+					cl("33"+self.name+" reached node at"+node.pos);
+					//if(isDefined(self.nodeStance) && self.nodeStance != "any" ){ self botAction( "+go"+ self.nodeStance); }
+					//else { self botAction( "+gocrouch"); }
+					//self maps\mp\bots\_bot_script::CampAtSpot(self.moveToPos, self.moveToPos + AnglesToForward(self.nodeAngles) * 2048);
+					//self setPlayerAngles(self.nodeAngles);
+					//cl(self.name+":"+self.nodeAngles);
+					//self.bot.stop_move=true;
+					node.pos = undefined;
+					//wait 5;
+					//self.bot.stop_move=false;
+				}
+				else if(dist<=150 && dist>100){ 
+					//self botAction( "+gocrouch" );
+					//cl("^3"+name+" dist to "+nr+" is "+dist);
+				}
+				else if(dist>64){ 
+					//self maps\mp\bots\_bot_utility::ClearScriptGoal();
+					//self maps\mp\bots\_bot_utility::SetScriptGoal(self.moveToPos,48);
+					//self maps\mp\bots\_bot_script::CampAtSpot(self.moveToPos, self.moveToPos + AnglesToForward(self.nodeAngles) * 2048);
+				}
+			}
+		}
+	}
+}
+
 _marked_nodes(){
 	self endon ( "disconnect" );
 	self endon( "intermission" );
 	self endon( "game_ended" );
 	
-	if (!getdvarint("developer")>0){ return; }
+	if (!getDvarInt("dev")>0){ return; }
 	if (self.isbot) { return; }
 	
 	//cl("^3_marked_nodes started on "+self.name);
@@ -505,7 +594,7 @@ _marked_bot(){
 	self endon( "intermission" );
 	self endon( "game_ended" );
 	
-	if (!getdvarint("developer")>0){ return; }
+	if (!getDvarInt("dev")>0){ return; }
 	if (self.isbot) { return; }
 	
 	//cl("^3_marked_bot started on "+self.name);
@@ -528,7 +617,7 @@ _hud_draw_nodes(){
 	self endon ( "disconnect" );
 	self endon( "intermission" );
 	self endon( "game_ended" );	
-	if (!getdvarint("developer")>0) {return;}
+	if (!getDvarInt("dev")>0){ return; }
 	if (self.isbot) {return;}
 	
 	//cl("^3starting _hud_draw_nodes thread "+self.name);
@@ -545,13 +634,14 @@ _hud_draw_nodes(){
 					if(dist<500){
 						self.hudwpt[hud_q] = newClientHudElem( self ); 
 						if(objs[i].marked) { self.hudwpt[hud_q] setShader( "compass_waypoint_target", 15, 15 ); }
-						else if(isDefined(objs[i].cover) && objs[i].cover != "no_cover") { self.hudwpt[hud_q] setShader( "compass_waypoint_bomb", 15, 15 ); }
+						else if(isDefined(objs[i].cover) && objs[i].cover != "any") { self.hudwpt[hud_q] setShader( "compass_waypoint_bomb", 15, 15 ); }
 						else { self.hudwpt[hud_q] setShader( "compass_waypoint_defend", 15, 15 ); }
 						self.hudwpt[hud_q].alpha = 0.5;
 						self.hudwpt[hud_q].x = objs[i].pos[0]; self.hudwpt[hud_q].y = objs[i].pos[1]; self.hudwpt[hud_q].z = objs[i].pos[2]+32;
 						if(objs[i].marked) { self.hudwpt[hud_q] SetWayPoint(true, "compass_waypoint_target"); }
-						else if(isDefined(objs[i].cover) && objs[i].cover != "no_cover") { self.hudwpt[hud_q] SetWayPoint(true, "compass_waypoint_bomb"); }
+						else if(isDefined(objs[i].cover) && objs[i].cover != "any") { self.hudwpt[hud_q] SetWayPoint(true, "compass_waypoint_bomb"); }
 						else { self.hudwpt[hud_q] SetWayPoint(true, "compass_waypoint_defend"); }
+						self notify("showNodeInfo");
 						hud_q++;
 					}
 				}
@@ -572,7 +662,7 @@ _hud_draw_tagged(){
 	self endon ( "disconnect" );
 	self endon( "intermission" );
 	self endon( "game_ended" );	
-	if (!getdvarint("developer")>0) { return; }
+	if (!getDvarInt("dev")>0){ return; }
 	if (self.isbot) { return; }
 
 	for(;;){
@@ -603,7 +693,7 @@ _hud_draw_squad(){
 	self endon ( "disconnect" );
 	self endon( "intermission" );
 	self endon( "game_ended" );	
-	if (!getdvarint("developer")>0) { return; }
+	if (!getDvarInt("dev")>0){ return; }
 	if (self.isbot) { return; }
 	
 	//cl("^3starting _hud_draw_squad thread on "+self.name);
@@ -640,7 +730,7 @@ _add_remove_squad(bot){
 	self endon ( "disconnect" );
 	self endon( "intermission" );
 	self endon( "game_ended" );	
-	if (!getdvarint("developer")>0) { return; }
+	if (!getDvarInt("dev")>0){ return; }
 	if (self.isbot) { return; }
 	
 	exists=false;
@@ -771,7 +861,7 @@ parseTokensIntoNodes( tokens )
 	//cl("node:"+tokens[3]);
 	
 	if (isDefined(cover)){ node.cover=cover; }
-	else { node.cover = "no_cover"; }
+	else { node.cover = "any"; }
 
 	return node;
 }
@@ -803,7 +893,7 @@ _load_nodes()
 			level.nodes[i].angles = ( 0, 0, 0 );
 		
 		if ( !isDefined( level.nodes[i].cover ) )
-			level.nodes[i].cover = "no_cover";
+			level.nodes[i].cover = "any";
 			
 		if ( !isDefined( level.nodes[i].names ) )
 			level.nodes[i].names = [];
@@ -822,7 +912,7 @@ _save_nodes()
 	self endon ( "disconnect" );
 	self endon( "intermission" );
 	self endon( "game_ended" );	
-	if (!getdvarint("developer")>0) { return; }
+	if (!getDvarInt("dev")>0){ return; }
 	if (self.isbot) { return; }
 
 	for ( ;; )
@@ -913,14 +1003,14 @@ _arr_remove( arr, remover )
 	return new_arr;
 }
 
-cl(txt){
+/*cl(txt){
 	color = "";
 	txt+="";
 	if (isDefined(txt) && txt.size>1){
 		if(txt[0]=="^")	{ color="^"+txt[1]; }
 		print(color+"-- "+txt+" -- \n"); 
 	} else { print("!! undefined !! \n"); }
-}
+}*/
 
 pl(txt){
 	color = "";
