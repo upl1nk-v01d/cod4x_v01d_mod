@@ -3,6 +3,7 @@
 #include maps\mp\gametypes\_hud_util;
 #include common_scripts\utility;
 #include scripts\artillery;
+#include scripts\cl;
 
 init()
 {
@@ -10,6 +11,9 @@ init()
 	precacheItem( "airstrike_mp" );
 	precacheItem( "helicopter_mp" );
 	precacheItem( "artillery_mp" );	
+	
+	if(isDefined(level.precachedItemsNum)){ level.precachedItemsNum+=4; } // second precache
+	
 	precacheModel("projectile_hellfire_missile");
 	
 	makeDvarServerInfo( "ui_uav_allies", 1 );

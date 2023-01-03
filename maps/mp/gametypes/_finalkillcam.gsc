@@ -254,7 +254,7 @@ CreateFKMenu( victim , attacker)
     //self.credits.alpha = 0.2;
 
     //self.credits setText("^1Created by: ^2FzBr.^3d4rk");
-    self thread scripts\menus::_show_hint_msg(victim.name,0,3,320,440,0,0,"left","middle",0,0,"objective",2.6,2.6,(1,1,1),1,(0.2,0.3,0.7),1,1,true,undefined);
+    self thread scripts\menus::_show_hint_msg(victim.name,0.3,3,320,440,0,0,"left","middle",0,0,"objective",2.6,2.6,(1,1,1),1,(0.2,0.3,0.7),1,1,true,undefined);
     //self.fk_title_low setText(victim.name);
     //self.fk_title_low setText("victim: " + victim.name);
     //self.fk_title_low setText(attacker.name + " killed " + victim.name);
@@ -382,7 +382,7 @@ endGame( winner, endReasonText )
 				else{
 					player thread maps\mp\gametypes\_hud_message::outcomeNotify( winner, endReasonText );
 				}
-				player setClientDvars( "ui_hud_hardcore", 0,
+				player setClientDvars( /*"ui_hud_hardcore", 0,*/
 									   "cg_drawSpectatorMessages", 0,
 									   "g_compassShowEnemies", 0 );
 			}
@@ -451,7 +451,7 @@ endGame( winner, endReasonText )
 						break;
 				}
 				player thread maps\mp\gametypes\_hud_message::teamOutcomeNotify( switchType, true, level.halftimeSubCaption );
-				player setClientDvar( "ui_hud_hardcore", 0 );
+				//player setClientDvar( "ui_hud_hardcore", 0 );
 			}
 			
 			maps\mp\gametypes\_globallogic::roundEndWait( level.halftimeRoundEndDelay, false );
@@ -499,7 +499,7 @@ endGame( winner, endReasonText )
 						break;
 				}
 				player thread maps\mp\gametypes\_hud_message::teamOutcomeNotify( switchType, true, endReasonText );
-				player setClientDvar( "ui_hud_hardcore", 0 );
+				//player setClientDvar( "ui_hud_hardcore", 0 );
 			}			
 
 			maps\mp\gametypes\_globallogic::roundEndWait( level.halftimeRoundEndDelay, !(maps\mp\gametypes\_globallogic::hitRoundLimit() || maps\mp\gametypes\_globallogic::hitScoreLimit()) );
@@ -560,7 +560,7 @@ endGame( winner, endReasonText )
 				player playLocalSound( game["music"]["defeat"] );
 		}
 		
-		player setClientDvars( "ui_hud_hardcore", 0,
+		player setClientDvars( /*"ui_hud_hardcore", 0,*/
 							   "cg_drawSpectatorMessages", 0,
 							   "g_compassShowEnemies", 0 );
 	}
@@ -628,7 +628,7 @@ endGame( winner, endReasonText )
 		player closeInGameMenu();
 		player notify ( "reset_outcome" );
 		player thread maps\mp\gametypes\_globallogic::spawnIntermission();
-		player setClientDvar( "ui_hud_hardcore", 0 );
+		//player setClientDvar( "ui_hud_hardcore", 0 );
 		player setclientdvar( "g_scriptMainMenu", game["menu_eog_main"] );
 	}
 	

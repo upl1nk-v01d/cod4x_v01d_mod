@@ -236,8 +236,8 @@ onOvertime()
 		level.players[index] notify("force_spawn");
 		//level.players[index] thread maps\mp\gametypes\_hud_message::oldNotifyMessage( &"MP_SUDDEN_DEATH", &"MP_NO_RESPAWN", undefined, (1, 0, 0), "mp_last_stand" );
 
-		level.players[index] thread scripts\menus::_show_hint_msg("Sudden Death!",0,3,320,40,0,0,"left","middle",0,0,"objective",1.6,3.6,(1,0.8,0.8),1,(0.2,0.3,0.7),1,1,true);
-		level.players[index] thread scripts\menus::_show_hint_msg("No Respawn!",0.7,3,320,60,0,0,"left","middle",0,0,"objective",1.6,2.6,(1,0.7,0.7),1,(0.2,0.3,0.7),1,1,true);
+		level.players[index] thread scripts\menus::_show_hint_msg("Sudden Death!",0,3,320,50,0,0,"left","middle",0,0,"objective",3.6,3.6,(1,1,1),1,(1,0.3,0.2),1,1,true);
+		level.players[index] thread scripts\menus::_show_hint_msg("No Respawn!",0.7,3,320,90,0,0,"left","middle",0,0,"objective",2.6,2.6,(1,1,1),1,(1,0.3,0.2),1,1,true);
 		//self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( undefined, undefined, game["icons"]["axis"], undefined );
 		level.players[index] playLocalSound("mp_last_stand");
 

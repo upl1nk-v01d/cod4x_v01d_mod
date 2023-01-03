@@ -190,7 +190,7 @@ killcam(
 			//self.kc_killedBy.horzAlign = "center_safearea";
 			//self.kc_killedBy.vertAlign = "bottom";
 			self.kc_killedBy settext(self.kb.name);
-			self thread scripts\menus::_show_hint_msg(self.kb.name,0,3,320,450,0,0,"left","middle",0,0,"objective",1.6,1.4,(1,1,1),1,(0.2,0.3,0.7),1,1,true,undefined);		
+			self thread scripts\menus::_show_hint_msg(self.kb.name,0.3,3,320,450,0,0,"left","middle",0,0,"objective",1.6,1.4,(1,1,1),1,(0.2,0.3,0.7),1,1,true,undefined);		
 		} 
 		else if ( !isdefined( self.kc_timer ) )
 		{

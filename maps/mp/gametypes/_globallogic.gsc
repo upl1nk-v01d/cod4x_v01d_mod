@@ -5397,7 +5397,7 @@ Callback_PlayerLastStand( eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon,
 	self GiveWeapon( grenadeTypePrimary );
 	self SetWeaponAmmoClip( grenadeTypePrimary, 0 );
 	self SwitchToOffhand( grenadeTypePrimary );
-	self thread lastStandTimer( 10 );
+	//self thread lastStandTimer( 10 );
 }
 
 
