@@ -31,7 +31,7 @@ init()
 	level thread scripts\tactical::init();
 	//level thread scripts\bots_nav::init();
 
-	if (getDvar("v01d_version") == "") { setDvar("v01d_version", "v1.91"); }
+	if (getDvar("v01d_version") == "") { setDvar("v01d_version", "v1.92"); }
 
 	//if (!getdvarint("developer")>0) { return; }
 	
@@ -39,7 +39,7 @@ init()
 	//if (getDvar("g_gametype") != "sab") { return; }
 	
 	level._maps = StrTok("mp_ancient_ultimate,12,mp_carentan,14,mp_rasalem,12,mp_efa_lake,10,mp_bo2carrier,12,mp_bog,16,mp_summit,18,mp_backlot,16,mp_harbor_v2,16,mp_sugarcane,12,mp_csgo_assault,12,mp_csgo_inferno,12,mp_csgo_office,12,mp_csgo_overpass,12,mp_csgo_mirage,12,mp_finca,12,mp_csgo_safehouse,10,mp_csgo_cbble,12,mp_csgo_shortdust,12,mp_csgo_stmarc,12,mp_ins_panj,10,mp_creek,12,mp_csgo_mirage,12,mp_csgo_overpass,12,mp_ins_heights,12,mp_ins_peak,12", "," );
-	level._weapons = StrTok("knife_mp,aw50_mp,aw50_acog_mp", "," );
+	level._weapons = StrTok("knife_mp", "," );
 	//level._weapons = StrTok("knife_mp,m16_mp,m16_reflex_mp,barret_mp,barret_acog_mp,winchester_reflex_mp,winchester_grip_mp,skorpion_acog_mp,skorpion_reflex_mp", "," );
 	level._gametypes = StrTok("mp_csgo_assault,war,mp_csgo_inferno,dm", "," );
 	//level._weapons = StrTok("knife_mp,tac330_mp,tac330_sil_mp,svg100_mp,rw1_mp,law_mp,at4_bo_mp,mm1_mp,striker_mp", "," );
@@ -699,10 +699,16 @@ _hp_weapons_list(){
 
 	if(self.isbot){ return; }
 	while(1){
-		if (self getAmmoCount("radar_mp")>0){ self setClientDvar( "ui_uav_client", 1 ); } else { self setClientDvar( "ui_uav_client", 0 ); }
-		if (self getAmmoCount("airstrike_mp")>0){ self setClientDvar( "ui_airstrike_client", 1 ); } else { self setClientDvar( "ui_airstrike_client", 0 ); }
-		if (self getAmmoCount("helicopter_mp")>0){ self setClientDvar( "ui_helicopter_client", 1 ); } else { self setClientDvar( "ui_helicopter_client", 0 ); }
-		if (self getAmmoCount("artillery_mp")>0){ self setClientDvar( "ui_artillery_client", 1 ); } else { self setClientDvar( "ui_artillery_client", 0 ); }
+		if(isDefined(self.pers["hardPointItem"])){
+			if(self.pers["hardPointItem"] == "radar_mp"){ self setClientDvar( "ui_uav_client", 1 ); } else { self setClientDvar( "ui_uav_client", 0 ); }
+			if(self.pers["hardPointItem"] == "airstrike_mp"){ self setClientDvar( "ui_airstrike_client", 1 ); } else { self setClientDvar( "ui_airstrike_client", 0 ); }
+			if(self.pers["hardPointItem"] == "helicopter_mp"){ self setClientDvar( "ui_helicopter_client", 1 ); } else { self setClientDvar( "ui_helicopter_client", 0 ); }
+			if(self.pers["hardPointItem"] == "artillery_mp"){ self setClientDvar( "ui_artillery_client", 1 ); } else { self setClientDvar( "ui_artillery_client", 0 ); }
+		}
+		//if (self getAmmoCount("radar_mp")>0){ self setClientDvar( "ui_uav_client", 1 ); } else { self setClientDvar( "ui_uav_client", 0 ); }
+		//if (self getAmmoCount("airstrike_mp")>0){ self setClientDvar( "ui_airstrike_client", 1 ); } else { self setClientDvar( "ui_airstrike_client", 0 ); }
+		//if (self getAmmoCount("helicopter_mp")>0){ self setClientDvar( "ui_helicopter_client", 1 ); } else { self setClientDvar( "ui_helicopter_client", 0 ); }
+		//if (self getAmmoCount("artillery_mp")>0){ self setClientDvar( "ui_artillery_client", 1 ); } else { self setClientDvar( "ui_artillery_client", 0 ); }
 		wait 0.5;
 	}
 }
@@ -2133,7 +2139,7 @@ _dev_weapon_test(){
 	if (getdvarint("bots_main_debug")>0) { return; }  
 	if(self.isbot){ return; }
 	
-	give = "aw50_mp";
+	give = "skorpion_reflex_mp";
 
 	wait 1;
 	//give+="_mp";
@@ -3038,12 +3044,12 @@ _recoil(){
 		if(isAlive(self)){
 			//self waittill("weapon_fired");
 			//while(self AttackButtonPressed()){
-				//cl("^1fired");
 				//if(self.isbot){ self.pers["bots"]["skill"]["aim_time"] = 2; }
 				weapon = self GetCurrentWeapon();
 				ammocount_old = self getAmmoCount(weapon);
 				ammocount = ammocount_old;
 				
+				//cl("11"+self.name+" fired "+weapon);
 				//cl("^1prev_ammocount: "+ammocount);
 				//cl("^1prev_ammocount_old: "+ammocount_old);
 
@@ -3767,7 +3773,7 @@ _damaged(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint
 		//cl("33k:"+k);
 		
 		//cl("33maxhealth:"+self.maxhealth);
-		self thread _flash("blur",3+(0.01*iDamage),0,1,0.1); //type,amp,dur,t1,t2
+		//self thread _flash("blur",3+(0.01*iDamage),0,1,0.1); //type,amp,dur,t1,t2
 		//if (self hasPerk("specialty_pistoldeath") == true) { 
 		//cl("33self.prevOrigin: "+self.prevOrigin);
 		//cl("33self.velocity: "+self.velocity); 
@@ -3849,8 +3855,8 @@ _suicide_pd(seconds){
 	self SetWeaponAmmoClip( "frag_grenade_mp", 1 );
 	self SwitchToOffhand( "frag_grenade_mp" );
 	self SwitchToWeapon( "frag_grenade_mp" );
-	self thread _flash("blur",4,seconds/2,seconds/2,1);
-	self thread _flash("bright",4,seconds/2,seconds/2,1);
+	//self thread _flash("blur",4,seconds/2,seconds/2,1);
+	//self thread _flash("bright",1,seconds/2,seconds/2,1);
 	wait seconds;
 	self suicide();
 	//if(isAlive(self)) { self suicide(); }
@@ -4031,14 +4037,17 @@ _changeBotWeapon(){
 				self GiveWeapon( level._weapons[w1] );
 				self switchToWeapon(level._weapons[w1]);
 				self giveMaxAmmo(level._weapons[w1]);
-				//cl(self.name + " the " + level._weapons[w1] + " is given from level._weapons"); 
+				//cl("55"+self.name + " the " + level._weapons[w1] + " and model "+self.model); 
+				//cl("55"+self.name + " the " + level._weapons[w1] + " is given from level._weapons"); 
 			} else { i=-1; }
 		} else {
 			self GiveWeapon( level.botsWeapons[w2] );
 			self switchToWeapon(level.botsWeapons[w2]);
 			self giveMaxAmmo(level.botsWeapons[w2]);
-			//cl(self.name + " the " + level.botsWeapons[w2] + " is given from level.botsWeapons"); 
+			//cl("55"+self.name + " the " + level.botsWeapons[w2]+" and model "+self.model); 
+			//cl("55"+self.name + " the " + level.botsWeapons[w2] + " is given from level.botsWeapons"); 
 		}
+		wait 0.05;
 	}
 }
 
@@ -4189,12 +4198,16 @@ _flash(type,amp,dur,t1,t2){
 	s2=amp/t2;
 	
 	if (type=="blur"){ 
-		while( i<amp ){	self setClientDvar( "r_blur", i );  i+=t1; wait 0.05; }
+		while( i<amp && isAlive(self)){	self setClientDvar( "r_blur", i );  i+=t1; wait 0.05; }
 		wait dur;
 		while( i>0 ){ self setClientDvar( "r_blur", i );  i-=t2; wait 0.05; }
 	}
-
-	else if (type=="bright"){ 
+	
+	if (type=="bright"){ 
 		self SetClientDvars ("r_filmUseTweaks",1,"r_filmTweakEnable",1,"r_filmTweakBrightness",0);
+		while( i<amp && isAlive(self)){	self setClientDvar( "r_filmTweakBrightness", i );  i+=t1; wait 0.05; }
+		wait dur;
+		while( i>0 ){ self setClientDvar( "r_blur", i );  i-=t2; wait 0.05; }
+		//self SetClientDvars ("r_filmUseTweaks",1,"r_filmTweakEnable",1,"r_filmTweakBrightness",0);
 	}
 }
