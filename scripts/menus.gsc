@@ -599,6 +599,7 @@ _show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,c
 	if(isDefined(cx)){ x=x-(txt.size*fsc*6.45)/2; }
 	if(isDefined(cy)){ y=y-(txt.size*fsc*6.45)/2; }
 	
+	self playLocalSound("cypher_start");
 	while(size<txt.size){
 		r=randomIntRange(0,blob.size);
 		//blob[size]=rarr[r];
@@ -615,11 +616,11 @@ _show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,c
 		self _create_menu_text("hudHint"+msgID,hudHint,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort);
 		//self _create_menu_text("hudHint",hudHint,"default", 1.6,1.4,(r,g,b),_a,(0,0,0),0,300,300,"center","middle",ox,oy,1);
 		//_create_menu_text(hud,arr,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,selector,scolor,div,skip);		
-		self playLocalSound("mouse_click");
+		self playLocalSound("cypher1");
 		//if(a<_a){ _a+=0.1; }
 		wait 0.05;
 		c--;
-		if(size == txt.size){ wait dur; }
+		if(size == txt.size){ wait dur; self playLocalSound("cypher_start"); }
 		self _destroy_menu("hudHint"+msgID); 
 	}
 	//wait 1;
@@ -637,7 +638,8 @@ _show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,c
 		if(isDefined(override)){ a-=0.1; }
 		self _create_menu_text("hudHint"+msgID,hudHint,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort);
 		//_create_menu_text(hud,arr,ft,fsz,fsc,color,a,gc,ga,x,y,ax,ay,ox,oy,sort,selector,scolor,div,skip){		
-		self playLocalSound("mouse_click");
+		self playLocalSound("cypher1");
+		self playLocalSound("cypher2");
 		//if(ntxt.size==txt.size+3){ wait dur; }
 		//if(a==_a){ wait dur; }
 		//if(a>0){ a-=0.1; }
@@ -1136,8 +1138,8 @@ _buy_menu_main(){
 		//buyMenuPistols = StrTok("Beretta Silenced,138,beretta_silencer_mp,Desert Eagle,230,deserteagle_mp,Desert Eagle Gold,400,deserteaglegold_mp,RW1,450,rw1_mp",",");
 		buyMenuSMGs = StrTok("Uzi,320,uzi_mp,Skorpion,440,skorpion_mp,AK74U,580,ak74u_mp",",");
 		buyMenuMGs = StrTok("SAW,1200,saw_mp,RPD,1300,rpd_mp",",");
-		buyMenuRifles = StrTok("AK47,640,ak47_mp,AK47 GL,800,ak47_gl_mp",",");
-		buyMenuSnipers = StrTok("G3,430,g3_acog_mp,Dragunov,640,dragunov_mp,SVG-100,1200,barrett_mp",",");
+		buyMenuRifles = StrTok("AK47,640,ak47_mp,AK47 GL,800,ak47_gl_mp,Striker,1200,winchester1200_reflex_mp",",");
+		buyMenuSnipers = StrTok("G3,430,g3_acog_mp,Dragunov,640,dragunov_mp,SVG-100,1200,barrett_mp,PSG1,1500,ak47_reflex_mp",",");
 		buyMenuRPGs = StrTok("RPG,1200,rpg_mp",",");
 		//buyMenuRPGs = StrTok("RPG,2300,rpg_mp,LAW,2500,law_mp,AT4,2600,at4_mp",",");
 		buyMenuGLs = StrTok("MM1,2400,barrett_acog_mp",",");
@@ -1151,7 +1153,8 @@ _buy_menu_main(){
 		buyMenuPistols = StrTok("Colt 45 Silenced,155,colt45_silencer_mp,USP Silenced,167,usp_silencer_mp",",");
 		buyMenuSMGs = StrTok("MP5,550,mp5_silencer_mp,G36C GL,630,g36c_gl_mp,P90,900,p90_silencer_mp",",");
 		buyMenuMGs = StrTok("M60E4,1600,m60e4_mp",",");
-		buyMenuRifles = StrTok("M4 GL,1200,m4_gl_mp,M21,1650,m21_mp,Striker,1800,winchester1200_reflex_mp",","); //M4 is automatic
+		buyMenuRifles = StrTok("M4 GL,1200,m4_gl_mp,M21,1650,m21_mp,CheyTac,2200,remington700_acog_mp",","); //M4 is automatic
+		//buyMenuRifles = StrTok("M4 GL,1200,m4_gl_mp,M21,1650,m21_mp,GPAS-12,2000,m1014_reflex_mp,CheyTac,2200,remington700_acog_mp",","); //M4 is automatic
 		//buyMenuRifles = StrTok("M4 GL,1200,m4_gl_mp,M21,1650,m21_mp,Striker,1800,striker_mp",","); //M4 is automatic
 		buyMenuSnipers = StrTok("TAC330,2000,aw50_mp,TAC330 Silenced,2300,aw50_acog_mp",",");
 		//buyMenuSnipers = StrTok("TAC330,2000,tac330_mp,TAC330 Silenced,2300,tac330_sil_mp",",");
