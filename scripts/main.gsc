@@ -25,13 +25,13 @@ init()
 
 	level thread scripts\bots_aim_ext::init();
 	level thread scripts\bots_fire_ext::init();
-	level thread scripts\chopper_ext::init();
+	//level thread scripts\chopper_ext::init();
 	level thread scripts\money::init();
 	level thread scripts\menus::init();
 	level thread scripts\tactical::init();
 	//level thread scripts\bots_nav::init();
 
-	if (getDvar("v01d_version") == "") { setDvar("v01d_version", "v1.92"); }
+	if (getDvar("v01d_version") == "") { setDvar("v01d_version", "v1.93"); }
 
 	//if (!getdvarint("developer")>0) { return; }
 	
@@ -50,7 +50,7 @@ init()
 	}
 	level.hudMarkers = [];
 	level.slowMo=false;
-	level.gracePeriod = 60;
+	level.gracePeriod = 30;
 	
 	//for(i=0;i<level._gametypes;i+=2){ 
 	//	if(level._gametypes[i]==getDvar("mapname")){ setDvar("g_gametype",level._gametypes[i+1]); break; }
@@ -227,6 +227,8 @@ init()
 		player thread _grenade_owner();
 		player thread _projectiles_owner();
 		player thread _menu_response();
+		
+		//player thread _dev_sound_test();
 
 		//tm++;  ctm++;
 		//if (tm > 13) { tm=1; }
@@ -417,7 +419,6 @@ _player_spawn_loop(){
 		
 		//self thread _dev_coords();
 		//self thread _dev_weapon_test();
-		//self thread _dev_sound_test();
 		//self thread _dev_hp_test();
 		//self thread _dev_wpt_helpers_add_remove();
 		//self thread _dev_timescale();		
@@ -811,7 +812,7 @@ _give_knife(delay){
 			}
 			if(giveKnife || cw == "none"){
 				self GiveWeapon("knife_mp");
-				self SwitchToWeapon("knife_mp"); 
+				//self SwitchToWeapon("knife_mp"); 
 				//cl("33switched"); 
 				while(self GetCurrentWeapon()=="knife_mp"){ 
 					wait 0.3; 
@@ -2112,21 +2113,24 @@ _dev_start(){
 
 _dev_sound_test(){
 	self endon ( "disconnect" );
-	self endon( "intermission" );
-	self endon( "game_ended" );
+	self endon ( "game_ended" );
+	self endon ( "intermission" );
 	//if (!getdvarint("developer")>0){ return; }
 	if(self.isbot){ return; }
 	
-	while(1){
-		self playSound("rifle_cock");
-		wait 1;
-		self playSound("pistol_cock");
-		wait 2;
-		//self playLocalSound("em1_el_zap");
-		//self playLoopSound("em1_el_loop");
-		wait 2;
-		//self stopLoopSound("em1_el_loop");
-		//wait 1;
+	s = StrTok("clusterbomb_explode_default,clusterbomb_explode_layer,clusterbomb_explode_layer_2,grenade_explode_default,grenade_explode_bark,grenade_explode_brick,grenade_explode_carpet,grenade_explode_cloth,grenade_explode_concrete,grenade_explode_dirt,grenade_explode_layer,grenade_explode_layer_2",","); i=0;
+	
+	cl("33_dev_sound_test");
+	for(;;){
+		while(!self LeanLeftButtonPressed() && !self LeanRightButtonPressed()){ wait 0.05; }
+		if(self LeanLeftButtonPressed()){ i--; }
+		if(self LeanRightButtonPressed()){ i++; }
+		if(i>s.size){ i=s.size; }
+		if(i<0){ i=0; }
+		self playLocalSound(s[i]);
+		cl("33sound: "+s[i]);
+		while(self LeanLeftButtonPressed() || self LeanRightButtonPressed()){ wait 0.05; }
+		wait 0.05;
 	}
 }
 
@@ -2139,7 +2143,7 @@ _dev_weapon_test(){
 	if (getdvarint("bots_main_debug")>0) { return; }  
 	if(self.isbot){ return; }
 	
-	give = "skorpion_reflex_mp";
+	give = "m1014_reflex_mp";
 
 	wait 1;
 	//give+="_mp";
@@ -2399,14 +2403,15 @@ _dvar_remove_bots(){
 	for(;;){
 		dvar = getDvar("kb");
 		botname="";
-		if(dvar!=""){
+		kicked=undefined;
+		if(dvar!="" && !isDefined(kicked)){
 			players = getentarray("player", "classname"); 
 			for(i=0;i<players.size;i++){
-				if(players[i].pers["team"]==dvar && players[i].isbot){
+				if(players[i].pers["team"]==dvar && players[i].isbot && !isDefined(kicked)){
 					botname=StrRepl(players[i].name, "/", "");
 					exec("kick " + botname);
 					cl("11kicking bot "+botname+" from "+dvar+" team");
-					break;
+					kicked=true;
 				}	
 			setDvar("kb","");
 			wait 1;
@@ -3788,13 +3793,14 @@ _damaged(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint
 		z = 100;
 		
 		if(isDefined(x) && isDefined(y)){
-			if (isDefined(self.lastStand) && isDefined(self.velocity) && isDefined(self.prevOrigin)){ 
+			if (isDefined(self.velocity) && isDefined(self.prevOrigin)){ 
+			//if (isDefined(self.lastStand) && isDefined(self.velocity) && isDefined(self.prevOrigin)){ 
 				self setVelocity((x,y,z));
 				//cl("33"+self.name+" self.velocity:"+self.velocity);
 				//cl("33"+self.name+" self.origin:"+self.origin);
 				//cl("33"+self.name+" self.prevOrigin:"+self.prevOrigin);
 			} else {
-				self setVelocity((x/4,y/4,z/4));
+				self setVelocity((x/2,y/2,z/2));
 			}
 		}
 		
@@ -3804,7 +3810,7 @@ _damaged(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint
 
 		//if (isDefined(self.lastStand)) { 
 		if (iDamage >= self.health+1) {
-			self thread _suicide_pd(10); 
+			self thread _suicide_pd(5); 
 			self setClientDvar("m_pitch",0.002);
 			self setClientDvar("m_yaw",0.002);
 			//cl("33"+self.name+" has perk specialty_pistoldeath");
@@ -4022,31 +4028,33 @@ _sleepers(){
 }
 
 _changeBotWeapon(){
-	self endon("game_ended");
 	self endon("disconnect");
+	self endon("game_ended");
+	self endon("intermission");
+	self endon("death");
 	if(!self.isbot) { return; }
-	wait 0.1;
+	wait 0.5;
 	self takeAllWeapons(); 
 	wait 0.5;
-	wait randomFloatRange(0.3,2);
+	//wait randomFloatRange(0.3,2);
 	for(i=0;i<2;i++){	//give 2 weapons to bots
-		w1=randomIntRange(0,level._weapons.size);
-		w2=randomIntRange(0,level.botsWeapons.size);
-		if(randomIntRange(0,5)<3){
-			if(level._weapons[w1] != "knife_mp"){
+		/*if(randomIntRange(0,5)<3){
+			w1=randomIntRange(0,level._weapons.size);
+			if(level._weapons[w1] != "knife_mp" && level._weapons[w1] != "none"){
 				self GiveWeapon( level._weapons[w1] );
 				self switchToWeapon(level._weapons[w1]);
 				self giveMaxAmmo(level._weapons[w1]);
-				//cl("55"+self.name + " the " + level._weapons[w1] + " and model "+self.model); 
+				cl("55"+self.name + " the " + level._weapons[w1] + " and model "+self.model); 
 				//cl("55"+self.name + " the " + level._weapons[w1] + " is given from level._weapons"); 
 			} else { i=-1; }
-		} else {
+		} else {*/
+			w2=randomIntRange(0,level.botsWeapons.size);
 			self GiveWeapon( level.botsWeapons[w2] );
-			self switchToWeapon(level.botsWeapons[w2]);
+			//self switchToWeapon(level.botsWeapons[w2]);
 			self giveMaxAmmo(level.botsWeapons[w2]);
-			//cl("55"+self.name + " the " + level.botsWeapons[w2]+" and model "+self.model); 
+			cl("55"+self.name + " the " + level.botsWeapons[w2]+" and model "+self.model); 
 			//cl("55"+self.name + " the " + level.botsWeapons[w2] + " is given from level.botsWeapons"); 
-		}
+		//}
 		wait 0.05;
 	}
 }
