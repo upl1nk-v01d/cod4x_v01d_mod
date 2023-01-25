@@ -8,6 +8,9 @@ init(){
 	if (getdvarint("bots_main_debug")>0){ return; }
 	if (getdvarint("dev")>0){ return; }
 	
+	if (!isDefined(game["MOTD"])){ game["MOTD"]=[]; }
+	if (!isDefined(game["MOTD"]["dateTimes"])){ game["MOTD"]["dateTimes"]=[]; }
+	if (!isDefined(game["MOTD"]["reports"])){ game["MOTD"]["reports"]=[]; }
 	if (!isDefined(game["hasReadMOTD"])){ game["hasReadMOTD"]=[]; }
 	if (!isDefined(game["hasReadHintMessage"])){ game["hasReadHintMessage"]=[]; }
 	
@@ -15,6 +18,7 @@ init(){
 
 	level thread _connecting_loop();
 	level thread _connected_loop();
+	level thread _get_motd_txt(1);
 }
 
 _connecting_loop(){
@@ -51,7 +55,6 @@ _connected_loop(){
 		//player thread _keystrokes();
 		//wait 0.1;
 		//player setClientDvar( "ui_lobbypopup", "summary" );
-		
 	}
 }
 
@@ -359,60 +362,80 @@ createRectangle(align,relative,x,y,width,height,color,sort,alpha,shader,ha,va)
 }
 */
 
-_get_motd_txt(d){
-	if(!isDefined(self.readDay)){ self.readDay=0; }
-	if(!isDefined(self.prevReadDay)){ self.prevReadDay=-1; }
-	realTime = getRealTime()-(86400*self.readDay);
+_get_motd_txt(prevDay){
+	if(!isDefined(prevDay)){ prevDay=0; }
+	realTime = getRealTime()-(86400*prevDay);
 	realDate = TimeToString(realTime, 0, "%F");
 	dateTime = TimeToString(realTime, 0, "%F %T");
 	//dateTime = StrRepl(playername, ":", "_");
-	filename = "motd/"+realDate+".log";
+	filename = "motd/motd.log";
 	line="";
+	raw=[];
 	lines=[];
 	chars=[];
-	dates=[];
+	dateTimes=[];
+	reports=[];
+	prevDaysLimit=90;
 	//cl("^3realDate: " + realDate);
 	
 	//lines[0]="^2"+realDate+"\n";
-	while (!FS_TestFile(filename) && self.readDay>=0){ 
-		cl("^1No log file on date "+realDate+" available!"); 
-		//lines[1]="^1\n\n\nNo Report";
-		realTime = getRealTime()-(86400*self.readDay);
-		realDate = TimeToString(realTime, 0, "%F");
-		dateTime = TimeToString(realTime, 0, "%F %T");
-		lines[0]="^2"+realDate+"\n";
-		filename = "motd/"+realDate+".log";
-		if(self.readDay>self.prevReadDay){ self.readDay++; }
-		else if(self.ReadDay<self.prevReadDay){ self.readDay--; }
-		if(self.readDay<=0){ self.readDay=0; break; }
-		level waittill("timers");
-	}
-	self.prevReadDay=self.readDay;
-
-	csv = FS_FOpen(filename, "read");
-	line = FS_ReadLine(csv);
-	lines[0]="^2"+realDate+"\n";
-	lines[1]="\n\n";
-	while (isDefined(line)){
-		cl("^3line: " + line);
-		//if (line == "") { lines[1]+="\n"; }
-		lines[1]+=line+"\n";
+	if (!FS_TestFile(filename)){ 
+		cl("11No MOTD file available!"); 
+	} else if(prevDay>=0){
+		csv = FS_FOpen(filename, "read");
 		line = FS_ReadLine(csv);
+		while (isDefined(line)){
+			cl("33line: " + line);
+			//if (line == "") { lines[1]+="\n"; }
+			raw[raw.size]=line;
+			line = FS_ReadLine(csv);
+		}
+		FS_FClose(csv);
+		//level waittill("timers");
 	}
-	FS_FClose(csv);
-		
-	//return lines;
-	/*div=lines.size/256; c=0;
-	for(d=0;d<div;d++){
-		for(i=0;i<lines;i++){
-			chars[d]+=lines[c]; 
+	
+	for(i=0;i<raw.size;i++){ cl("raw: " + raw[i]); }
+
+	c=0;
+	if(isDefined(raw)){
+		for(i=0;i<raw.size;i++){
+			for(d=0;d<prevDaysLimit;d++){
+				time=getRealTime()-(86400*d);
+				date=strRepl(TimeToString(time, 0, "%F"),"-"," ");
+				stop=undefined;
+				//cl("date: "+date);
+				
+				if(isDefined(raw[i]) && raw[i]==date){
+					dateTimes[c]=raw[i];
+					cl("11dateTimes[c]: " + dateTimes[c]);
+					game["MOTD"]["dateTimes"][c]=dateTimes[c];
+					while(isDefined(raw[i]) && !isDefined(stop)){ 
+						i++;
+						for(j=0;j<prevDaysLimit-c;j++){
+							time=getRealTime()-(86400*j);
+							date=strRepl(TimeToString(time, 0, "%F"),"-"," ");
+							if(isDefined(raw[i]) && raw[i]==date){ stop=true; break; }
+						}
+						if(isDefined(stop)){ break; }
+						if(isDefined(raw[i])){ 
+							reports[c]=raw[i]; 
+							cl("22reports[c]: " + reports[c]);
+							if(isDefined(game["MOTD"]["reports"][c])){ game["MOTD"]["reports"][c]+="\n"+reports[c]; }
+							else { game["MOTD"]["reports"][c]="\n\n"+reports[c]; }
+						}
+					}
+					c++;
+				}
+			}
 		}
 	}
-	return chars;*/
 
-	lines[2]="\n\n\n\n\n\n\n\n\n^2Press left or RIGHT button to navigate\n";
-	lines[2]+="^1Press JUMP button to destroy this message\n";
-	return lines;
+	//lines[1]="\n\n";
+	//lines[2]="\n\n\n\n\n\n\n\n\n^2Press left or RIGHT button to navigate\n";
+	//lines[2]+="^1Press JUMP button to destroy this message\n";
+	
+	//return game["MOTD"];
+	//return lines;
 }
 
 //---------------------------------------------------------------------------------------------------
@@ -599,7 +622,6 @@ _show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,c
 	if(isDefined(cx)){ x=x-(txt.size*fsc*6.45)/2; }
 	if(isDefined(cy)){ y=y-(txt.size*fsc*6.45)/2; }
 	
-	self playLocalSound("cypher_start");
 	while(size<txt.size){
 		r=randomIntRange(0,blob.size);
 		//blob[size]=rarr[r];
@@ -617,15 +639,16 @@ _show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,c
 		//self _create_menu_text("hudHint",hudHint,"default", 1.6,1.4,(r,g,b),_a,(0,0,0),0,300,300,"center","middle",ox,oy,1);
 		//_create_menu_text(hud,arr,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,selector,scolor,div,skip);		
 		self playLocalSound("cypher1");
+		//self playLocalSound("mouse_click");
 		//if(a<_a){ _a+=0.1; }
 		wait 0.05;
 		c--;
-		if(size == txt.size){ wait dur; self playLocalSound("cypher_start"); }
+		if(size == txt.size){ wait dur; }
 		self _destroy_menu("hudHint"+msgID); 
 	}
 	//wait 1;
 	//while(_a>0){
-	self playLocalSound("ui_camera_whoosh_in");
+	self playLocalSound("cypher_start");
 	while(size>0){
 		r=randomIntRange(0,blob.size);
 		//for(i=0;i<txt.size;i++){ if(txt[i] != " "){ txt[i]=" "; }}
@@ -639,7 +662,7 @@ _show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,c
 		self _create_menu_text("hudHint"+msgID,hudHint,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort);
 		//_create_menu_text(hud,arr,ft,fsz,fsc,color,a,gc,ga,x,y,ax,ay,ox,oy,sort,selector,scolor,div,skip){		
 		self playLocalSound("cypher1");
-		self playLocalSound("cypher2");
+		//self playLocalSound("mouse_click");
 		//if(ntxt.size==txt.size+3){ wait dur; }
 		//if(a==_a){ wait dur; }
 		//if(a>0){ a-=0.1; }
@@ -658,8 +681,8 @@ _welcome_msg(){
 	self endon( "game_ended" );
 	if (self.isbot){ return; }
 	
-	//if(!isDefined(self.readDay)){ self.readDay=0; };
-	//if(!isDefined(self.prevReadDay)){ self.prevReadDay=-1; };
+	if(!isDefined(self.readDay)){ self.readDay=0; }
+	if(!isDefined(self.prevReadDay)){ self.prevReadDay=-1; }
 
 	self closeMenu();
 	self closeInGameMenu();
@@ -711,13 +734,21 @@ _welcome_msg(){
 
 	if (game["hasReadMOTD"][self.name]==false){
 		self thread _accept();
-		motd=_get_motd_txt();
-		self.hudMOTD[0]=motd;
+		//motd=game["MOTD"];
+		//self.hudMOTD[0]=motd;
 		
-		if(isDefined(self.hudMOTD) && isDefined(motd)){
+		self.hudMOTDdateTimes[0]="^1"+game["MOTD"]["dateTimes"][self.readDay];
+		self.hudMOTDreports[0]="^7"+game["MOTD"]["reports"][self.readDay];
+		self.hudMOTDfooter[0]="\n\n\n\n\n\n\n\n\n\n^2Press left or RIGHT button to navigate\n";
+		self.hudMOTDfooter[0]+="^1Press JUMP button to destroy this message\n";
+		
+		if(isDefined(self.hudMOTDdateTimes) && isDefined(self.hudMOTDreports)){
+		//if(isDefined(self.hudMOTD) && isDefined(motd)){
 			while(h<300){
 				//self _create_menu_text("hudWelcome",self.hudMOTD[0],"default", 1.6,1.4,(r,g,b),a,(0,0,0),0,"center","middle",0,-70,2);
-				self _create_menu_text("hudWelcome",self.hudMOTD[0],320,155,0,0,"center","middle",0,0,"default", 1.6,1.4,(r,g,b),a,(0,0,0),0,1);
+				self _create_menu_text("hudMOTDdateTimes",self.hudMOTDdateTimes,320,155,0,0,"center","middle",0,0,"default", 1.6,1.4,(r,g,b),a,(0,0,0),0,1);
+				self _create_menu_text("hudMOTDreports",self.hudMOTDreports,200,155,0,0,"left","middle",0,0,"default", 1.6,1.4,(r,g,b),a,(0,0,0),0,1);
+				self _create_menu_text("hudMOTDfooter",self.hudMOTDfooter,200,155,0,0,"left","middle",0,0,"default", 1.6,1.4,(r,g,b),a,(0,0,0),0,1);
 				//self _create_menu_bg("hudWelcomeBG","middle","middle",0,0,w,h,(r,g,b),1,a,"black",50,"fullscreen","fullscreen");
 				self _create_menu_bg("hudWelcomeBG",-160,-120,320,240,0,0,"center","middle",(0,0,0),a,0,"black",50);
 				//_create_menu_bg(bg,x,y,w,h,ox,oy,ax,ay,color,a,sort,shader,aperc){
@@ -727,7 +758,9 @@ _welcome_msg(){
 				//level waittill("timers");
 				wait 0.05;
 				//self _destroy_menu(self.money["hudWelcomeBG"]);
-				self _destroy_menu("hudWelcome");
+				self _destroy_menu("hudMOTDdateTimes");
+				self _destroy_menu("hudMOTDreports");
+				self _destroy_menu("hudMOTDfooter");
 				self _destroy_bg("hudWelcomeBG");
 				c++;
 				//wait 0.05;
@@ -738,7 +771,9 @@ _welcome_msg(){
 
 			while(h>1){
 				//self _create_menu_text("hudWelcome",self.hudMOTD[0],"default", 1.6,1.4,(r,g,b),a,(0,0,0),0,"center","middle",0,-70,2);
-				self _create_menu_text("hudWelcome",self.hudMOTD[0],320,155,0,0,"center","middle",0,0,"default", 1.6,1.4,(r,g,b),a,(0,0,0),0,1);
+				self _create_menu_text("hudMOTDdateTimes",self.hudMOTDdateTimes,320,155,0,0,"center","middle",0,0,"default", 1.6,1.4,(r,g,b),a,(0,0,0),0,1);
+				self _create_menu_text("hudMOTDreports",self.hudMOTDreports,200,155,0,0,"left","middle",0,0,"default", 1.6,1.4,(r,g,b),a,(0,0,0),0,1);
+				self _create_menu_text("hudMOTDfooter",self.hudMOTDfooter,200,155,0,0,"left","middle",0,0,"default", 1.6,1.4,(r,g,b),a,(0,0,0),0,1);
 				//self _create_menu_bg("hudWelcomeBG","middle","middle",0,0,w,h,(r,g,b),1,a,"black",50,"fullscreen","fullscreen");
 				self _create_menu_bg("hudWelcomeBG",-160,-120,320,240,0,0,"center","middle",(0,0,0),a,0,"black",50);
 				//_create_menu_bg(bg,x,y,w,h,ox,oy,ax,ay,color,a,sort,sh,aperc){
@@ -752,7 +787,9 @@ _welcome_msg(){
 				//level waittill("timers");
 				wait 0.05;
 				//self _destroy_menu(self.money["hudWelcomeBG"]);
-				self _destroy_menu("hudWelcome");
+				self _destroy_menu("hudMOTDdateTimes");
+				self _destroy_menu("hudMOTDreports");
+				self _destroy_menu("hudMOTDfooter");
 				self _destroy_bg("hudWelcomeBG");
 				c++;
 				//wait 0.05;
@@ -793,22 +830,32 @@ _nav_motd(){
 	if(self.isbot){ return; }
 	
 	while(game["hasReadMOTD"][self.name]==false){
+		self.hudMOTDdateTimes[0]="^1"+game["MOTD"]["dateTimes"][self.readDay];
+		self.hudMOTDreports[0]="^7"+game["MOTD"]["reports"][self.readDay];
+
 		if (self MoveleftButtonPressed()){ 
-			//cl(self.name+" pressed left key");
+			cl(self.name+" pressed left key");
 			self notify("hasPressedMoveleftButton");
 			self.readDay++;
-			motd=_get_motd_txt(self.readDay);
-			if(isDefined(motd)){ self.hudMOTD[0]=motd; }
+			if(!isDefined(game["MOTD"]["dateTimes"][self.readDay])){ self.readDay--; }
+			cl("self.readDay:"+game["MOTD"]["dateTimes"][self.readDay]);
+			cl("self.readDay:"+game["MOTD"]["reports"][self.readDay]);
+			//motd=game["MOTD"]["dateTimes"][self.readDay];
+			//motd+=game["MOTD"]["reports"][self.readDay];
+			//if(isDefined(motd)){ self.hudMOTD[0]=motd; }
 			self playLocalSound("mouse_click");
 			while (self MoveleftButtonPressed()){ wait 0.05; }
 		}
 		
 		if (self MoveRightButtonPressed()){ 
-			//cl(self.name+" pressed RIGHT key"); 
+			cl(self.name+" pressed RIGHT key"); 
 			self notify("hasPressedMoveRightButton");
 			if(self.readDay>0){ self.readDay--; }
-			motd=_get_motd_txt(self.readDay);
-			if(isDefined(motd)){ self.hudMOTD[0]=motd; }
+			cl("self.readDay:"+game["MOTD"]["dateTimes"][self.readDay]);
+			cl("self.readDay:"+game["MOTD"]["reports"][self.readDay]);
+			//motd=game["MOTD"]["dateTimes"][self.readDay];
+			//motd+=game["MOTD"]["reports"][self.readDay];
+			//if(isDefined(motd)){ self.hudMOTD[0]=motd; }
 			self playLocalSound("mouse_click");
 			while (self MoveRightButtonPressed()){ wait 0.05; }
 		}
@@ -818,7 +865,7 @@ _nav_motd(){
 
 _map_datetime_menu(){
 	self endon ( "disconnect" );
-	if(self.isbot){ return; }
+	//if(self.isbot){ return; }
 	
 	map=[]; dateTime=[];
 	x=-100; y=440; ax="left"; ay="bottom"; a=0.5; ft="default"; fsz=1.4; fsc=1.6; color=(1,1,1); a=0.3;
@@ -1138,8 +1185,8 @@ _buy_menu_main(){
 		//buyMenuPistols = StrTok("Beretta Silenced,138,beretta_silencer_mp,Desert Eagle,230,deserteagle_mp,Desert Eagle Gold,400,deserteaglegold_mp,RW1,450,rw1_mp",",");
 		buyMenuSMGs = StrTok("Uzi,320,uzi_mp,Skorpion,440,skorpion_mp,AK74U,580,ak74u_mp",",");
 		buyMenuMGs = StrTok("SAW,1200,saw_mp,RPD,1300,rpd_mp",",");
-		buyMenuRifles = StrTok("AK47,640,ak47_mp,AK47 GL,800,ak47_gl_mp,Striker,1200,winchester1200_reflex_mp",",");
-		buyMenuSnipers = StrTok("G3,430,g3_acog_mp,Dragunov,640,dragunov_mp,SVG-100,1200,barrett_mp,PSG1,1500,ak47_reflex_mp",",");
+		buyMenuRifles = StrTok("AK47,640,ak47_mp,AK47 GL,800,ak47_gl_mp,G3 GL,1000,g3_gl_mp,",",");
+		buyMenuSnipers = StrTok("Dragunov,640,dragunov_mp,SVG-100,1200,barrett_mp",",");
 		buyMenuRPGs = StrTok("RPG,1200,rpg_mp",",");
 		//buyMenuRPGs = StrTok("RPG,2300,rpg_mp,LAW,2500,law_mp,AT4,2600,at4_mp",",");
 		buyMenuGLs = StrTok("MM1,2400,barrett_acog_mp",",");
@@ -1153,8 +1200,7 @@ _buy_menu_main(){
 		buyMenuPistols = StrTok("Colt 45 Silenced,155,colt45_silencer_mp,USP Silenced,167,usp_silencer_mp",",");
 		buyMenuSMGs = StrTok("MP5,550,mp5_silencer_mp,G36C GL,630,g36c_gl_mp,P90,900,p90_silencer_mp",",");
 		buyMenuMGs = StrTok("M60E4,1600,m60e4_mp",",");
-		buyMenuRifles = StrTok("M4 GL,1200,m4_gl_mp,M21,1650,m21_mp,CheyTac,2200,remington700_acog_mp",","); //M4 is automatic
-		//buyMenuRifles = StrTok("M4 GL,1200,m4_gl_mp,M21,1650,m21_mp,GPAS-12,2000,m1014_reflex_mp,CheyTac,2200,remington700_acog_mp",","); //M4 is automatic
+		buyMenuRifles = StrTok("M4 GL,1200,m4_gl_mp,M21,1650,m21_mp,Striker,1800,winchester1200_reflex_mp",","); //M4 is automatic
 		//buyMenuRifles = StrTok("M4 GL,1200,m4_gl_mp,M21,1650,m21_mp,Striker,1800,striker_mp",","); //M4 is automatic
 		buyMenuSnipers = StrTok("TAC330,2000,aw50_mp,TAC330 Silenced,2300,aw50_acog_mp",",");
 		//buyMenuSnipers = StrTok("TAC330,2000,tac330_mp,TAC330 Silenced,2300,tac330_sil_mp",",");

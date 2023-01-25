@@ -29,7 +29,7 @@ _give_chopper_hardpoint()
 	
 	for(;;){
 	
-		self waittill("spawned_player");
+		//self waittill("spawned_player");
 		if(isAlive(self)){
 			self maps\mp\gametypes\_hardpoints::giveHardpointItem( "helicopter_mp" );
 			//self giveWeapon("helicopter_mp");
@@ -39,7 +39,7 @@ _give_chopper_hardpoint()
 			cl(self.name+" used hardpoint");
 			
 		}
-	wait 1;
+		wait 1;
 	}
 }
 
@@ -47,6 +47,8 @@ _fire_on_enemies(){
 	level endon ( "disconnect" );
 	level endon( "intermission" );
 	level endon( "game_ended" );
+	
+	//cl("33_fire_on_enemies");
 	
 	target=undefined;
 
@@ -61,59 +63,51 @@ _fire_on_enemies(){
 		if(isDefined(allies_choppers)){ cl("allies_choppers.size:"+allies_choppers.size); }
 		if(isDefined(choppers)){
 			for(i=0;i<choppers.size;i++){ 
-				//choppers[i].maxhealth=100;
-				//choppers[i].heli_armor=100;
-				//choppers[i] settargetyaw(choppers[i].angles[1]+90);
-				for(j=0;j<choppers.size;j++){ 
-					if(choppers[i] != choppers[j] && choppers[i].team != choppers[j].team ){
-						dist = distance( choppers[i].origin, choppers[j].origin );
-						if(dist<closest){ 
-							closest = dist; 
-							choppers[i].primaryTarget = choppers[j];
-							choppers[i].secondaryTarget = choppers[j];
-							choppers[i].hasTarget=choppers[j];
-							target=choppers[i].hasTarget;
-							choppers[i] setVehWeapon( "cobra_20mm_mp" );
-							choppers[i] fireWeapon( "tag_flash" );
-						}
-					}
-				}
-				
-				if(isDefined(choppers[i].hasTarget) && isPlayer(choppers[i].hasTarget)){
-					player=choppers[i].hasTarget;
-					if(isAlive(player) && player.isbot){ 
-						player.bot.script_target=choppers[i]; 
-					}
-					cl("11"+player.name);
-					//choppers[i] setgoalyaw (target.angles[1]);
-				}
-				
-				/*if(!isDefined(target)){
-					for(i=0;i<players.size;i++){ 
-						dist = distance( choppers[i].origin, players[i].origin );
-						if(choppers[i].team != players[i].team){
+				if(isDefined(choppers[i].model) && (choppers[i].model == "vehicle_cobra_helicopter_fly" || choppers[i].model == "vehicle_mi24p_hind_desert")){
+					//choppers[i].maxhealth=100;
+					//choppers[i].heli_armor=100;
+					//choppers[i] settargetyaw(choppers[i].angles[1]+90);
+					for(j=0;j<choppers.size;j++){ 
+						if(choppers[i].team != choppers[j].team){
+							dist = distance( choppers[i].origin, choppers[j].origin );
 							if(dist<closest){ 
-								closest = dist; target = players[i];
-								choppers[i].primaryTarget = target;
-								choppers[i].secondaryTarget = target;
-								if(isPlayer(target) && isAlive(target) && target.isbot){ target.bot.script_target=choppers[i]; }
-								//choppers[i] setgoalyaw (choppers[i].angles[0]+40);
-								//cl("chopper.primaryTarget:"+choppers[i].primaryTarget.name);
-								//cl("chopper.secondaryTarget:"+choppers[i].secondaryTarget.name);
+								closest = dist; 
+								choppers[i].primaryTarget = choppers[j];
+								choppers[i].secondaryTarget = choppers[j];
+								choppers[i].hasTarget=choppers[j];
+								target=choppers[i].hasTarget;
+								choppers[i] setVehWeapon( "cobra_20mm_mp" );
+								choppers[i] fireWeapon( "tag_flash" );
 							}
 						}
 					}
-				}*/
+				
+					/*if(isDefined(players) && !isDefined(choppers[i].hasTarget)){
+						for(j=0;i<players.size;j++){ 
+							if(choppers[i].owner.team != players[j].team){
+								dist = distance( choppers[i].origin, players[j].origin );
+								if(dist<closest){ 
+									closest = dist; 
+									choppers[i].primaryTarget = players[j];
+									choppers[i].secondaryTarget = players[j];
+									choppers[i].hasTarget=players[j];
+									target=choppers[i].hasTarget;
+									choppers[i] setVehWeapon( "cobra_20mm_mp" );
+									choppers[i] fireWeapon( "tag_flash" );
+									if(isAlive(players[j]) && players[j].isbot){ 
+										players[j].bot.script_target=choppers[i]; 
+									}
+									cl("11"+players[j].name);
+								}
+							}
+						}
+					}*/
+				}
 			}
-		}
-		if(isDefined(target)){
-			//cl("target.maxhealth:"+target.maxhealth);
-		}
-		wait 0.1;
-		
 		//cl("models.size:"+models.size);
 		//cl("choppers.size:"+choppers.size);
-				
+		}
+		wait 0.1;	
 	}
 }
 

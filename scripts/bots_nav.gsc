@@ -1,10 +1,26 @@
 #include maps\mp\_load;
 #include maps\mp\_utility;
+#include scripts\cl;
 
 init()
 {
-	setDvar( "bots_play_move", true );
-	if (!getdvarint("developer")>0){ return; }
+	setDvar( "bots_play_move", false );
+	setDvar( "bots_fire_ext", 0 );
+	setDvar( "bots_aim_ext", 0 );
+	level.doNotAddBots=true;
+	
+	if (getDvar("dev") == ""){ setdvar("dev",1); }
+	
+	if (!getdvarInt("dev")){
+		setdvar( "developer_script", 1 );
+		setdvar( "developer", 1 );
+		
+		setdvar( "sv_mapRotation", "map " + getDvar( "mapname" ) );
+		exitLevel( false );
+	}
+
+	
+	//if (!getdvarint("developer")>0){ return; }
 	
 	//if (level.waypointCount != 0) { return; }
 
@@ -13,15 +29,19 @@ init()
 	precacheShader("compass_waypoint_bomb");
 	
 	if(!isDefined(getDvar( "bots_nav_enable"))){ setDvar( "bots_nav_enable", ""); }
-	setDvar( "bots_play_move", false );
+	cl("33bots_nav");
 	
 	level.bomb = undefined;
 	//level.nodes = [];
 	//level.nodes_quantity = 0;
+	
+	level thread _player_connecting();
+	level thread _add_some_bots(2);
 			
 	for(;;)
     {
 		level waittill("connected", player);
+		player thread _player_spawn();
 		player thread _start_nav();
 		//player thread _checkPos();
 		//player thread _place_markers();
@@ -33,6 +53,60 @@ init()
 		//player thread _calc_nearest_node();
 	}
 }
+
+_arr_remove(arr, remover){
+	new_arr = [];
+	for (i = 0; i < arr.size; i++ )
+	{
+		index = arr[i];
+		
+		if (isDefined(index)){
+			if ( index != remover )
+				new_arr[ new_arr.size ] = index;
+		}
+	}
+	return new_arr;
+}
+
+_player_connecting(){
+	level endon ( "disconnect" );
+	level endon( "intermission" );
+	level endon( "game_ended" );
+
+	//if (getdvarint("developer")>0){ return; }
+	//if(self.isbot){ return; }
+	
+	for(;;){
+		level waittill("connecting", player);
+		player thread _connecting();
+		wait 0.05;
+	}
+}
+
+_connecting(){
+	if (getdvarInt("dev")>0){
+		self setClientDvar( "developer_script", 1 );
+		self setClientDvar( "developer", 1 );
+		//cl("33connecting");
+	}
+}
+
+_player_spawn()
+{
+	self endon ( "disconnect" );
+	self endon( "intermission" );
+	self endon( "death" );
+	self endon( "game_ended" );
+	//if (self.isbot){ return; }
+	
+	self waittill("spawned_player");
+	//self thread _draw_grid();
+	self thread _grid_loop();
+	self thread _draw_nodes();
+	
+	//self setClientDvars("cg_thirdperson", 1);		
+}
+
 
 _start_nav()
 {
@@ -56,420 +130,94 @@ _start_nav()
 	
 }
 
-_nav_loop(){
-	self endon ( "disconnect" );
-	//self endon( "intermission" );
-	//self endon( "death" );
-	self endon( "game_ended" );
-	if (!self.isbot){ return; }
-	
-	r = randomFloatRange(1.2,1.4);
+_add_some_bots(bots){
+	setDvar( "testclients_doreload", true );
+	wait 0.1;
+	setDvar( "testclients_doreload", false );
+	if(!isDefined(bots)){ bots=10; }
+	for(i=0;i<bots/2;i++){
+		setDvar("ab", "axis");
+		wait 1.5;
+		setDvar("ab","allies");
+		wait 1.5;
+	}
+}
 
+_draw_grid(){
+	self endon ( "disconnect" );
+	self endon( "intermission" );
+	self endon( "death" );
+	self endon( "game_ended" );
+	if (self.isbot){ return; }
+	
+	cl("33draw_grid");
 	for(;;){
-		if(isAlive(self)){
-		
-			bot_angles = self GetPlayerAngles();
-			startPos = self getEye();
-			
-			//bt_X_angles_arr = StrTok(-45+","+-33.75+","+-22.5+","+-11.25+","+0+","+11.25+","+22.5+","+33.75+","+45,"," );
-			bt_X_angles_arr = -60;
-			bt_startPos_arr = [];
-			bt_trace_arr = [];
-			bt_pos_arr = [];
-			for(i=0;i<5;i++){
-				bt_startPos_arr = startPos + anglesToForward( ( bot_angles[0]+5, bot_angles[1]+bt_X_angles_arr, 0 ) ) * 560;
-				if(i==0 || i==4) { bt_startPos_arr = startPos + anglesToForward( ( bot_angles[0], bot_angles[1]+bt_X_angles_arr, 0 ) ) * 560; }
-				if(i==2) { bt_startPos_arr = startPos + anglesToForward( ( bot_angles[0]+10, bot_angles[1]+bt_X_angles_arr, 0 ) ) * 320; }
-				if(i==5) { bt_startPos_arr = startPos + anglesToForward( ( bot_angles[0], bot_angles[1], 0 ) ) * -160 ; }
-				trace = bulletTrace( startPos, bt_startPos_arr, false, self );
-				bt_pos_arr[i] = trace["position"];
-				//cl(bt_X_angles_arr);
-				bt_X_angles_arr += 30;
-			}
-				
-			if(isDefined(self.approachNode)){
-				self.moveToPos = self.approachNode;
-			} else {
-				self.moveToPos = self.origin;
-			}
-			
-			self _calc_dist(bt_pos_arr);
-			//self.moveToPos = self _calc_dist(bt_pos_arr);
-			aimspeed = 0.1 + (distance( self.origin, self.moveToPos )*0.01);
-			r = 0.05+aimspeed*0.1;
-			//aimspeed = 0.3;
-			dist = distance( self.origin, self.moveToPos );
-			//iprintln(self.name+":"+speed);
-			if (!isDefined(self.bot.target)){
-				//self thread _aim_speed(self.moveToPos,aimspeed); 
-				if (isDefined(self.nodeAngles)) { 
-					self setPlayerAngles((0, self.nodeAngles[1], 0));
+		while(!self UseButtonPressed()){ wait 0.05; }
+		myAngles = self GetPlayerAngles();
+		startPos = self getEye();
+		startPosForward = startPos + anglesToForward((0,myAngles[1],0))*120;
+		trace = bulletTrace(startPos,startPosForward,true,self);
+		//pos = trace["position"];
+		pos = startPos;
+		//ent = trace["entity"];
+		if(isDefined(pos)){
+			for(i=1;i<=10;i++){
+				for(j=1;j<=10;j++){
+					trace_down = bulletTrace((pos[0]-(64*10/2)+(i*64), pos[1]-(64*10/2)+(j*64), pos[2]), (pos[0]-(64*10/2)+(i*64)-64, pos[1]-(64*10/2)+(j*64), pos[2]-100), false,self);
+					pos2 = trace_down["position"];
+					if((i==1 && j==1) || (i==1 && j==10) || (i==10 && j==1) || (i==10 && j==10)){	
+						//marker = spawn( "script_origin", (pos2[0],pos2[1],pos2[2]),0,0,0);
+						//marker.targetname = "markers_"+self.name;
+					}
+					//line(fw1, fw2, (1, 1, 0.5), 1, 1, 30);
+					//print3d(self.origin, "START", (1.0, 0.8, 0.5), 1, 3, 10000);
+					cl("33pos:"+pos2);
+					//wait 0.5;
 				}
 			}
 		}
-	wait r;
-	}
+		while(self UseButtonPressed()){	wait 0.05; }
+		wait 0.05;
+	}wait 0.05;
 }
 
-_calc_dist(bt_pos_arr){
-	closest = 2147483647; a=undefined; h=0; dist = [];
-	for(i=0;i<bt_pos_arr.size;i++){
-		dist[i] = distance( self.origin, bt_pos_arr[i] );
-		//cl(dist[i]);
-	}
-	
-	for(i=0;i<dist.size;i++){
-		if(dist[i]<closest){ closest = dist[i]; h=i; }
-		//else if (dist[arr.size-1] > 60 ) { closest = dist[1]; h=arr.size-1; }
-	}
-
-	//self.approachNode = undefined;
-	if (dist[3] > 500 ) { closest = dist[1]; h=1; }
-	else if (dist[1] > 500 ) { closest = dist[3]; h=3; }
-	else if (dist[2] > 220 ) { closest = dist[2]; h=2; }
-	else if (dist[2] < 50 ) { closest = dist[4]; h=4; self.approachNode = undefined; }
-	else if (dist[0] > 50 && dist[0] < 90) { closest = dist[4]; h=4; }
-	else if (dist[4] > 50 && dist[4] < 90) { closest = dist[0]; h=0; }
-	else if (dist[3] < 30 ) { closest = dist[1]; h=1; self.approachNode = undefined; }
-	else if (dist[1] < 30 ) { closest = dist[3]; h=3; self.approachNode = undefined; }
-	//else if (dist[5] < 120 ) { closest = dist[5]; h=5; iprintln(self.name+":back"); }
-	
-	//else if (dist[0] < 60 ) { closest = dist[2]; h=0; iprintln(self.name+":right"); }
-	//else if (dist[2] < 60 ) { closest = dist[0]; h=2; iprintln(self.name+":left"); }
-
-	a = bt_pos_arr[(bt_pos_arr.size-1)-h]; 
-	//cl(closest);
-	self thread _bot_hud_bt(bt_pos_arr,h);
-
-	//wait 0.05;
-	//iprintln(arr[0]);
-	return a;
-}
-
-/* _calc_nearest_node(){
+_grid_loop(){
 	self endon ( "disconnect" );
 	self endon( "intermission" );
-	self endon( "game_ended" );
 	//self endon( "death" );
+	self endon( "game_ended" );
 	if (!self.isbot){ return; }
 	
-	//self.nodesPassed = [];
-	
-	for(;;){
-		if(isAlive(self)){
-			//nodes = level.nodes;	
-			closest = 2147483647;
-			node = undefined;
-			next_node = undefined;
-			name = undefined;
-			nr = undefined;
-			exists = false;
-			dist = 0;
-			if(isDefined(level.nodes)){
-				for( i = 0 ; i < level.nodes.size; i++ ){
-					if (isDefined(level.nodes[i].pos)){ 
-						dist = distance( self.origin, level.nodes[i].pos ); 
-						//if(!isDefined(level.nodes[level.nodes_quantity].names)){ level.nodes[level.nodes_quantity].names = []; }
-						//self iprintln("^3"+level.nodes[i].pos);
+	self.nodes=[];
+	self.nodes_quantity=0;
+
+	cl("33grid_loop");
+	//while(isAlive(self)){
+		myAngles = self GetPlayerAngles();
+		startPos = self getEye();
+		startPosForward = startPos + anglesToForward((0,myAngles[1],0))*120;
+		trace = bulletTrace(startPos,startPosForward,true,self);
+		//pos = trace["position"];
+		pos = startPos;
+		//ent = trace["entity"];
+		if(isDefined(pos)){
+			for(i=1;i<=10;i++){
+				for(j=1;j<=10;j++){
+					trace_down = bulletTrace((pos[0]-(64*10/2)+(i*64), pos[1]-(64*10/2)+(j*64), pos[2]), (pos[0]-(64*10/2)+(i*64)-64, pos[1]-(64*10/2)+(j*64), pos[2]-100), false,self);
+					pos2 = trace_down["position"];
+					self _add_node(pos2);
+					if((i==1 && j==1) || (i==1 && j==10) || (i==10 && j==1) || (i==10 && j==10)){
+						//node = spawn( "script_origin", (pos2[0],pos2[1],pos2[2]),0,0,0);
+						//node.targetname = "markers_"+self.name;
 					}
-					
-					//if (dist<closest) {
-					if (dist < 150 && dist > 50 ) {
-						//if(isDefined(self.nodesPassed)) { iprintln("^3"+self.nodesPassed.size); }
-						closest = dist;
-						node = level.nodes[i].pos;
-						name = self.name;
-						nr = i;
-						if (isDefined(level.nodes[i])){
-							//cl("^3"+level.nodes[i].names.size);
-							if (level.nodes[i].names.size < 1) { level.nodes[i].names[level.nodes[i].names.size] = name; }
-							for( j = 0 ; j < level.nodes[i].names.size; j++ ){
-								//cl("^3"+level.nodes[i].names.size);
-								//next_node = level.nodes[i].pos; 
-								//level.nodes[i].names[j] = self.name;
-								if (level.nodes[i].names[j] == name){ 
-									exists = true;
-								}
-							}	
-							if (exists == false){
-								level.nodes[i].names[level.nodes[i].names.size] = name;
-								//cl("^3Register name "+name+" to "+i+" node at "+node); 
-								next_node = level.nodes[i].pos;
-								cl("^3Register name "+name+" to "+i+" node at "+node); 
-								wait 1;
-							}
-							exists = false;
-						}
-					}
-				}
-				wait 0.5;
-				//if(isDefined(level.nodes)){ cl(level.nodes.size); }
-				if (isDefined(next_node)){ 
-						self.moveToPos = next_node;
-						self.approachNode = self.moveToPos;
-						level.nodes[nr].names[level.nodes[nr].names.size] = name;
-				}
-				
-				while(isDefined(self.approachNode)){
-					dist = distance( self.origin, self.moveToPos ); 
-					wait 0.5;
-					if(dist<30){ 
-						self.approachNode = undefined; 
-						self.moveToPos = undefined;
-						//iprintln(dist);
-						wait 5;
-					}
+					//line(fw1, fw2, (1, 1, 0.5), 1, 1, 30);
+					//print3d(self.origin, "START", (1.0, 0.8, 0.5), 1, 3, 10000);
+					cl("33"+self.name+" pos:"+pos2);
+					//wait 0.5;
 				}
 			}
 		}
 		wait 0.05;
-	}
-} */
-
-/* _reset_nodes(){
-	self endon ( "disconnect" );
-	self endon( "intermission" );
-	self endon( "game_ended" );
-	//self endon( "death" );
-	if (!self.isbot){ return; }
-	
-	for(;;){
-		self waittill("death");
-		self.nodesPassed = [];
-		wait 1;
-	}
-} */
-
-_bot_move(){
-	self endon ( "disconnect" );
-	self endon( "intermission" );
-	self endon( "game_ended" );
-	//self endon( "death" );
-	if (!self.isbot){ return; }
-	
-	for(;;){
-		while(isAlive(self)){
-			if (isDefined(self.approachNode) && isDefined(self.moveToPos)){ self botMoveTo(self.moveToPos); }
-			wait 1;
-		}
-		wait 1;
-	}
-}
-
-_bot_hud_bt(pos,h){
-
-	if (!self.isbot){ return; }
-	
-	nearest = "compass_waypoint_target";
-	farthest = "compass_waypoint_defend";
-	between = "compass_waypoint_bomb";
-
-	for(i=0;i<pos.size;i++){
-		self.scc = spawn( "script_origin", pos[i],0,64,64 );
-		self.scc.targetname = "scc_"+self.name;
-	}
-	
-	self.objs_scc = getentarray( "scc_"+self.name, "targetname" );
-	
-	for(i=0;i<self.objs_scc.size;i++){
-		self.scc_hud[i] = newClientHudElem( self ); 
-		
-		if(i==h) { 
-			self.scc_hud[i] setShader( nearest , 8, 8 ); 
-			self.scc_hud[i] SetWayPoint(false, nearest); 
-		} else { 
-			self.scc_hud[i] setShader( farthest , 8, 8 ); 
-			self.scc_hud[i] SetWayPoint(false, farthest); 	
-		}
-		self.scc_hud[i].alpha = 0.5;
-		self.scc_hud[i].x = self.objs_scc[i].origin[0]; self.scc_hud[i].y = self.objs_scc[i].origin[1]; self.scc_hud[i].z = self.objs_scc[i].origin[2]+20;
-	}
-	
-
-	wait 0.05;
-	//wait 1.5;
-	//self.objs_scc = getentarray( "scc_"+self.name, "targetname" );
-	for(i=0;i<self.objs_scc.size;i++){
-		if(isDefined(self.scc_hud[i])){ self.scc_hud[i] Destroy(); }
-		if(isDefined(self.objs_scc[i])){ self.objs_scc[i] delete(); }
-	}
-}
-
-_checkPos(){
-	level endon("game_ended");
-	self endon("disconnect");
-	//self endon( "death" );
-	if (!self.isbot){ return; }
-
-	stay_time = 2;
-	bot_stay_time = 0;
-	max_distance = 30;
-	wait 5;
-	
-	for(;;){
-		while(isAlive(self))
-		{
-			old_position = self.origin;
-			wait 1;	
-			new_position = self.origin;
-		
-			distance = distance2d( old_position, new_position );
-			if( distance < max_distance )
-				bot_stay_time++;
-		
-			if( bot_stay_time == stay_time ){
-				angles = self GetPlayerAngles();
-				self setPlayerAngles((0, angles[1]+180, 0));
-				bot_stay_time=0;
-				wait 2;
-			}
-		}
-		wait 0.05;
-	}
-}
-
-/* _place_markers(pos){
-	self endon ( "disconnect" );
-	self endon( "intermission" );
-	self endon( "game_ended" );
-	if(self.isbot){ return; }
-	
-	self waittill("spawned_player");
-	wait 1;
-	
-	while(isAlive(self)){
-		self.objs = getentarray( "markers_"+self.name, "targetname" );		
-		closest = 2147483647;
-		dist = 0;
-		for( i = 0 ; i < self.objs.size ; i++ ){
-			self.markers[i] = newClientHudElem( self ); 
-			self.markers[i] setShader( "compass_waypoint_bomb", 15, 15 );
-			self.markers[i].alpha = 0.5;
-			self.markers[i].x = self.objs[i].origin[0]; self.markers[i].y = self.objs[i].origin[1]; self.markers[i].z = self.objs[i].origin[2]+32;
-			self.markers[i] SetWayPoint(true, "compass_waypoint_bomb");
-			
-			if (isDefined(self.objs[i])){ 
-				dist = distance( self.origin, self.objs[i].origin ); 
-				//self iprintln("^3"+dist);
-			}
-			if (dist < closest ) {
-				closest = dist;
-			}
-			if(self.objs.size>2){
-				if (isDefined(self.objs[0])){ 
-					self.objs[0] delete();
-				}
-			}
-		}
-		
-		if (closest > 300 ) {
-			marker = spawn( "script_origin", self.origin,0,64,64 );
-			marker.targetname = "markers_"+self.name;
-			if(!self.isbot) { 
-				self thread _add_wpt(self.origin); 
-			}
-		}
-		
-		wait 1;
-		for( i = 0 ; i < self.objs.size ; i++ ){ self.markers[i] Destroy(); }
-	}
-	self.objs = getentarray( "markers_"+self.name, "targetname" );		
-	for( i = 0 ; i < self.objs.size ; i++ ){ 
-		if(isDefined(self.markers[i])) { self.markers[i] Destroy(); }
-		if(isDefined(self.objs[i])) { self.objs[i] delete(); }
-	}
-} */
-
-_room_center_node(){	
-	if(!self.isbot){
-		for(;;){
-			if(isAlive(self)){
-				if(isDefined(self.test_hud) && isDefined(self.test)){
-					for(i=0;i<self.test.size;i++){
-						if(isDefined(self.test_hud[i])){ self.test_hud[i] Destroy(); }
-						if(isDefined(self.test[i])){ self.test[i] delete(); }
-					}			
-				}
-				angles = self GetPlayerAngles();
-				Pos = self getEye();
-				startPos = (Pos[0],Pos[1],Pos[2]);
-				//startPos = self getEye();
-				bt_X_angles_arr = 0;
-				bt_startPos_arr = [];
-				bt_trace_arr = [];
-				bt_pos_arr = [];
-				for(i=0;i<4;i++){
-					bt_startPos_arr = startPos + anglesToForward( ( angles[0]+5, angles[1]+bt_X_angles_arr, 0 ) ) * 260;
-					trace = bulletTrace( startPos, bt_startPos_arr, false, self );
-					bt_pos_arr[i] = trace["position"];
-					bt_X_angles_arr += 90;
-					self.test[i] = spawn( "script_origin", bt_pos_arr[i],0,64,64 );
-					self.test[i].targetname = "test_"+self.name;
-					self.test_hud[i] = newClientHudElem( self ); 
-					self.test_hud[i] setShader( "compass_waypoint_defend" , 8, 8 ); 
-					self.test_hud[i] SetWayPoint(false, "compass_waypoint_defend"); 	
-					self.test_hud[i].alpha = 0.5;
-					self.test_hud[i].x = bt_pos_arr[i][0]; self.test_hud[i].y = bt_pos_arr[i][1]; self.test_hud[i].z = bt_pos_arr[i][2]+20;
-				}
-					
-				d1 = distance( bt_pos_arr[0], bt_pos_arr[2] )/2;
-				d2 = distance( bt_pos_arr[1], bt_pos_arr[3] )/2;
-				point = (bt_pos_arr[0][0]+d1/2,bt_pos_arr[0][1],bt_pos_arr[0][2]);
-				//point = bt_pos_arr[0];
-				//cl(d1);
-				//cl(d2);
-				self.test[4] = spawn( "script_origin", point,0,64,64 );
-				self.test[4].targetname = "test_"+self.name;
-				self.test_hud[4] = newClientHudElem( self ); 
-				self.test_hud[4] setShader( "compass_waypoint_target" , 8, 8 ); 
-				self.test_hud[4] SetWayPoint(false, "compass_waypoint_target"); 	
-				self.test_hud[4].alpha = 0.5;
-				self.test_hud[4].x = point[0]; self.test_hud[4].y = point[1]; self.test_hud[4].z = point[2]+20;
-			}
-		wait 4.1;
-		}
-	}
-}
-
-_aim_speed(pos,speed){
-	//self endon ( "death" );2
-	self endon ( "disconnect" );
-	self endon( "intermission" );
-	self endon( "game_ended" );
-	
-	if (!self.isbot){return;}
-	if (!isDefined(speed)) {speed=0.2;}
-	
-	self.swc = 1;
-	self.pers["bots"]["skill"]["aim_time"] = speed;
-	
-	//for(;;){
-	
-		while (self.swc == 1)  { 
-			pos = self.moveToPos;		
-			if(self.pers["bots"]["skill"]["aim_time"] < 0.2) {self.swc = 0; }
-			if(self.pers["bots"]["skill"]["aim_time"] < 0.1) { self.pers["bots"]["skill"]["aim_time"]=1.7; }
-			self.pers["bots"]["skill"]["aim_time"] *= 0.9;
-			if(isDefined(pos)){ self botLookAt( pos, self.pers["bots"]["skill"]["aim_time"] ); }
-			//if (isDefined(pos)){ self botMoveTo(pos); }
-			angles = self getPlayerAngles();
-			self setPlayerAngles((0, angles[1], 0)); 
-			wait 0.05;
-			//self botLookAt( (0,0,0), 0.1 );
-			
-		} 
-		while (self.swc == 0) {
-			pos = self.moveToPos;		
-			self.pers["bots"]["skill"]["aim_time"] *= 1.2; 
-			if(self.pers["bots"]["skill"]["aim_time"] > 2) { self.swc = 1; }
-			if(isDefined(pos)){ self botLookAt( pos, self.pers["bots"]["skill"]["aim_time"] ); }
-			//if (isDefined(pos)){ self botMoveTo(pos); }
-			angles = self getPlayerAngles();
-			self setPlayerAngles((0, angles[1], 0)); 
-			wait 0.05;
-		}
-	pos=undefined;
-	wait 0.05;
 	//}
 }
 
@@ -505,50 +253,61 @@ _add_wpt_for_bomb(){
 	}
 }
 
-/* _add_node(pos)
-{
-	level.nodes[level.nodes_quantity] = spawnstruct();
-	level.nodes[level.nodes_quantity].pos = pos;
-	level.nodes[level.nodes_quantity].type = self getStance();
-	level.nodes[level.nodes_quantity].angles = self getPlayerAngles();
-	level.nodes[level.nodes_quantity].names = [];
-	//iprintln("node added at "+pos); 
-	cl("node added at "+pos); 
-	level.nodes_quantity++;
+_add_node(pos){
+	if(isDefined(pos)){
+		self.nodes[self.nodes_quantity] = spawnstruct();
+		self.nodes[self.nodes_quantity].pos = pos;
+		self.nodes[self.nodes_quantity].type = self getStance();
+		self.nodes[self.nodes_quantity].angles = self getPlayerAngles();
+		self.nodes[self.nodes_quantity].names = [];
+		//iprintln("node added at "+pos); 
+		//cl("node added at "+pos); 
+		cl("self.nodes_quantity: "+self.nodes_quantity); 
+		self.nodes_quantity++;
+	}
 }
 
-_add_nodes(pos){
+_draw_nodes(){
 	self endon ( "disconnect" );
 	self endon( "intermission" );
 	self endon( "game_ended" );
-	//if(self.isbot){ return; }
+	if(!self.isbot){ return; }
 	
-	for(;;){
-		wait 1;
-		while(isAlive(self)){
-			self.objs = level.nodes;	
-			closest = 2147483647;
-			dist = 0;
-			if(isDefined(self.objs)){
-				for( i = 0 ; i < self.objs.size ; i++ ){
-					if (isDefined(self.objs[i].pos)){ 
-						dist = distance( self.origin, self.objs[i].pos ); 
-						//self iprintln("^3"+dist);
-					}
-					if (dist < closest ) {
-						closest = dist;
-					}
-				}
+	wait 1;
+	
+	while(isAlive(self)){
+		//self.objs = objs;	
+		cl("33self.nodes.size:"+self.nodes.size);	
+		//self.objs = getentarray( "markers_"+self.name, "targetname" );		
+		closest = 2147483647;
+		dist = 0;
+		for( i = 0 ; i < self.nodes.size ; i++ ){
+			self.markers[i] = newClientHudElem( self ); 
+			self.markers[i] setShader( "compass_waypoint_bomb", 15, 15 );
+			self.markers[i].alpha = 0.5;
+			self.markers[i].x = self.nodes[i].origin[0]; self.markers[i].y = self.nodes[i].origin[1]; self.markers[i].z = self.nodes[i].origin[2]+1;
+			self.markers[i] SetWayPoint(true, "compass_waypoint_bomb");
+			
+			if (isDefined(self.nodes[i])){ 
+				dist = distance( self.origin, self.nodes[i].origin ); 
+				//self iprintln("^3"+dist);
 			}
-			if (closest > 100 ) {
-				self thread _add_node(self.origin);
+			if (dist < closest ) {
+				closest = dist;
+			}
+			if(self.nodes.size>2){
+				if (isDefined(self.nodes[0])){ 
+					//self.nodes[0] delete();
+					self.nodes = _arr_remove(self.nodes,self.nodes[0]);
+				}
 			}
 			wait 1;
 		}
+		
+		
+		wait 1;
+		for( i = 0 ; i < self.nodes.size ; i++ ){ self.markers[i] Destroy(); }
+		
+		wait 1;
 	}
-}*/
-
-cl(txt){
-	if (isDefined(txt)){ print("-- "+txt+" -- \n"); }
-	else { print("!! undefined !! \n"); }
 }

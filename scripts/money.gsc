@@ -104,6 +104,7 @@ _player_read_data(id){
 	
 	//game["firstRound"][self.name]=true;
 	game["money"][self.name] = int(data[1]);
+	if(game["money"][self.name]<1){ game["money"][self.name]=3000; }
 	_set_player_weapons_ammo_list(self,data[2],data[3]);
 	//game["loot"][self.name]=data[2];
 	//self setSpawnWeapon(data[3]);

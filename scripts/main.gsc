@@ -25,13 +25,13 @@ init()
 
 	level thread scripts\bots_aim_ext::init();
 	level thread scripts\bots_fire_ext::init();
-	//level thread scripts\chopper_ext::init();
+	level thread scripts\chopper_ext::init();
 	level thread scripts\money::init();
 	level thread scripts\menus::init();
 	level thread scripts\tactical::init();
 	//level thread scripts\bots_nav::init();
 
-	if (getDvar("v01d_version") == "") { setDvar("v01d_version", "v1.93"); }
+	if (getDvar("v01d_version") == "") { setDvar("v01d_version", "v2.00"); }
 
 	//if (!getdvarint("developer")>0) { return; }
 	
@@ -150,6 +150,7 @@ init()
 	if (!isDefined(game["nextMap"])){ game["nextMap"]=""; }
 	if (!isDefined(game["prevMap"])){ game["prevMap"]=""; }
 	if (!isDefined(game["mapList"])){ game["mapList"]=[]; }
+	if (!isDefined(game["teamWonRound"])){ game["teamWonRound"]=""; }
 
 	if (level.waypointCount == 0) {
 		game["waypointless_map"]="on";
@@ -213,7 +214,7 @@ init()
 		//player thread _connecting();
         
         level waittill("connected", player);
-		if (!player.isbot && getDvarInt("log_players")==1) { player thread _player_info(1,player.name); }
+ 		if(!player.isbot && getDvarInt("log_players")==1) { player thread _player_info(1,player.name); }
 		if(!isDefined(game["isJoinedSpectators"][player.name])){ game["isJoinedSpectators"][player.name]=true; }
         
         player thread _welcome();
@@ -235,7 +236,7 @@ init()
 		//if (ctm > 5) { ctm=1; }
 		
 		//if(isDefined(game["botPlayers"])){ setDvar("bots_manage_fill", game["botPlayers"]+1-game["realPlayers"]); }
-    }
+	} 
 }
 
 _t1(){
@@ -289,6 +290,22 @@ _t5(){
 }
 */
 
+_cancel_reload_when_jumping(){
+	self endon ( "disconnect" );
+	self endon ( "death" );
+	self endon( "intermission" );
+	self endon( "game_ended" );
+	//if(self.isbot){ return; }
+		
+	for(;;){
+		while(!self JumpButtonPressed()){ wait 0.05; }
+		self DisableWeapons();
+		wait 0.4;
+		self EnableWeapons();
+		//wait 0.05;
+	}
+}
+
 _precache_info(delay){
 	wait delay;
 	if(isDefined(level.precachedItemsNum)){ cl("33Totally precached "+level.precachedItemsNum+" items!"); }
@@ -318,28 +335,42 @@ _last_allie_taunting(){
 
 _bot_balance_manage(){
 	level endon ( "disconnect" );
-	level endon( "intermission" );
-	level endon( "game_ended" );
+	//level endon( "intermission" );
+	//level endon( "game_ended" );
 
 	if(getDvarInt("bots_inbalance_feature") == 1){
-		if(game["roundsplayed"]>0){
-			wait 1;
-			axisScore = [[level._getTeamScore]]( "axis" );
-			alliesScore = [[level._getTeamScore]]( "allies" );
-			//cl("33level.playerLives[axis]:"+level.playerLives["axis"]);
-			//cl("33level.playerLives[allies]:"+level.playerLives["allies"]);
-			if(axisScore>alliesScore){ 
+		wait 1;
+		if(isDefined(game["teamWonRound"])){			
+			if(game["teamWonRound"]=="axis"){ 
 				exec("ab allies");
-				wait 1;
+				wait 0.5;
 				if(level.playerLives["axis"]>4){ exec("kb axis"); }
 				//exec("kb axis");
-			} else if(alliesScore>axisScore){ 
+			} else if(game["teamWonRound"]=="allies"){ 
 				exec("ab axis");
-				wait 1;
+				wait 0.5;
 				if(level.playerLives["allies"]>4){ exec("kb allies"); }
 				//exec("kb allies");
 			}
 		}
+		
+		axisScore = [[level._getTeamScore]]( "axis" );
+		alliesScore = [[level._getTeamScore]]( "allies" );
+		_axisScore = axisScore;
+		_alliesScore = alliesScore;
+		cl("33waiting... team score diff");
+		while(axisScore==_axisScore && alliesScore==_alliesScore){ 
+			wait 1;
+			axisScore = [[level._getTeamScore]]( "axis" );
+			alliesScore = [[level._getTeamScore]]( "allies" );
+		}
+		if(axisScore>_axisScore){ game["teamWonRound"]="axis"; }
+		if(alliesScore>_alliesScore){ game["teamWonRound"]="allies"; }
+		//cl("33level.playerLives[axis]:"+level.playerLives["axis"]);
+		//cl("33level.playerLives[allies]:"+level.playerLives["allies"]);
+		cl("33waiting... game[state] == postgame");
+		while (level.gameEnded) { wait 0.5; }
+		cl("33game[teamWonRound]="+game["teamWonRound"]);
 	}
 }
 
@@ -359,8 +390,6 @@ _player_connecting_loop(){
 	level endon( "intermission" );
 	level endon( "game_ended" );	
 	
-	if (!isDefined(game["nextMap"])){ game["nextMap"]=""; }
-
 	//if (getdvarint("developer")>0){ return; }
 	//if(self.isbot){ return; }
 	
@@ -382,6 +411,7 @@ _player_spawn_loop(){
 	self.bombPing=undefined;
 	self setClientDvar( "v01d_tools_bp", 1 );
 	self.firingXP=0;
+	self.isBlurrying=undefined;
 	
 	for(;;){
 		self waittill("spawned_player");	
@@ -416,6 +446,7 @@ _player_spawn_loop(){
 		self thread _weapon_cock_sound();
 		self thread _player_mouse();
 		self thread _hp_weapons_list();
+		self thread _cancel_reload_when_jumping();
 		
 		//self thread _dev_coords();
 		//self thread _dev_weapon_test();
@@ -568,7 +599,8 @@ _explosives_pickup(){
 							if(c>=20){ self thread _progress_bar(1000,0,1); }
 						}
 					}
-					if(isDefined(nr) && !isDefined(level.claymoreArray[nr].removed) && c<=0){ 
+					//if(isDefined(nr) && !isDefined(level.claymoreArray[nr].removed) && c<=0){ 
+					if(isDefined(nr) && isDefined(level.claymoreArray[nr]) && c<=0){ 
 						//self.claymorearray[nr] notify("death");
 						level.claymoreArray[nr] delete();
 						wait 0.05;
@@ -994,6 +1026,7 @@ _maps_randomizer(){
 				}
 				//else{ setDvar("g_gametype","sab"); }
 			}
+			//game["teamWonRound"]=undefined;
 			wait getDvarFloat( "scr_intermission_time" )-1.5;
 			exec("map " + game["nextMap"]+" 0");
 			game["nextMap"]="";
@@ -1003,23 +1036,26 @@ _maps_randomizer(){
 
 _movement_accel_decel(){
 	self endon ( "disconnect" );
-	//self endon ( "death" );
+	self endon ( "death" );
 	self endon( "intermission" );
 	self endon( "game_ended" );
 	//if (!getdvarint("developer")>0){ return; }
 	//if(self.isbot){ return; }
 	c=0.3;
-	while(isAlive(self)){
-		mss=0.1;
-		self setMoveSpeedScale(mss);
-		while (self ForwardButtonPressed() || self BackButtonPressed() || self MoveLeftButtonPressed() || self MoveRightButtonPressed()){ self setMoveSpeedScale(mss); wait 0.05; if(mss<1){ mss+=0.10; }}
-		//while (self ForwardButtonPressed()){ self setMoveSpeedScale(mss); wait 0.05; if(mss<1){ mss+=0.10; }}
-		//while (self BackButtonPressed()){ self setMoveSpeedScale(mss); wait 0.05; if(mss<1){ mss+=0.10; }}
-		//while (self MoveLeftButtonPressed()){ self setMoveSpeedScale(mss); wait 0.05; if(mss<1){ mss+=0.10; }}
-		//while (self MoveRightButtonPressed()){ self setMoveSpeedScale(mss); wait 0.05; if(mss<1){ mss+=0.10; }}
-		//else { self setMoveSpeedScale(mss); if(mss>0.1){ mss-=0.1; cl("^3"+self.name+" is decel"); }}
+	for(;;){
+		while(isAlive(self) && self.isReloading==false){
+			mss=0.1;
+			self setMoveSpeedScale(mss);
+			while (self ForwardButtonPressed() || self BackButtonPressed() || self MoveLeftButtonPressed() || self MoveRightButtonPressed()){ self setMoveSpeedScale(mss); wait 0.05; if(mss<1){ mss+=0.10; }}
+			//while (self ForwardButtonPressed()){ self setMoveSpeedScale(mss); wait 0.05; if(mss<1){ mss+=0.10; }}
+			//while (self BackButtonPressed()){ self setMoveSpeedScale(mss); wait 0.05; if(mss<1){ mss+=0.10; }}
+			//while (self MoveLeftButtonPressed()){ self setMoveSpeedScale(mss); wait 0.05; if(mss<1){ mss+=0.10; }}
+			//while (self MoveRightButtonPressed()){ self setMoveSpeedScale(mss); wait 0.05; if(mss<1){ mss+=0.10; }}
+			//else { self setMoveSpeedScale(mss); if(mss>0.1){ mss-=0.1; cl("^3"+self.name+" is decel"); }}
+			wait 0.05;
+			//waittillframeend;
+		}
 		wait 0.05;
-		//waittillframeend;
 	}
 }
 
@@ -1087,7 +1123,7 @@ _menu_response()
 			game["isJoinedSpectators"][self.name]=true; 
 			//cl("33game[isJoinedSpectators][self.name]: " + game["isJoinedSpectators"][self.name]);
 			self suicide();
-			self [[level.spectator]]();
+			//self [[level.spectator]]();
 			self.pers["team"]=self.isInTeam;
 			self.sessionteam=self.isInTeam;
 			self.sessionstate = "spectator";
@@ -1197,7 +1233,7 @@ _blast(delay,dist,maxDist,blastOrigin,attacker,inflictor){
 				RadiusDamage(blastOrigin, maxDist/2, 20, 1, attacker); 
 				//self FinishPlayerDamage(inflictor, attacker, int(z), 0, "MOD_GRENADE_SPLASH", self.blastName,(0,0,0),(0,0,0),"j_torso",0);
 				//level thread _playSoundInSpace("distboom",blastOrigin,delay*2,self);
-				self thread _flash("blur",3*(dist/maxDist)*2,0,1,0.1); //type,amp,dur,t1,t2
+				self thread _flash("blur",3*(dist/maxDist)*2,0,1,3*(dist/maxDist)); //type,amp,dur,t1,t2
 				//if(isDefined(inflictor)){ playSoundinSpace("distboom",blastOrigin); }
 			}
 			//self FinishPlayerDamage( eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, psOffsetTime );
@@ -1831,6 +1867,8 @@ _killed(eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, t
 	self setClientDvar("m_yaw",0.022);
 	self SetClientDvar("ui_ShowMenuOnly", "");
 	
+	self setMoveSpeedScale(1);
+	
 	self.haveC4=0;
 	self.haveClaymores=0;
 	self.haveFragGrenades=0;
@@ -2376,8 +2414,10 @@ _dvar_map_restart(){
 
 _dvar_add_bots(){
 	level endon("disconnect");
-	level endon("intermission");
-	level endon("game_ended");
+	//level endon("intermission");
+	//level endon("game_ended");
+	
+	cl("33_dvar_add_bots");
 	
 	for(;;){
 		dvar = getDvar("ab");
@@ -2397,8 +2437,10 @@ _dvar_add_bots(){
 
 _dvar_remove_bots(){
 	level endon("disconnect");
-	level endon("intermission");
-	level endon("game_ended");
+	//level endon("intermission");
+	//level endon("game_ended");
+	
+	cl("33_dvar_remove_bots");
 	
 	for(;;){
 		dvar = getDvar("kb");
@@ -2631,7 +2673,7 @@ _reload_monitor()
 	self endon ( "disconnect" );
 	self endon( "intermission" );
 	self endon( "game_ended" );
-	if(self.isbot){ return; }
+	//if(self.isbot){ return; }
 	
 	level.weapons_clip_strict = StrTok("none,artillery,binoculars,cell", "," );
 	level.weapons_partial_reload = StrTok("m1014,m40a3,remington700,winchester1200,striker", "," );
@@ -2640,7 +2682,11 @@ _reload_monitor()
 	for(;;){
 		self setMoveSpeedScale(1);
 		self waittill( "reload_start" );
+		//cl("44"+self.name+" reload started");
 		self.isReloading=true;
+		proned=false;
+
+		if(self.isbot){ self.bot.stop_move=true; }
 
 		weapon = self GetCurrentWeapon();
 		if(weapon == "none"){ return; }
@@ -2654,12 +2700,14 @@ _reload_monitor()
 				self.restrict = weapon;	return;
  			}
 		}
-		self setMoveSpeedScale(0.5);
+		
+		if(self getStance() == "prone"){ proned=true; }
+		else{ proned=undefined; }
 		//cl("^3"+self.name+" have "+ weapon+" with "+clipsize+" clipsize & "+ammoclip+" ammoclip & "+ammocount+" ammocount");				
 		//cl("^4"+self.name+" starts reloading");
 		if (isDefined(self.restrict)){
 			self.restrict = undefined; continue;
-		}else{
+		} else {
 			for (i=0;i<level.weapons_partial_reload.size;i++){
 				if (isSubStr( weapon, level.weapons_partial_reload[i])){ 
 					self.partial = weapon; break;
@@ -2667,6 +2715,7 @@ _reload_monitor()
 			}
 			if(isDefined(self.partial)) { self.partial = undefined; } else { self SetWeaponAmmoClip( weapon, 0 ); }
 			while(c<10 && !self sprintButtonPressed()) { k-=0.05; self setMoveSpeedScale(k); c++; wait 0.05; }
+			if(isDefined(proned)){ self setMoveSpeedScale(0); } else { self setMoveSpeedScale(k); }
 			while(self GetCurrentWeapon() == weapon && (self GetWeaponAmmoClip(weapon) == ammoclip || self GetWeaponAmmoClip(weapon) == 0)) { wait 0.05; }
 			//cl("^3self GetWeaponAmmoClip(weapon): "+self GetWeaponAmmoClip(self GetCurrentWeapon()));
 			//cl("^3ammoclip: "+ammoclip);
@@ -2679,7 +2728,9 @@ _reload_monitor()
 		//cl("^4"+self.name+" reloaded");
 		self setMoveSpeedScale(1);
 		self.isReloading=false;
-		}
+		proned=undefined;
+		if(self.isbot){ self.bot.stop_move=false; }
+	}
 }
 
 mp_efa_bingoland(){
@@ -3809,12 +3860,9 @@ _damaged(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint
 		}
 
 		//if (isDefined(self.lastStand)) { 
-		if (iDamage >= self.health+1) {
-			self thread _suicide_pd(5); 
-			self setClientDvar("m_pitch",0.002);
-			self setClientDvar("m_yaw",0.002);
-			//cl("33"+self.name+" has perk specialty_pistoldeath");
-		}
+		//if (self.health<5) {
+			self thread _suicide_pd(5);
+		//}
 		
 		if(self.isbot){ self botAction("-ads"); }
 		else { self allowADS(0); self allowADS(1); }
@@ -3847,25 +3895,33 @@ _suicide_pd(seconds){
 	self endon ( "disconnect" );
 	self endon( "intermission" );
 	self endon( "game_ended" );
-
-	if(!isDefined(seconds)){ seconds=30; }
 	
-	weaponslist = self GetWeaponsList();
-	weapon = self getCurrentWeapon();
-	//cl(weapon);
-	for( i = 0; i < weaponslist.size; i++ ){
-		self setWeaponAmmoStock(weaponslist[i],0);
+	wait 0.1;
+	self notify("stop_location_selection");
+	if(isDefined(self.lastStand)){
+		self setClientDvar("m_pitch",0.002);
+		self setClientDvar("m_yaw",0.002);
+		//cl("33"+self.name+" has perk specialty_pistoldeath");
+	
+		if(!isDefined(seconds)){ seconds=30; }
+		
+		weaponslist = self GetWeaponsList();
+		weapon = self getCurrentWeapon();
+		//cl(weapon);
+		for( i = 0; i < weaponslist.size; i++ ){
+			self setWeaponAmmoStock(weaponslist[i],0);
+		}
+		
+		self GiveWeapon( "frag_grenade_mp" );
+		self SetWeaponAmmoClip( "frag_grenade_mp", 1 );
+		self SwitchToOffhand( "frag_grenade_mp" );
+		self SwitchToWeapon( "frag_grenade_mp" );
+		self thread _flash("blur",4,seconds,seconds,1);
+		//self thread _flash("bright",1,seconds/2,seconds/2,1);
+		wait seconds;
+		self suicide();
+		//if(isAlive(self)) { self suicide(); }
 	}
-	
-	self GiveWeapon( "frag_grenade_mp" );
-	self SetWeaponAmmoClip( "frag_grenade_mp", 1 );
-	self SwitchToOffhand( "frag_grenade_mp" );
-	self SwitchToWeapon( "frag_grenade_mp" );
-	//self thread _flash("blur",4,seconds/2,seconds/2,1);
-	//self thread _flash("bright",1,seconds/2,seconds/2,1);
-	wait seconds;
-	self suicide();
-	//if(isAlive(self)) { self suicide(); }
 }
 
 _fs(){
@@ -3908,14 +3964,14 @@ _fs(){
 		//cl("^3game[isJoinedSpectators][self.name]:"+game["isJoinedSpectators"][self.name]);
 		
 		//level.tp = (gettime() - level.st)/1000;
-		cl("^2level.tp "+level.tp);
+		cl("22level.tp "+level.tp);
 		//game["isJoinedSpectators"][self.name]=false;
 		
 		if (game["isJoinedSpectators"][self.name]==false){
 		//if (self.pers["team"]!="spectator"  || self.sessionstate!="spectator"){
 			self [[level.class]]("custom1");
 			if(level.tp<level.gracePeriod){ 
-				self.pers["team"]=self.sessionteam;
+				//self.pers["team"]=self.sessionteam;
 				self.pers["lives"]=getDvarInt("scr_sab_numlives");
 				//if(level.tp>15 && self.hasSpawned!=true){ self [[level.spawnPlayer]](); self.pers["lives"]=1; }
 				if(level.tp>30 && self.hasSpawned!=true){ self.pers["lives"]=1; }
@@ -3924,7 +3980,7 @@ _fs(){
 				//self notify("spawned");
 				//self notify("player_spawned");
 				self.isInTeam=self.pers["team"];
-				cl("^4forcespawned "+self.name);
+				cl("44forcespawned "+self.name);
 			} else {
 				//self.sessionstate = "playing";
 				//self notify("player_spawned");
@@ -4052,7 +4108,7 @@ _changeBotWeapon(){
 			self GiveWeapon( level.botsWeapons[w2] );
 			//self switchToWeapon(level.botsWeapons[w2]);
 			self giveMaxAmmo(level.botsWeapons[w2]);
-			cl("55"+self.name + " the " + level.botsWeapons[w2]+" and model "+self.model); 
+			//cl("55"+self.name + " the " + level.botsWeapons[w2]+" and model "+self.model); 
 			//cl("55"+self.name + " the " + level.botsWeapons[w2] + " is given from level.botsWeapons"); 
 		//}
 		wait 0.05;
@@ -4192,23 +4248,33 @@ _quick_killcam(victim, attackerNum, killcamentity, sWeapon, attacker){
 
 _flash(type,amp,dur,t1,t2){
 	self endon("disconnect");
-
+	//self endon("death");
 	if (self.isbot) { return; }
+	if (isDefined(self.isBlurrying)) { return; }
+	
 	if(!isDefined(dur)){ dur=0; }
 	if(!isDefined(amp)){ amp=2; }
 	if(!isDefined(t1)){ t1=1; }
 	if(!isDefined(t2)){ t2=1; }
 	
 	i=0;
-	t1=t1*0.2;
-	t2=t2*0.2;
+	//t1=t1*0.2;
+	//t2=t2*0.2;
 	s1=amp/t1;
 	s2=amp/t2;
 	
+	//cl("33dur:"+dur);
+	//cl("33amp:"+amp);
+	//cl("33t1:"+t1);
+	//cl("33t2:"+t2);
+	
 	if (type=="blur"){ 
-		while( i<amp && isAlive(self)){	self setClientDvar( "r_blur", i );  i+=t1; wait 0.05; }
-		wait dur;
-		while( i>0 ){ self setClientDvar( "r_blur", i );  i-=t2; wait 0.05; }
+		self.isBlurrying=true;
+		while( i<t1 && isAlive(self)){	self setClientDvar( "r_blur", amp*i/t1 );  i+=0.2; wait 0.05; }
+		wait dur; i=t2;
+		while( i>0 ){ self setClientDvar( "r_blur", amp*i/t2 ); i-=0.2; wait 0.05; }
+		self setClientDvar( "r_blur", 0 );
+		self.isBlurrying=undefined;
 	}
 	
 	if (type=="bright"){ 

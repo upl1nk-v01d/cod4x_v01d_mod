@@ -237,6 +237,7 @@ _bot_aimspots(){
 						//r=randomFloatRange(0,15)+(dist*0.2);
 						lives = self.pers["lives"];
 						dvar=getDvarInt("scr_"+getDvar("g_gametype")+"_numlives");
+						if(dvar<1){ k=1; }
 						k=lives/dvar;
 						r=randomFloatRange(-30,30)*k;
 						aimspot = (r,r,r);

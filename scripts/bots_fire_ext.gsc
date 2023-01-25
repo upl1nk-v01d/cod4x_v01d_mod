@@ -58,8 +58,8 @@ _bot_fire(){
 					//vehicle_cobra_helicopter_fly
 					stance=self getStance();
 					dist=distance(self.bot.after_target.origin,self.origin);
-					if (stance == "stand" || stance == "crouch"){ self.bot.stop_move=true; }
-					else { self.bot.stop_move=false; }
+					//if (stance == "stand" || stance == "crouch"){ self.bot.stop_move=true; }
+					//else { self.bot.stop_move=false; }
 					if (isDefined(level.classBoltSniper)) { 
 						for (i=0;i<level.classBoltSniper.size;i++){
 							if (isSubStr( self GetCurrentWeapon(), level.classBoltSniper[i])){ 
@@ -84,7 +84,7 @@ _bot_fire(){
 				} else {
 					wait 1;
 					if(isDefined(stance)) { 
-						self.bot.stop_move=false;
+						//self.bot.stop_move=false;
 						self botAction("-go"+stance);
 					}
 				}
@@ -102,15 +102,21 @@ _bot_press_fire(delay,target)
 	self endon("bot_fire");
 	
 	if(!isDefined(delay)) { delay = 0.3; }
-		
+	
 	wait delay;
 
-	dist=distance(target.origin,self.origin);
-	duration=randomFloatRange(0.05,0.3)+(1/(dist*2));
-	self botAction("+fire");
-	//self.pers["bots"]["skill"]["aim_time"] = 5;
-	if(duration) { wait duration; }
-	self botAction("-fire");
-	if(duration) { wait duration/2; }
-	target = undefined;
+	if(isDefined(target)){
+		stance=self getStance();
+		if (stance == "stand" || stance == "crouch"){ self.bot.stop_move=false; }
+		else if (stance == "prone"){ self.bot.stop_move=true; }
+		dist=distance(target.origin,self.origin);
+		duration=randomFloatRange(0.05,0.3)+(1/(dist*2));
+		self botAction("+fire");
+		//self.pers["bots"]["skill"]["aim_time"] = 5;
+		if(duration) { wait duration; }
+		self botAction("-fire");
+		if(duration) { wait duration/2; }
+		target = undefined;
+		self.bot.stop_move=false;
+	}
 }
