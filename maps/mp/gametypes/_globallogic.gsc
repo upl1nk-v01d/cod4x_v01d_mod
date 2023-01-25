@@ -5338,6 +5338,7 @@ Callback_PlayerLastStand( eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon,
 	
 	//mayDoLastStand = mayDoLastStand( sWeapon, sMeansOfDeath, sHitLoc );
 	mayDoLastStand = true;
+	self.lastStand = true;
 	/#
 	if ( getdvar("scr_forcelaststand" ) == "1" )
 		mayDoLastStand = true;

@@ -1,7 +1,7 @@
 //
 init()
 {
-	print("!!! _copter.gsc !!!\n");
+	print("^3!!! _copter.gsc !!!\n");
 	level.coptermodel = "vehicle_cobra_helicopter_fly";
 	precacheModel(level.coptermodel);
 	
