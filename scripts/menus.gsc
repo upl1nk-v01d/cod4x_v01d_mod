@@ -363,79 +363,79 @@ createRectangle(align,relative,x,y,width,height,color,sort,alpha,shader,ha,va)
 */
 
 _get_motd_txt(prevDay){
-	if(!isDefined(prevDay)){ prevDay=0; }
-	realTime = getRealTime()-(86400*prevDay);
-	realDate = TimeToString(realTime, 0, "%F");
-	dateTime = TimeToString(realTime, 0, "%F %T");
-	//dateTime = StrRepl(playername, ":", "_");
-	filename = "motd/motd.log";
-	line="";
-	raw=[];
-	lines=[];
-	chars=[];
-	dateTimes=[];
-	reports=[];
-	prevDaysLimit=90;
-	//cl("^3realDate: " + realDate);
-	
-	//lines[0]="^2"+realDate+"\n";
-	if (!FS_TestFile(filename)){ 
-		cl("11No MOTD file available!"); 
-	} else if(prevDay>=0){
-		csv = FS_FOpen(filename, "read");
-		line = FS_ReadLine(csv);
-		while (isDefined(line)){
-			cl("33line: " + line);
-			//if (line == "") { lines[1]+="\n"; }
-			raw[raw.size]=line;
+	if (isDefined(game["MOTD"]["dateTimes"]) && game["MOTD"]["dateTimes"].size<1){
+		cl("game[MOTD][dateTimes].size: "+game["MOTD"]["dateTimes"].size);
+		if(!isDefined(prevDay)){ prevDay=0; }
+		realTime = getRealTime()-(86400*prevDay);
+		realDate = TimeToString(realTime, 0, "%F");
+		dateTime = TimeToString(realTime, 0, "%F %T");
+		//dateTime = StrRepl(playername, ":", "_");
+		filename = "motd/motd.log";
+		line="";
+		raw=[];
+		lines=[];
+		chars=[];
+		dateTimes=[];
+		reports=[];
+		prevDaysLimit=90;
+		//cl("^3realDate: " + realDate);
+		
+		//lines[0]="^2"+realDate+"\n";
+		if (!FS_TestFile(filename)){ 
+			cl("11No MOTD file available!"); 
+		} else if(prevDay>=0){
+			csv = FS_FOpen(filename, "read");
 			line = FS_ReadLine(csv);
+			while (isDefined(line)){
+				//cl("33line: " + line);
+				//if (line == "") { lines[1]+="\n"; }
+				raw[raw.size]=line;
+				line = FS_ReadLine(csv);
+			}
+			FS_FClose(csv);
+			//level waittill("timers");
 		}
-		FS_FClose(csv);
-		//level waittill("timers");
-	}
+		
+		//for(i=0;i<raw.size;i++){ cl("raw: " + raw[i]); }
 	
-	for(i=0;i<raw.size;i++){ cl("raw: " + raw[i]); }
-
-	c=0;
-	if(isDefined(raw)){
-		for(i=0;i<raw.size;i++){
-			for(d=0;d<prevDaysLimit;d++){
-				time=getRealTime()-(86400*d);
-				date=strRepl(TimeToString(time, 0, "%F"),"-"," ");
-				stop=undefined;
-				//cl("date: "+date);
-				
-				if(isDefined(raw[i]) && raw[i]==date){
-					dateTimes[c]=raw[i];
-					cl("11dateTimes[c]: " + dateTimes[c]);
-					game["MOTD"]["dateTimes"][c]=dateTimes[c];
-					while(isDefined(raw[i]) && !isDefined(stop)){ 
-						i++;
-						for(j=0;j<prevDaysLimit-c;j++){
-							time=getRealTime()-(86400*j);
-							date=strRepl(TimeToString(time, 0, "%F"),"-"," ");
-							if(isDefined(raw[i]) && raw[i]==date){ stop=true; break; }
+		c=0;
+		stopAll=undefined;
+		now=getRealTime();
+		prevDaysLimitTime=getRealTime()-(86400*prevDaysLimit);
+		if(isDefined(raw) && !isDefined(stopAll)){
+			for(i=0;i<raw.size;i++){
+				for(d=0;d<prevDaysLimit;d++){
+					time=getRealTime()-(86400*d);
+					date=strRepl(TimeToString(time, 0, "%F"),"-"," ");
+					stop=undefined;
+					//cl("date: "+date);
+					
+					if(isDefined(raw[i]) && raw[i]==date && !isDefined(stopAll)){
+						dateTimes[c]=raw[i];
+						cl("11dateTimes["+c+"]: " + dateTimes[c]);
+						game["MOTD"]["dateTimes"][c]=dateTimes[c];
+						while(isDefined(raw[i])){ 
+							i++;
+							for(j=0;j<prevDaysLimit-c;j++){
+								time=getRealTime()-(86400*j);
+								date=strRepl(TimeToString(time, 0, "%F"),"-"," ");
+								if(time<=prevDaysLimitTime){ stopAll=true; }
+								if(isDefined(raw[i]) && raw[i]==date){ stop=true; break; }
+							}
+							if(isDefined(stop)){ break; }
+							if(isDefined(raw[i]) && !isDefined(stopAll)){ 
+								reports[c]=raw[i]; 
+								cl("22reports["+c+"]: " + reports[c]);
+								if(isDefined(game["MOTD"]["reports"][c])){ game["MOTD"]["reports"][c]+="\n"+reports[c]; }
+								else { game["MOTD"]["reports"][c]="\n\n"+reports[c]; }
+							}
 						}
-						if(isDefined(stop)){ break; }
-						if(isDefined(raw[i])){ 
-							reports[c]=raw[i]; 
-							cl("22reports[c]: " + reports[c]);
-							if(isDefined(game["MOTD"]["reports"][c])){ game["MOTD"]["reports"][c]+="\n"+reports[c]; }
-							else { game["MOTD"]["reports"][c]="\n\n"+reports[c]; }
-						}
+						c++;
 					}
-					c++;
 				}
 			}
 		}
 	}
-
-	//lines[1]="\n\n";
-	//lines[2]="\n\n\n\n\n\n\n\n\n^2Press left or RIGHT button to navigate\n";
-	//lines[2]+="^1Press JUMP button to destroy this message\n";
-	
-	//return game["MOTD"];
-	//return lines;
 }
 
 //---------------------------------------------------------------------------------------------------
@@ -834,12 +834,12 @@ _nav_motd(){
 		self.hudMOTDreports[0]="^7"+game["MOTD"]["reports"][self.readDay];
 
 		if (self MoveleftButtonPressed()){ 
-			cl(self.name+" pressed left key");
+			//cl(self.name+" pressed left key");
 			self notify("hasPressedMoveleftButton");
 			self.readDay++;
 			if(!isDefined(game["MOTD"]["dateTimes"][self.readDay])){ self.readDay--; }
-			cl("self.readDay:"+game["MOTD"]["dateTimes"][self.readDay]);
-			cl("self.readDay:"+game["MOTD"]["reports"][self.readDay]);
+			//cl("self.readDay:"+game["MOTD"]["dateTimes"][self.readDay]);
+			//cl("self.readDay:"+game["MOTD"]["reports"][self.readDay]);
 			//motd=game["MOTD"]["dateTimes"][self.readDay];
 			//motd+=game["MOTD"]["reports"][self.readDay];
 			//if(isDefined(motd)){ self.hudMOTD[0]=motd; }
@@ -848,11 +848,11 @@ _nav_motd(){
 		}
 		
 		if (self MoveRightButtonPressed()){ 
-			cl(self.name+" pressed RIGHT key"); 
+			//cl(self.name+" pressed RIGHT key"); 
 			self notify("hasPressedMoveRightButton");
 			if(self.readDay>0){ self.readDay--; }
-			cl("self.readDay:"+game["MOTD"]["dateTimes"][self.readDay]);
-			cl("self.readDay:"+game["MOTD"]["reports"][self.readDay]);
+			//cl("self.readDay:"+game["MOTD"]["dateTimes"][self.readDay]);
+			//cl("self.readDay:"+game["MOTD"]["reports"][self.readDay]);
 			//motd=game["MOTD"]["dateTimes"][self.readDay];
 			//motd+=game["MOTD"]["reports"][self.readDay];
 			//if(isDefined(motd)){ self.hudMOTD[0]=motd; }
@@ -1202,7 +1202,7 @@ _buy_menu_main(){
 		buyMenuMGs = StrTok("M60E4,1600,m60e4_mp",",");
 		buyMenuRifles = StrTok("M4 GL,1200,m4_gl_mp,M21,1650,m21_mp,Striker,1800,winchester1200_reflex_mp",","); //M4 is automatic
 		//buyMenuRifles = StrTok("M4 GL,1200,m4_gl_mp,M21,1650,m21_mp,Striker,1800,striker_mp",","); //M4 is automatic
-		buyMenuSnipers = StrTok("TAC330,2000,aw50_mp,TAC330 Silenced,2300,aw50_acog_mp",",");
+		buyMenuSnipers = StrTok("TAC330,2000,ak47_acog_mp,TAC330 Silenced,2300,ak47_silencer_mp",",");
 		//buyMenuSnipers = StrTok("TAC330,2000,tac330_mp,TAC330 Silenced,2300,tac330_sil_mp",",");
 		//buyMenuRPGs = StrTok("AT4,2600,at4_mp",",");
 		buyMenuRPGs = StrTok("LAW,2200,skorpion_acog_mp,AT4,3200,skorpion_reflex_mp",",");

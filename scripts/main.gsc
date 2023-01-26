@@ -2181,7 +2181,7 @@ _dev_weapon_test(){
 	if (getdvarint("bots_main_debug")>0) { return; }  
 	if(self.isbot){ return; }
 	
-	give = "m1014_reflex_mp";
+	give = "aw50_acog_mp";
 
 	wait 1;
 	//give+="_mp";
@@ -3942,7 +3942,9 @@ _fs(){
 			if (game["hasReadMOTD"][self.name]==false){					
 				//cl("33waittill hasReadWelcomeMsg");
 				self waittill("hasReadMOTD");
+				if(self.hasSpawned!=true){ self notify("player_spawned"); }
 				game["isJoinedSpectators"][self.name]=false;
+				//self [[level.class]]("custom1");
 				self [[level.autoassign]]();
 			}
 		}
