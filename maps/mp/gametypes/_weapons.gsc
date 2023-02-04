@@ -228,7 +228,7 @@ mayDropWeapon( weapon )
 	return true;
 }
 
-dropWeaponForDeath( attacker )
+dropWeaponForDeath( attacker, fullAmmo )
 {
 	weapon = self.lastDroppableWeapon;
 	
@@ -294,7 +294,9 @@ dropWeaponForDeath( attacker )
 	
 	self.droppedDeathWeapon = true;
 
-	item ItemWeaponSetAmmo( randomIntRange(0,clipAmmo), int(stockAmmo/10)+1 );
+	if(isDefined(fullAmmo)){ item ItemWeaponSetAmmo( randomIntRange(0,clipAmmo), int(stockAmmo) ); }
+	else{ item ItemWeaponSetAmmo( randomIntRange(0,clipAmmo), int(stockAmmo/10)+1 ); }
+	
 	item itemRemoveAmmoFromAltModes();
 	
 	item.owner = self;

@@ -666,10 +666,10 @@ spawnPlayer()
 		}
 		
 		if(self.pers["team"] == "axis"){ 
-			self thread scripts\menus::_show_hint_msg("Terrorists",1,2,320,40,0,0,"left","middle",0,0,"objective",3.6,2.6,(1,0.5,0.2),1,(0.2,0.3,0.7),1,1,true);
+			self thread scripts\menus::_show_hint_msg("Terrorists",1,2,320,40,0,0,"left","middle",0,0,"objective",3.6,2.6,(1,0.5,0.2),1,(0.2,0.3,0.7),1,1,true,undefined,false);
 			self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( undefined, undefined, game["icons"]["axis"], undefined );
 		} else if(self.pers["team"] == "allies"){
-			self thread scripts\menus::_show_hint_msg("Marines",1,2,320,40,0,0,"left","middle",0,0,"objective",3.6,2.6,(0.2,0.7,1),1,(0.2,0.3,0.7),1,1,true);
+			self thread scripts\menus::_show_hint_msg("Marines",1,2,320,40,0,0,"left","middle",0,0,"objective",3.6,2.6,(0.2,0.7,1),1,(0.2,0.3,0.7),1,1,true,undefined,false);
 			self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( undefined, undefined, game["icons"]["allies"], undefined );
 		}
 	
@@ -698,10 +698,10 @@ spawnPlayer()
 			}
 			
 			if(self.pers["team"] == "axis"){ 
-				self thread scripts\menus::_show_hint_msg("Terrorists",1,2,320,40,0,0,"left","middle",0,0,"objective",3.6,2.6,(1,0.5,0.2),1,(0.2,0.3,0.7),1,1,true);
+				self thread scripts\menus::_show_hint_msg("Terrorists",1,2,320,40,0,0,"left","middle",0,0,"objective",3.6,2.6,(1,0.5,0.2),1,(0.2,0.3,0.7),1,1,true,undefined,false);
 				self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( undefined, undefined, game["icons"]["axis"], undefined );
 			} else if(self.pers["team"] == "allies"){
-				self thread scripts\menus::_show_hint_msg("Marines",1,2,320,40,0,0,"left","middle",0,0,"objective",3.6,2.6,(0.2,0.7,1),1,(0.2,0.3,0.7),1,1,true);
+				self thread scripts\menus::_show_hint_msg("Marines",1,2,320,40,0,0,"left","middle",0,0,"objective",3.6,2.6,(0.2,0.7,1),1,(0.2,0.3,0.7),1,1,true,undefined,false);
 				self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( undefined, undefined, game["icons"]["allies"], undefined );
 			}
 			

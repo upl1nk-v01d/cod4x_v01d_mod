@@ -976,8 +976,8 @@ hardpointNotify( hardpointType, streakVal )
 			//notifyData.notifyText = "Press 6 or B to access Tools";
 			notifyData.sound = level.hardpointInforms[hardpointType];
 			//self maps\mp\gametypes\_hud_message::notifyMessage( notifyData );
-			self thread scripts\menus::_show_hint_msg(level.hardpointHints[hardpointType],0,3,320,40,0,0,"left","middle",0,0,"objective",1.6,2.8,(0.9,1,0.9),1,(0.2,0.3,0.7),1,1,true);
-			self thread scripts\menus::_show_hint_msg(notifyData.notifyText,0.5,3,320,70,0,0,"left","middle",0,0,"objective",1.6,1.8,(0.9,1,0.9),1,(0.2,0.3,0.7),1,1,true);
+			self thread scripts\menus::_show_hint_msg(level.hardpointHints[hardpointType],0,3,320,40,0,0,"left","middle",0,0,"objective",1.6,2.8,(0.9,1,0.9),1,(0.2,0.3,0.7),1,1,true,undefined,false);
+			self thread scripts\menus::_show_hint_msg(notifyData.notifyText,0.5,3,320,70,0,0,"left","middle",0,0,"objective",1.6,1.8,(0.9,1,0.9),1,(0.2,0.3,0.7),1,1,true,undefined,false);
 			self playLocalSound(notifyData.sound);
 		//}
 	}
