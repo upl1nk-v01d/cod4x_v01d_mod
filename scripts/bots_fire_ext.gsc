@@ -43,7 +43,7 @@ _bot_fire(){
 	
 	for(;;){
 		if (getDvarInt("bots_fire_ext")>0 && getDvar("bots_play_fire") != "1" && getDvar("bots_play_move") == "1"){
-			if(isAlive(self)){
+			if(isAlive(self) && isDefined(self.dp) && self.dp>0.95){
 				if (isDefined(self.bot.script_target)){
 					//cl("33"+self.name+" target model: "+self.bot.script_target.model);
 					if (self.bot.script_target.model == "vehicle_mi24p_hind_desert" || self.bot.script_target.model == "vehicle_cobra_helicopter_fly") { 
@@ -117,6 +117,6 @@ _bot_press_fire(delay,target)
 		self botAction("-fire");
 		if(duration) { wait duration/2; }
 		target = undefined;
-		self.bot.stop_move=false;
+		//self.bot.stop_move=false;
 	}
 }

@@ -43,15 +43,11 @@ _connected_loop(){
 		
 	for(;;){
 		level waittill("connected", player);
-		
-		player.hudmsg = [];
-		player.hudmsgID = 0;
-
 		player thread _money_menu();
 		player thread _welcome_msg();
 		player thread _spawn_loop();
 		player thread _map_datetime_menu();
-		//player thread _dev_test_hud();
+		player thread _dev_test_hud();
 		//player _show_message(1,"test test test test",2,(1,1,0),1,(1,1,0),1,"center","middle",-200,-80,"default",1.4,1.6,0);
 		//wait 0.5;
 		//player _show_message(1,"test test test test",2,(1,1,0),1,(1,1,0),1,"center","middle",-200,-60,"default",1.4,1.6,0);
@@ -66,13 +62,6 @@ _dev_test_hud(){
 	if(!self.isbot){
 		wait 0.5;
 
-		self thread _show_hint_msg("press FIRE button to select",0,3,0,300,0,0,"left","middle",0,0,"default",1.6,1.6,(1,1,0),1,(1,1,0),0.5,1,undefined,undefined,true);
-		wait 0.05;
-		self thread _show_hint_msg("press ADS button to return",0.3,3,0,318,0,0,"left","middle",0,0,"default",1.6,1.6,(1,1,0),1,(1,1,0),0.5,1,undefined,undefined,false);
-		wait 1;
-		//self.hudmsg[1]=true;
-		
-		//_show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,cx,cy,override){
 		//self thread scripts\menus::_show_hint_msg("GAME WINNING KILL",0,3,320,50,0,0,"left","middle",0,0,"objective",1.6,3.6,(1,1,1),1,(0.2,0.3,0.7),1,1,true,undefined);
 		//str=game["strings"]["roundend"];
 		//self thread scripts\menus::_show_hint_msg(str,1.7,2,320,70,0,0,"left","middle",0,0,"objective",1.6,2.6,(1,0.5,0.5),1,(0.2,0.3,0.7),1,1,true,true);
@@ -104,11 +93,10 @@ _spawn_loop(){
 			//self _show_message(1,"press ADS button to return",2,(1,1,0),1,(1,1,0),1,"center","middle",-200,-80,"default",1.4,1.6,1);
 			//self thread _show_message(0,"TEST TEST TEST",1,1,1,0,1,-200,-80);
 			
-			//wait 2;
-			self thread _show_hint_msg("press FIRE button to select",0,3,0,300,0,0,"left","middle",0,0,"default",1.6,1.6,(1,1,0),1,(1,1,0),0.5,1,undefined,undefined);
-			wait 0.05;
-			self thread _show_hint_msg("press ADS button to return",0.3,3,0,318,0,0,"left","middle",0,0,"default",1.6,1.6,(1,1,0),1,(1,1,0),0.5,1,undefined,undefined);
-			//_show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,cx,cy,override){
+			self thread _show_hint_msg("press FIRE button to select",1,3,0,300,0,0,"left","middle",0,0,"default",1.6,1.6,(1,1,0),1,(1,1,0),0.5,1);
+			self thread _show_hint_msg("press ADS button to return",1.3,3,0,318,0,0,"left","middle",0,0,"default",1.6,1.6,(1,1,0),1,(1,1,0),0.5,1);
+			//_show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort){
+			//delay,txt,dur,r,g,b,a,ox,oy
 			game["hasReadHintMessage"][self.name]=true;
 		}
 	}
@@ -144,7 +132,7 @@ _create_menu(align,relative,x,y,width,height,color,sort,alpha,shader){
 }
 */
 
-_create_menu_text(hud,arr,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,selector,scolor,div,skip,override){
+_create_menu_text(hud,arr,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,selector,scolor,div,skip){
 	self endon ( "disconnect" );
 	self endon ( "death" );
 	self endon( "intermission" );
@@ -210,7 +198,6 @@ _create_menu_text(hud,arr,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,sele
 		}
 		y+=10;
 		self.money[hud][i].alpha = a;
-		if(isDefined(override)){ a-=0.01; }
 		self.money[hud][i].glowColor = gc;
 		self.money[hud][i].glowAlpha = ga;
 		self.money[hud][i].sort = sort;
@@ -305,47 +292,6 @@ _destroy_menu(menu,size,delay){
 
 }
 
-_change_menu(menu,arg,val){
-	//self endon ( "disconnect" );
-	//self endon ( "death" );
-	//self endon( "intermission" );
-	//self endon( "game_ended" );
-	
-	if(!isDefined(self.money)){ return; }
-	if(!isDefined(menu)){ return; }
-	if(!isDefined(arg)){ return; }
-
-	c=0; size=menu.size;
-	if(!isDefined(size) || menu.size<1){ return; }
-	if(isDefined(self.money) && isArray(self.money) && isDefined(self.money[menu])){		
-		for(i=0;i<size;i++){
-			if(isDefined(self.money[menu][i])){
-				if(arg=="x"){ self.money[menu][i].x=val; }
-				if(arg=="y"){ self.money[menu][i].y=val; }
-				if(arg=="w"){ self.money[menu][i].w=val; } //max width = 640;
-				if(arg=="h"){ self.money[menu][i].h=val; } //max height = 480;
-				if(arg=="ox"){ self.money[menu][i].ox=val; }
-				if(arg=="oy"){ self.money[menu][i].oy=val; }
-				if(arg=="ax"){ self.money[menu][i].ax=val; } //left center right
-				if(arg=="ay"){ self.money[menu][i].ay=val; } //top middle bottom
-				if(arg=="color"){ self.money[menu][i].color=val; } 
-				if(arg=="a"){ self.money[menu][i].alpha=val; }
-				if(arg=="ft"){ self.money[menu][i].ft=val; }
-				if(arg=="fsz"){ self.money[menu][i].fsz=val; }
-				if(arg=="fsc"){ self.money[menu][i].fsc=val; }
-				if(arg=="gc"){ self.money[menu][i].gc=val; }
-				if(arg=="ga"){ self.money[menu][i].gca=val; }
-				if(arg=="sort"){ self.money[menu][i].sort=val; }
-				if(arg=="override"){ self.money[menu][i].override=val; }
-				//self.money[menu][i] = undefined;
-				c++;
-			}
-		}
-		//cl("^3menu.size:"+c);
-	}
-
-}
-
 _destroy_bg(menu,size,delay){
 	if(!isDefined(self.money)){ return; }
 	if(!isDefined(menu)){ return; }
@@ -430,7 +376,7 @@ _get_motd_txt(prevDay){
 		chars=[];
 		dateTimes=[];
 		reports=[];
-		prevDatesLimit=180;
+		prevDaysLimit=90;
 		//cl("^3realDate: " + realDate);
 		
 		//lines[0]="^2"+realDate+"\n";
@@ -454,10 +400,10 @@ _get_motd_txt(prevDay){
 		c=0;
 		stopAll=undefined;
 		now=getRealTime();
-		prevDatesLimitTime=getRealTime()-(86400*prevDatesLimit);
+		prevDaysLimitTime=getRealTime()-(86400*prevDaysLimit);
 		if(isDefined(raw) && !isDefined(stopAll)){
 			for(i=0;i<raw.size;i++){
-				for(d=0;d<prevDatesLimit;d++){
+				for(d=0;d<prevDaysLimit;d++){
 					time=getRealTime()-(86400*d);
 					date=strRepl(TimeToString(time, 0, "%F"),"-"," ");
 					stop=undefined;
@@ -469,10 +415,10 @@ _get_motd_txt(prevDay){
 						game["MOTD"]["dateTimes"][c]=dateTimes[c];
 						while(isDefined(raw[i])){ 
 							i++;
-							for(j=0;j<prevDatesLimit-c;j++){
+							for(j=0;j<prevDaysLimit-c;j++){
 								time=getRealTime()-(86400*j);
 								date=strRepl(TimeToString(time, 0, "%F"),"-"," ");
-								if(time<=prevDatesLimit){ stopAll=true; }
+								if(time<=prevDaysLimitTime){ stopAll=true; }
 								if(isDefined(raw[i]) && raw[i]==date){ stop=true; break; }
 							}
 							if(isDefined(stop)){ break; }
@@ -630,15 +576,6 @@ _show_message(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,color,a,gc,ga,ft,fsz,fsc,sort){
 	cl("33ended show_message");
 }
 
-_get_override_data(){
-	if(!isDefined(self.hudmsg)){ self.hudmsg=[]; }
-	//if(isDefined(self.hudmsg[self.hudmsgID])){ 
-		//cl("11"+self.hudmsgID);
-		//self.hudmsg[self.hudmsgID].alpha-=0.05;
-		return self.hudmsg[self.hudmsgID-1];
-	//}
-}
-
 _show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,cx,cy,override){
 	self endon ( "disconnect" );
 	//self endon ( "death" );
@@ -667,20 +604,8 @@ _show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,c
 	if (!isDefined(fsc)){ fsc=1.4; }
 	if (!isDefined(sort)){ sort=1; }
 	
-	while(!isDefined(self.hudmsgID)){ wait 0.05; }
-	self.hudmsgID++;
-	//level.msgID++;
-	//msgID_prev=self.hudmsg[player.hudmsg.size];
-	_a=a;
-	self.hudmsg[self.hudmsgID]=spawnStruct();
-	//self.hudmsg[self.hudmsgID].override=override;
-	self.hudmsg[self.hudmsgID].alpha=a;
-	self.hudmsg[self.hudmsgID].override=override;
-	//self.hudmsg[self.hudmsgID-1]=override;
-	//cl("11override:"+self.hudmsg[self.hudmsgID-1]);
-	msgID=self.hudmsgID;
-	//msgID=level.msgID;
-	aprev=1;
+	level.msgID++;
+	_a=a; msgID=level.msgID;
 	hudHint=[];
 	hudHint[0]="";
 	//self.showHint=true;
@@ -689,8 +614,6 @@ _show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,c
 	blob="asdfghjklqwertyuiopzxcvbnm";
 	c=3;
 	ntxt=txt;
-	cl("55"+self.name+" : "+self.hudmsgID+": "+txt);
-	stop=undefined;
 	//cl("^3_show_hint_msg");
 	//cl("33hintmsg:"+txt);
 	//cl("33"+txt.size);
@@ -698,7 +621,7 @@ _show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,c
 	if(isDefined(cx)){ x=x-(txt.size*fsc*6.45)/2; }
 	if(isDefined(cy)){ y=y-(txt.size*fsc*6.45)/2; }
 	
-	while(size<txt.size && !isDefined(stop)){
+	while(size<txt.size){
 		r=randomIntRange(0,blob.size);
 		//blob[size]=rarr[r];
 		//while(txt[r] == " " && r>0){ r--; }
@@ -710,34 +633,8 @@ _show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,c
 		//txt[size]=blob[r];
 		for(i=0;i<size;i++){ ntxt+=txt[i]; }
 		if(size<txt.size){ hudHint[0]=ntxt+blob[r]; } else { hudHint[0]=ntxt; }
-		//data=self _get_override_data();
-		//if(isDefined(self.hudmsg[self.hudmsgID-1])){ 
-		if(isDefined(self.hudmsg[self.hudmsgID])){
-			if(isDefined(self.hudmsg[self.hudmsgID].override)){ 
-				if(self.hudmsg[self.hudmsgID].override==true){
-					//data.alpha-=0.05; 
-					//cl("data");
-					cl("11stopped: "+txt);
-					dur=0;
-					stop=true;
-					//self.hudmsg[self.hudmsgID].alpha-=0.05;
-					//a=self.hudmsg[self.hudmsgID].alpha;
-					//self _create_menu_text("hudHint"+msgID,hudHint,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,undefined,undefined,undefined,undefined);
-					//a-=0.05; dur=0; 
-					//cl("override:"+override); 
-					//self _change_menu("hudHint"+(msgID-1),"a",aprev);
-					//aprev-=0.02;
-				} else if(self.hudmsg[self.hudmsgID].override==false){
-					//self _create_menu_text("hudHint"+msgID,hudHint,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,undefined,undefined,undefined,undefined);
-					//a=_a;
-				} else {
-					//stop=true;
-				}
-			}
-		} else {
-			//self _create_menu_text("hudHint"+msgID,hudHint,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,_a,gc,ga,sort,undefined,undefined,undefined,undefined);
-		}
-		self _create_menu_text("hudHint"+msgID,hudHint,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,undefined,undefined,undefined,undefined);
+		if(isDefined(override)){ a-=0.1; dur=0; }
+		self _create_menu_text("hudHint"+msgID,hudHint,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort);
 		//self _create_menu_text("hudHint",hudHint,"default", 1.6,1.4,(r,g,b),_a,(0,0,0),0,300,300,"center","middle",ox,oy,1);
 		//_create_menu_text(hud,arr,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,selector,scolor,div,skip);		
 		self playLocalSound("cypher1");
@@ -745,14 +642,13 @@ _show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,c
 		//if(a<_a){ _a+=0.1; }
 		wait 0.05;
 		c--;
-		if(size == txt.size && !isDefined(stop)){ wait dur; }
+		if(size == txt.size){ wait dur; }
 		self _destroy_menu("hudHint"+msgID); 
-		if(a<=0){ stop=true; }
 	}
 	//wait 1;
 	//while(_a>0){
 	self playLocalSound("cypher_start");
-	while(size>0 && !isDefined(stop)){
+	while(size>0){
 		r=randomIntRange(0,blob.size);
 		//for(i=0;i<txt.size;i++){ if(txt[i] != " "){ txt[i]=" "; }}
 		//while(txt[r] == " " && r>0){ r--; }
@@ -761,7 +657,7 @@ _show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,c
 		for(i=0;i<size-1;i+=2){ ntxt+=txt[i]; ntxt+=txt[i+1]; }
 		ntxt+=blob[r];
 		hudHint[0]=ntxt;
-		//if(isDefined(override)){ a-=0.1; }
+		if(isDefined(override)){ a-=0.1; }
 		self _create_menu_text("hudHint"+msgID,hudHint,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort);
 		//_create_menu_text(hud,arr,ft,fsz,fsc,color,a,gc,ga,x,y,ax,ay,ox,oy,sort,selector,scolor,div,skip){		
 		self playLocalSound("cypher1");
@@ -773,7 +669,6 @@ _show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,c
 		size--;
 		//if(size == txt.size){ wait 1; }
 		self _destroy_menu("hudHint"+msgID); 
-		if(a<=0){ stop=true; }
 	}
 	//cl("33"+self.name+" hud ended");
 }
@@ -1066,8 +961,6 @@ _buy_menu_show(arr,prev,next,div){
 		curView = self getPlayerAngles();
 		pitch=curView[0];
 		self DisableWeapons();
-		self setClientDvar("m_pitch",0.001);
-		self setClientDvar("m_yaw",0.001);
 		//sens = self getClientDvar("cl_mouseAccel");
 		//cl("^4cl_mouseAccel:"+sens);
 		//self setClientDvars("cl_mouseAccel", 0);
@@ -1097,8 +990,8 @@ _buy_menu_show(arr,prev,next,div){
 			}
 			if(AttackButtonPressed==false){
 				if(selector>0 && selector<=size) {
-					if(pitch>curView[0]+1 || self LeanleftButtonPressed()) { selector--; pitch=curView[0]; }
-					else if(pitch<curView[0]-1 || self LeanRightButtonPressed()) { selector++; pitch=curView[0]; }
+					if(pitch>curView[0]+5 || self LeanleftButtonPressed()) { selector--; pitch=curView[0]; }
+					else if(pitch<curView[0]-5 || self LeanRightButtonPressed()) { selector++; pitch=curView[0]; }
 					//self playLocalSound( "mouse_click" );
 				}
 				if (selector<1) { selector=int(size); } 
@@ -1179,8 +1072,6 @@ _buy_menu_show(arr,prev,next,div){
 	//self.hasChosen=undefined;
 	//self _destroy_menu("hudBuyMenu",arr.size,div); 
 	self EnableWeapons();
-	self setClientDvar("m_pitch",0.022);
-	self setClientDvar("m_yaw",0.022);
 	//cl("^3hud destroyed");
 }
 

@@ -32,6 +32,25 @@ _bot_dp(to, from, a){
 	return vd;
 }
 
+_bot_dp_loop(){
+	self endon ( "disconnect" );
+	self endon ( "death" );
+	self endon( "intermission" );
+	self endon( "game_ended" );
+	if(!self.isbot){ return; }
+
+	for(;;){
+		if(isDefined(self.bot.after_target) && isDefined(self.bot.after_target.origin)){
+			a = self GetPlayerAngles();
+			dirToTarget = VectorNormalize(self.bot.after_target.origin - self getEye());
+			forward = AnglesToForward(a);
+			self.dp = vectordot(dirToTarget, forward);
+			//cl("33"+self.name+":"+self.dp);
+		}
+		wait 0.5;
+	}
+}
+
 _start_aim_ext()
 {
 	self endon ( "disconnect" );
@@ -59,6 +78,8 @@ _start_aim_ext()
     	self thread _upd_aim();
     	self thread _upd_wpts();
     	self thread _bot_aimspots();
+    	self thread _bot_dp_loop();
+    	self thread _bot_react_to_firesound();
 		wait 0.05;
 	}
 }
@@ -226,7 +247,7 @@ _bot_aimspots(){
 		if (getDvar("bots_aim_ext")=="1" && getDvar("bots_play_move") == "1") {
 			//if(c<=12) { c++; }
 			//else if (c>12) { 
-				if (isDefined(self.bot.target)) { 
+				if (isDefined(self.bot.target) && isDefined(self.bot.target.entity)) { 
 					//if(isDefined(self.aimspots)){ self.aimspots Delete(); }
 					org=self.bot.target.entity.origin;
 					//self.aimspots = spawn("script_origin", (a[0]*r,a[1]*r,a[2]*r));
@@ -289,5 +310,40 @@ _hud_draw_bot_aimspots(bot){
 		}
 		wait 0.05;
 		if(isDefined(self.hud_aimspot)){ self.hud_aimspot Destroy(); }
+	}
+}
+
+_bot_react_to_firesound(){
+	self endon ( "death" );
+	self endon ( "disconnect" );
+	self endon( "intermission" );
+	self endon( "game_ended" );
+	
+	if(!self.isbot){ return; }
+	for(;;){
+		players = getentarray( "player", "classname" );
+		closest=20000; nr=undefined;
+		for(i=0;i<players.size;i++){
+			if(players[i] != self && isDefined(players[i].hasMadeFiringSound) && isDefined(self.bot.target)){
+				dist=distance(players[i].origin,self.origin);
+				closest=dist; nr=i;
+			}
+		}
+		if(isDefined(nr)){
+			oldTargetEnt=self.bot.target.entity;
+			self.bot.target.entity=players[nr];
+			//self.bot.script_target=players[nr];
+			//self botLookAt(players[nr].origin,0.2);
+			self notify( "new_enemy" );
+			//players[i].hasMadeFiringSound=undefined;
+			//players[i] thread _bot_react_to_firesound(delay);
+			//cl(self.name+" reacted to "+players[nr].name);
+			self.bot.stop_move=false;
+			wait 0.3;
+			players[nr].hasMadeFiringSound=undefined;
+			if(isDefined(self.bot.target)){ self.bot.target.entity=oldTargetEnt; }
+			wait 5;
+		}
+		wait 0.1;
 	}
 }
