@@ -31,7 +31,7 @@ init()
 	level thread scripts\tactical::init();
 	//level thread scripts\bots_nav::init();
 
-	if (getDvar("v01d_version") == "") { setDvar("v01d_version", "v2.01"); }
+	if (getDvar("v01d_version") == "") { setDvar("v01d_version", "v2.04"); }
 
 	//if (!getdvarint("developer")>0) { return; }
 	
