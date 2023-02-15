@@ -4,6 +4,10 @@ the script files for cod4x provided by v01d
 
 -------------------------------------------
 
+updated mod.ff, iwd and other mod files at https://drive.google.com/drive/folders/186GyQw-vKV_bFqAfxdYtRPXcxtaSnoCb
+
+-------------------------------------------
+
 updates log:
 
 2023 02 04
