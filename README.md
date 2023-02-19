@@ -10,6 +10,10 @@ updated mod.ff, iwd and other mod files at https://drive.google.com/drive/folder
 
 updates log:
 
+2023 02 19
+added dvar v01d_maps_randomizer to turn on/off 
+map randomizer, set default to 1.
+
 2023 02 04
 adjusted bots fire interval with dp;
 drop weapon on devastating hit;
