@@ -4,9 +4,13 @@ the script files for cod4x provided by v01d
 
 -------------------------------------------
 
-updated mod.ff, iwd and other mod files at https://drive.google.com/drive/folders/186GyQw-vKV_bFqAfxdYtRPXcxtaSnoCb
+updated v01d mod.ff, iwd and other mod files at https://drive.google.com/drive/folders/186GyQw-vKV_bFqAfxdYtRPXcxtaSnoCb
 
 -------------------------------------------
+
+important note:
+please add additional args to your cod4x server and client executable:
++set r_xassetnum xmodel=2300 material=4096 weapon=256 loaded_sound=2400
 
 updates log:
 
