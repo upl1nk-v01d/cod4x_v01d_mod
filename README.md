@@ -1,4 +1,4 @@
-# cod4x_v01d_mod_script_files
+# cod4x v01d mod gsc script files
 
 the script files for cod4x provided by v01d
 
