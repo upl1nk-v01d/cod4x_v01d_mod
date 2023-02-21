@@ -16,6 +16,9 @@ please add additional args to your cod4x server and client executable:
 
 updates log:
 
+2023 02 21
+added defuse kit in buymenu for defusing bomb faster.
+
 2023 02 19
 added dvar v01d_maps_randomizer to turn on/off 
 map randomizer, set default to 1.
