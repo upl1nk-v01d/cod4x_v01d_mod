@@ -25,6 +25,7 @@ map randomizer, set default to 1.
 
 2023 02 12
 made workaround with item pickup;
+new item pickup mode dvar v01d_pickup_item_mode set to 1;
 fixed bot starring on c4 and claymore.
 
 2023 02 04
