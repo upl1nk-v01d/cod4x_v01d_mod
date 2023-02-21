@@ -435,8 +435,8 @@ ch_kills( data, time )
 			player processChallenge( "ch_extremecruelty" );
 	}
 
-	if ( player.killedPlayers[""+data.victim.clientid] == 10 )
-		player processChallenge( "ch_rival" );
+	//if ( player.killedPlayers[""+data.victim.clientid] == 10 )
+	//	player processChallenge( "ch_rival" );
 
 	if ( isdefined( player.tookWeaponFrom[ data.sWeapon ] ) )
 	{

@@ -381,91 +381,7 @@ watchPickup()
 	}
 }
 
-playerPickupItem(item){
-	self endon("death");
-
-	if(!isDefined(item.ownersInventory)){ return; }
-
-	itemPickupTimerUnits=1000;
-	_itemPickupTimerUnits=itemPickupTimerUnits;
-	itemPickupTimerUnits=0;
-	maxItemPickupDist=48;
-	
-	while(isAlive(self)){
-		weapon=item.ownersInventory.weaponItemName;
-		ammo=item.ownersInventory.clipAmmo;
-		//cl(self.name+" is searching an item "+weapon);
-		dist=undefined;
-		if(isDefined(item.origin)){
-			dist = distance(self.origin, item.origin);
-		}
-		if(isDefined(dist) && isDefined(weapon) && self UseButtonPressed()){
-			if(dist<maxItemPickupDist && item.waitTimerUnits<item.deleteTimerUnits && !isDefined(self.gettingItem)){ 
-				self thread scripts\main::_progress_bar(_itemPickupTimerUnits,0,1,"");
-				self.gettingItem=true;
-				//cl(self.name+" is picking up an item "+weapon);
-			}
-			if(itemPickupTimerUnits>_itemPickupTimerUnits && isDefined(self.gettingItem)){
-				self takeWeapon(self GetCurrentWeapon());
-				self giveWeapon(weapon);
-				self switchToWeapon(weapon);
-				self SetWeaponAmmoClip(weapon, ammo);
-				self setWeaponAmmoStock(weapon, 0);
-				self playSound("weap_pickup");
-				self.inUse = false;
-				self.gettingItem=undefined;
-				item delete();
-				//cl(self.name+" picked up an item");
-				break;
-			} else {
-				itemPickupTimerUnits+=100;
-			}
-			if(dist>=maxItemPickupDist || !isDefined(item) || !isAlive(self)){
-				self.gettingItem=undefined;
-				self.inUse = false;
-				itemPickupTimerUnits=0;
-				break;
-			}
-		} else {
-			self.gettingItem=undefined;
-			break;
-		}
-		wait 0.1;
-	}
-}
-
-watchDroppedItem(){
-	//self endon("death");
-	
-	//cl("item model: "+self.model);
-	//cl("item timeCreated: "+self.timeCreated);
-	
-	if(!isDefined(self.ownersInventory)){ return; }
-	self.deleteTimerUnits=300;
-	maxItemPickupDist=48;
-	for(;;){
-		//if(!isAlive(self)){ return; }
-		if(!isDefined(self.waitTimerUnits) || !isDefined(self.deleteTimerUnits)){ return; }
-		if(self.waitTimerUnits > self.deleteTimerUnits){ 
-			//cl("deleted item:"+self.model);
-			self delete(); 
-			return;
-		}
-		else{ self.waitTimerUnits++; }
-		
-		players = getentarray( "player", "classname" );
-		for(i=0;i<players.size;i++){
-			dist = distance(players[i].origin, self.origin);
-			if(dist<maxItemPickupDist && !isDefined(players[i].gettingItem) && !isDefined(players[i].gettingItem)){
-				players[i] thread playerPickupItem(self);
-			}
-		}
-		wait 0.1;
-	}
-}
-
-watchPickupNew()
-{
+watchPickupNew(){
 	self endon("death");
 	
 	weapname = self getItemWeaponName();
@@ -508,11 +424,96 @@ watchPickupNew()
 			ent = level.droppedItems[level.droppedItemsCount - (droppedItemsLimit-1)].ent;
 			index = level.droppedItemsCount - (droppedItemsLimit-1);
 			//cl("deleted item "+ent.model+" with index "+index);
-			ent delete(); 
+			if(isDefined(ent)){ ent delete(); }
 		}
 	}
 	
 	droppedItem delete(); // remove original dropped item
+}
+
+playerPickupItem(item){
+	self endon("death");
+
+	if(!isDefined(item.ownersInventory)){ return; }
+
+	itemPickupTimerUnits=1000;
+	_itemPickupTimerUnits=itemPickupTimerUnits;
+	itemPickupTimerUnits=0;
+	maxItemPickupDist=48;
+	
+	while(isAlive(self) && isDefined(item.ownersInventory)){
+		weapon=item.ownersInventory.weaponItemName;
+		ammo=item.ownersInventory.clipAmmo;
+		//cl(self.name+" is searching an item "+weapon);
+		dist=undefined;
+		if(isDefined(item.origin)){
+			dist = distance(self.origin, item.origin);
+		}
+		if(isDefined(dist) && isDefined(weapon) && self UseButtonPressed()){
+			if(dist<maxItemPickupDist && item.waitTimerUnits<item.deleteTimerUnits && !isDefined(self.gettingItem)){ 
+				self thread scripts\main::_progress_bar(_itemPickupTimerUnits,0,1,"");
+				self.gettingItem=true;
+				//cl(self.name+" is picking up an item "+weapon);
+			}
+			if(itemPickupTimerUnits>_itemPickupTimerUnits && isDefined(self.gettingItem)){
+				self takeWeapon(self GetCurrentWeapon());
+				self giveWeapon(weapon);
+				self switchToWeapon(weapon);
+				self SetWeaponAmmoClip(weapon, ammo);
+				self setWeaponAmmoStock(weapon, 0);
+				self playSound("weap_pickup");
+				self.inUse = false;
+				self.gettingItem=undefined;
+				item delete();
+				wait 0.5;
+				//cl(self.name+" picked up an item");
+				break;
+			} else {
+				itemPickupTimerUnits+=100;
+			}
+			if(dist>=maxItemPickupDist || !isDefined(item) || !isAlive(self)){
+				self.gettingItem=undefined;
+				self.inUse = false;
+				itemPickupTimerUnits=0;
+				break;
+			}
+		} else {
+			self.gettingItem=undefined;
+			break;
+		}
+		wait 0.1;
+	}
+}
+
+watchDroppedItem(){
+	//self endon("death");
+	
+	//cl("item model: "+self.model);
+	//cl("item timeCreated: "+self.timeCreated);
+	
+	if(!isDefined(self.ownersInventory)){ return; }
+	self.deleteTimerUnits=100;
+	maxItemPickupDist=48;
+	self MoveZ(-2,self.deleteTimerUnits*0.1);
+	for(;;){
+		//if(!isAlive(self)){ return; }
+		if(!isDefined(self.waitTimerUnits) || !isDefined(self.deleteTimerUnits)){ return; }
+		if(self.waitTimerUnits > self.deleteTimerUnits){ 
+			//cl("deleted item:"+self.model);
+			self delete(); 
+			return;
+		}
+		else{ self.waitTimerUnits++; }
+		
+		players = getentarray( "player", "classname" );
+		for(i=0;i<players.size;i++){
+			dist = distance(players[i].origin, self.origin);
+			if(dist<maxItemPickupDist && !isDefined(players[i].gettingItem) && !isDefined(players[i].gettingItem)){
+				players[i] thread playerPickupItem(self);
+			}
+		}
+		wait 0.1;
+	}
 }
 
 itemRemoveAmmoFromAltModes()
