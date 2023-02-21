@@ -20,6 +20,10 @@ updates log:
 added dvar v01d_maps_randomizer to turn on/off 
 map randomizer, set default to 1.
 
+2023 02 12
+made workaround with item pickup;
+fixed bot starring on c4 and claymore.
+
 2023 02 04
 adjusted bots fire interval with dp;
 drop weapon on devastating hit;
