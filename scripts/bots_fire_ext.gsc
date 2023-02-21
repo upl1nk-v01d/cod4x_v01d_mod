@@ -38,7 +38,7 @@ _bot_fire(){
 	self endon( "game_ended" );
 	if(!self.isbot){ return; }
 	
-	stances=strTok("crouch,prone,stand",",");
+	stances=strTok("stand,crouch,prone",",");
 	stance=undefined;
 	
 	for(;;){
@@ -46,6 +46,9 @@ _bot_fire(){
 			if(isAlive(self) && isDefined(self.dp) && self.dp>0.95){
 				if (isDefined(self.bot.script_target)){
 					//cl("33"+self.name+" target model: "+self.bot.script_target.model);
+					if (self.bot.script_target.model == "c4_mp" || self.bot.script_target.model == "claymore_mp") { 
+						self.bot.script_target=undefined;
+					}
 					if (self.bot.script_target.model == "vehicle_mi24p_hind_desert" || self.bot.script_target.model == "vehicle_cobra_helicopter_fly") { 
 						//cl("33"+self.bot.script_target.model);
 						self _bot_press_fire(0.3,self.bot.script_target);
@@ -71,11 +74,14 @@ _bot_fire(){
 						}
 					} 
 					if(dist>600){
-						stance=stances[randomIntRange(0,2)]; 
+						stance=stances[randomIntRange(1,3)]; 
+						self setMoveSpeedScale(0);
 						self botAction("+go"+stance);
 						self botAction( "-gostand" );
 						self.bot.stop_move=true;
 						//cl("33"+self.name+" stance:"+stance);
+					}else{
+						self setMoveSpeedScale(1);
 					}
 					//self botAction( "-gocrouch" );
 					//self botAction( "-goprone" );
@@ -107,8 +113,8 @@ _bot_press_fire(delay,target)
 
 	if(isDefined(target)){
 		stance=self getStance();
-		if (stance == "stand" || stance == "crouch"){ self.bot.stop_move=false; }
-		else if (stance == "prone"){ self.bot.stop_move=true; }
+		//if (stance == "stand" || stance == "crouch"){ self.bot.stop_move=false; }
+		if (stance == "prone"){ self.bot.stop_move=true; }
 		dist=distance(target.origin,self.origin);
 		duration=randomFloatRange(0.05,0.3)+(1/(dist*2));
 		self botAction("+fire");
