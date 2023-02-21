@@ -8,6 +8,8 @@ init()
 	// attachments are now shown here, they are per weapon settings instead
 	
 	// generating weaponIDs array
+	level.droppedItems=[];
+	level.droppedItemsCount=0;
 	level.claymoreActivateDelay=10;
 	level.weaponIDs = [];
 	max_weapon_num = 149;
@@ -286,6 +288,7 @@ dropWeaponForDeath( attacker, fullAmmo )
 	if ( stockAmmo > stockMax )
 		stockAmmo = stockMax;
 
+	
 	item = self dropItem( weapon );
 	/#
 	if ( getdvar("scr_dropdebug") == "1" )
@@ -295,12 +298,16 @@ dropWeaponForDeath( attacker, fullAmmo )
 	self.droppedDeathWeapon = true;
 
 	if(isDefined(fullAmmo)){ item ItemWeaponSetAmmo( randomIntRange(0,clipAmmo), int(stockAmmo) ); }
-	else{ item ItemWeaponSetAmmo( randomIntRange(0,clipAmmo), int(stockAmmo/10)+1 ); }
+	else{ stockAmmo = int(stockAmmo/10)+1; item ItemWeaponSetAmmo( randomIntRange(0,clipAmmo), int(stockAmmo/10)+1 ); }
 	
 	item itemRemoveAmmoFromAltModes();
 	
 	item.owner = self;
 	item.ownersattacker = attacker;
+	item.ownersInventory = spawnStruct();
+	item.ownersInventory.weaponItemName = weapon;
+	item.ownersInventory.clipAmmo = clipAmmo;
+	item.ownersInventory.stockAmmo = stockAmmo;
 	
 	item thread watchPickup();
 	
@@ -330,6 +337,8 @@ getItemWeaponName()
 watchPickup()
 {
 	self endon("death");
+	
+	if(getDvar("v01d_pickup_item_mode") == "1"){ self thread watchPickupNew(); return; }
 	
 	weapname = self getItemWeaponName();
 	
@@ -370,6 +379,140 @@ watchPickup()
 	{
 		player.tookWeaponFrom[ weapname ] = undefined;
 	}
+}
+
+playerPickupItem(item){
+	self endon("death");
+
+	if(!isDefined(item.ownersInventory)){ return; }
+
+	itemPickupTimerUnits=1000;
+	_itemPickupTimerUnits=itemPickupTimerUnits;
+	itemPickupTimerUnits=0;
+	maxItemPickupDist=48;
+	
+	while(isAlive(self)){
+		weapon=item.ownersInventory.weaponItemName;
+		ammo=item.ownersInventory.clipAmmo;
+		//cl(self.name+" is searching an item "+weapon);
+		dist=undefined;
+		if(isDefined(item.origin)){
+			dist = distance(self.origin, item.origin);
+		}
+		if(isDefined(dist) && isDefined(weapon) && self UseButtonPressed()){
+			if(dist<maxItemPickupDist && item.waitTimerUnits<item.deleteTimerUnits && !isDefined(self.gettingItem)){ 
+				self thread scripts\main::_progress_bar(_itemPickupTimerUnits,0,1,"");
+				self.gettingItem=true;
+				//cl(self.name+" is picking up an item "+weapon);
+			}
+			if(itemPickupTimerUnits>_itemPickupTimerUnits && isDefined(self.gettingItem)){
+				self takeWeapon(self GetCurrentWeapon());
+				self giveWeapon(weapon);
+				self switchToWeapon(weapon);
+				self SetWeaponAmmoClip(weapon, ammo);
+				self setWeaponAmmoStock(weapon, 0);
+				self playSound("weap_pickup");
+				self.inUse = false;
+				self.gettingItem=undefined;
+				item delete();
+				//cl(self.name+" picked up an item");
+				break;
+			} else {
+				itemPickupTimerUnits+=100;
+			}
+			if(dist>=maxItemPickupDist || !isDefined(item) || !isAlive(self)){
+				self.gettingItem=undefined;
+				self.inUse = false;
+				itemPickupTimerUnits=0;
+				break;
+			}
+		} else {
+			self.gettingItem=undefined;
+			break;
+		}
+		wait 0.1;
+	}
+}
+
+watchDroppedItem(){
+	//self endon("death");
+	
+	//cl("item model: "+self.model);
+	//cl("item timeCreated: "+self.timeCreated);
+	
+	if(!isDefined(self.ownersInventory)){ return; }
+	self.deleteTimerUnits=300;
+	maxItemPickupDist=48;
+	for(;;){
+		//if(!isAlive(self)){ return; }
+		if(!isDefined(self.waitTimerUnits) || !isDefined(self.deleteTimerUnits)){ return; }
+		if(self.waitTimerUnits > self.deleteTimerUnits){ 
+			//cl("deleted item:"+self.model);
+			self delete(); 
+			return;
+		}
+		else{ self.waitTimerUnits++; }
+		
+		players = getentarray( "player", "classname" );
+		for(i=0;i<players.size;i++){
+			dist = distance(players[i].origin, self.origin);
+			if(dist<maxItemPickupDist && !isDefined(players[i].gettingItem) && !isDefined(players[i].gettingItem)){
+				players[i] thread playerPickupItem(self);
+			}
+		}
+		wait 0.1;
+	}
+}
+
+watchPickupNew()
+{
+	self endon("death");
+	
+	weapname = self getItemWeaponName();
+	//player = attacker;
+	droppedItem=self;
+	droppedItemsLimit = 5;
+	itemNewPos=droppedItem.origin;
+	itemOldPos=(0,0,0);
+	
+	while(isDefined(droppedItem) && isDefined(itemNewPos)){ 
+		if(itemNewPos != itemOldPos){ itemOldPos=itemNewPos; }
+		else{ break; }
+		wait 0.3;
+		itemNewPos=droppedItem.origin;
+	}
+	if(!isDefined(droppedItem)){ return; }	
+	
+	level.droppedItemsCount++;
+	level.droppedItems[level.droppedItemsCount] = spawnStruct();
+	level.droppedItems[level.droppedItemsCount].ent = spawn("script_model", droppedItem.origin);
+	level.droppedItems[level.droppedItemsCount].ent.targetname = "droppedItem"+level.droppedItemsCount;
+	level.droppedItems[level.droppedItemsCount].vis = getEnt("droppedItem"+level.droppedItemsCount, "targetname");
+	level.droppedItems[level.droppedItemsCount].vis setModel(droppedItem.model);
+	//level.droppedItems[level.droppedItemsCount].vis.origin = droppedItem.origin;
+	level.droppedItems[level.droppedItemsCount].vis.angles = droppedItem.angles;
+	level.droppedItems[level.droppedItemsCount].ent.waitTimerUnits = 0;
+	level.droppedItems[level.droppedItemsCount].ent.ownersInventory=droppedItem.ownersInventory;
+	//cl("level.droppedItemsCount: "+level.droppedItemsCount);
+	//cl("level.droppedItems.size: "+level.droppedItems.size);
+	//cl("item "+droppedItem.model+" is on ground");
+	//cl("item origin: "+droppedItem.origin);
+	//cl("item angles: "+droppedItem.angles);
+	//cl("item model: "+droppedItem.model);
+	//cl("item weapon: "+droppedItem.ownersInventory.weaponItemName);
+	
+	level.droppedItems[level.droppedItemsCount].ent thread watchDroppedItem();
+	
+	if(level.droppedItemsCount > droppedItemsLimit){ 
+		if(isDefined(level.droppedItems[level.droppedItemsCount - droppedItemsLimit].ent)){
+			ent = level.droppedItems[level.droppedItemsCount - (droppedItemsLimit-1)].ent;
+			index = level.droppedItemsCount - (droppedItemsLimit-1);
+			//cl("deleted item "+ent.model+" with index "+index);
+			ent delete(); 
+		}
+	}
+	
+	droppedItem delete(); // remove original dropped item
 }
 
 itemRemoveAmmoFromAltModes()
