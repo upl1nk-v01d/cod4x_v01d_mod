@@ -1376,12 +1376,16 @@ _projectiles_owner(){
 _projectiles_monitor(weap,wname){
 	//if(isDefined(self.projectile)) { cl(self.name+" has projectile: "+self.projectile.size); }
 	
-	blastOrigin = undefined;
+	blastOrigin = (0,0,0);
 	//name = self.name;
 	attacker = self;
 	w = attacker GetCurrentWeapon();
 	
-	while(isDefined(weap)){ blastOrigin = weap.origin; wait 0.05; }
+	while(isDefined(weap)){ 
+		if(blastOrigin == weap.origin){ break; }
+		wait 0.1;
+		blastOrigin = weap.origin;
+	}
 	//cl("projectile ended");
 	//weap waittill( "explode", blastOrigin );
 	//cl("^1grenade owner released: "+name);
@@ -1444,6 +1448,7 @@ _grenade_owner(){
 	for(;;){
 		if (isAlive(self)){
 			self waittill( "grenade_fire", w, wname );
+			//cl("grenade_fire ent: "+w getEntityNumber());
 			if(isDefined(wname)){
 				if(isSubStr(wname,"c4")){ self.haveC4-=1; }
 				if(isSubStr(wname,"claymore")){ self.haveClaymores-=1; }
@@ -2030,7 +2035,7 @@ _killed(eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, t
 			thread _sfx(sc);
 		//} else if (sMeansOfDeath == "MOD_SUICIDE" && !isDefined(self.lastStand) && self hasPerk("specialty_pistoldeath") == false && !isDefined(eAttacker)) {
 		}
-	} else if (isDefined(eAttacker)){ 
+	} else if (isDefined(eAttacker) && isPlayer(eAttacker)){ 
 		//if(eInflictor.classname == "player"){ eAttacker thread _quick_killcam(self, self getEntityNumber(), eInflictor, sWeapon, eAttacker); }
 		//cl(sWeapon); //cobra_20mm_mp
 		//cl(eInflictor.classname); //script_vehicle
@@ -2039,7 +2044,7 @@ _killed(eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, t
 				
 		self.kb = eAttacker;
 		
-		if(isPlayer(eAttacker) && sMeansOfDeath == "MOD_MELEE") //
+		if(sMeansOfDeath == "MOD_MELEE") //
 		{	
 			//cl("knifed");
 			if (!level.inOvertime == true) { 
@@ -2081,9 +2086,9 @@ _killed(eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, t
 	//self finishPlayerDamage( eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, psOffsetTime );
 	if(isDefined(level.originalcallbackPlayerKilled)){
 		self [[level.originalcallbackPlayerKilled]](eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, timeOffset, deathAnimDuration);
+	} else {
+		return;
 	}
-	
-	//wait (0.10);
 }
 
 _linkto(ent, del, dur){
