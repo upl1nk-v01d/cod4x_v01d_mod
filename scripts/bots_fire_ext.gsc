@@ -46,7 +46,8 @@ _bot_fire(){
 			if(isAlive(self) && isDefined(self.dp) && self.dp>0.95){
 				if (isDefined(self.bot.script_target)){
 					//cl("33"+self.name+" target model: "+self.bot.script_target.model);
-					if (self.bot.script_target.model == "c4_mp" || self.bot.script_target.model == "claymore_mp") { 
+					//if (self.bot.script_target.model == "c4_mp" || self.bot.script_target.model == "claymore_mp") { 
+					if (self.bot.script_target.model == "c4_mp") { 
 						self.bot.script_target=undefined;
 					}
 					if (self.bot.script_target.model == "vehicle_mi24p_hind_desert" || self.bot.script_target.model == "vehicle_cobra_helicopter_fly") { 
@@ -61,12 +62,12 @@ _bot_fire(){
 					//vehicle_cobra_helicopter_fly
 					stance=self getStance();
 					dist=distance(self.bot.after_target.origin,self.origin);
-					//if (stance == "stand" || stance == "crouch"){ self.bot.stop_move=true; }
-					//else { self.bot.stop_move=false; }
+					if (stance == "stand" || stance == "crouch"){ self.bot.stop_move=false; }
+					else { self.bot.stop_move=true; }
 					if (isDefined(level.classBoltSniper)) { 
 						for (i=0;i<level.classBoltSniper.size;i++){
 							if (isSubStr( self GetCurrentWeapon(), level.classBoltSniper[i])){ 
-								stance=stances[randomIntRange(0,3)]; 
+								stance=stances[randomIntRange(1,3)]; 
 								self botAction("+go"+stance);
 								//self botAction("-ads");
 								self.bot.stop_move=true; break;
@@ -75,12 +76,12 @@ _bot_fire(){
 					} 
 					if(dist>600){
 						stance=stances[randomIntRange(1,3)]; 
-						self setMoveSpeedScale(0);
-						self botAction("+go"+stance);
-						self botAction( "-gostand" );
+						//self setMoveSpeedScale(0);
+						//self botAction("+go"+stance);
+						//self botAction( "-gostand" );
 						self.bot.stop_move=true;
 						//cl("33"+self.name+" stance:"+stance);
-					}else{
+					} else {
 						self setMoveSpeedScale(1);
 					}
 					//self botAction( "-gocrouch" );
@@ -104,8 +105,8 @@ _bot_press_fire(delay,target)
 {
 	self endon("death");
 	self endon("disconnect");
-	self notify("bot_fire");
-	self endon("bot_fire");
+	//self notify("bot_fire");
+	//self endon("bot_fire");
 	
 	if(!isDefined(delay)) { delay = 0.3; }
 	
@@ -113,8 +114,9 @@ _bot_press_fire(delay,target)
 
 	if(isDefined(target)){
 		stance=self getStance();
-		//if (stance == "stand" || stance == "crouch"){ self.bot.stop_move=false; }
+		if (stance == "stand" || stance == "crouch"){ self.bot.stop_move=true; }
 		if (stance == "prone"){ self.bot.stop_move=true; }
+		//if (isDefined(self.isProning) && isDefined(self.isFiring)){ self.bot.stop_move=true; }
 		dist=distance(target.origin,self.origin);
 		duration=randomFloatRange(0.05,0.3)+(1/(dist*2));
 		self botAction("+fire");

@@ -209,7 +209,7 @@ _upd_wpts(){
 				if (self.bot.next_wp != self.bot._next_wp){
 					kills=self.pers["kills"];
 					roundwins=[[level._getTeamScore]](self.pers["team"]);
-					if(!isDefined(roundwins)) { roundwins=0; }
+					if(!isDefined(roundwins)) { roundwins=1; }
 					//k=0.3-((kills+roundwins)*0.005);
 					//k=0.3-(roundwins*0.05);
 					k=0.7;
@@ -259,7 +259,7 @@ _bot_aimspots(){
 						lives = self.pers["lives"];
 						dvar=getDvarInt("scr_"+getDvar("g_gametype")+"_numlives");
 						if(dvar<1){ k=1; }
-						k=lives/dvar;
+						else{ k=lives/dvar; }
 						r=randomFloatRange(-30,30)*k;
 						aimspot = (r,r,r);
 						//t = spawn( "script_origin", aimspot);
@@ -330,18 +330,18 @@ _bot_react_to_firesound(){
 			}
 		}
 		if(isDefined(nr)){
-			oldTargetEnt=self.bot.target.entity;
-			self.bot.target.entity=players[nr];
+			oldTargetEnt=self.bot.script_target;
+			self.bot.script_target=players[nr];
 			//self.bot.script_target=players[nr];
 			//self botLookAt(players[nr].origin,0.2);
 			self notify( "new_enemy" );
 			//players[i].hasMadeFiringSound=undefined;
 			//players[i] thread _bot_react_to_firesound(delay);
 			//cl(self.name+" reacted to "+players[nr].name);
-			self.bot.stop_move=false;
-			wait 0.3;
+			//self.bot.stop_move=false;
+			wait 0.7;
 			players[nr].hasMadeFiringSound=undefined;
-			if(isDefined(self.bot.target)){ self.bot.target.entity=oldTargetEnt; }
+			if(isDefined(self.bot.script_target)){ self.bot.script_target=oldTargetEnt; }
 			wait 5;
 		}
 		wait 0.1;

@@ -65,10 +65,11 @@ _connected_loop(){
 _dev_test_hud(){
 	if(!self.isbot){
 		wait 0.5;
-
-		self thread _show_hint_msg("press FIRE button to select",0,3,0,300,0,0,"left","middle",0,0,"default",1.6,1.6,(1,1,0),1,(1,1,0),0.5,1,undefined,undefined,true);
-		wait 0.05;
-		self thread _show_hint_msg("press ADS button to return",0.3,3,0,318,0,0,"left","middle",0,0,"default",1.6,1.6,(1,1,0),1,(1,1,0),0.5,1,undefined,undefined,false);
+		
+		//self _show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,cx,cy,override,chrs,chre){
+		self thread _show_hint_msg("press FIRE button to select",0,3,0,300,0,0,"left","middle",0,0,"default",1.6,1.6,(1,1,0),1,(1,1,0),0.5,1,undefined,undefined);
+		wait 0.5;
+		self thread _show_hint_msg("press ADS button to return",0.3,3,0,318,0,0,"left","middle",0,0,"default",1.6,1.6,(1,1,0),1,(1,1,0),0.5,1,undefined,undefined,true);
 		wait 1;
 		//self.hudmsg[1]=true;
 		
@@ -639,7 +640,7 @@ _get_override_data(){
 	//}
 }
 
-_show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,cx,cy,override){
+_show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,cx,cy,override,chrs,chre){
 	self endon ( "disconnect" );
 	//self endon ( "death" );
 	//self endon( "intermission" );
@@ -666,6 +667,8 @@ _show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,c
 	if (!isDefined(fsz)){ fsz=1.6; }
 	if (!isDefined(fsc)){ fsc=1.4; }
 	if (!isDefined(sort)){ sort=1; }
+	if (!isDefined(chrs)){ chrs=3; }
+	if (!isDefined(chre)){ chre=3; }
 	
 	while(!isDefined(self.hudmsgID)){ wait 0.05; }
 	self.hudmsgID++;
@@ -676,6 +679,9 @@ _show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,c
 	//self.hudmsg[self.hudmsgID].override=override;
 	self.hudmsg[self.hudmsgID].alpha=a;
 	self.hudmsg[self.hudmsgID].override=override;
+	self.hudmsg[self.hudmsgID].txt=txt;
+	self.hudmsg[self.hudmsgID].stop=undefined;
+	self.hudmsg[self.hudmsgID].dur=dur;
 	//self.hudmsg[self.hudmsgID-1]=override;
 	//cl("11override:"+self.hudmsg[self.hudmsgID-1]);
 	msgID=self.hudmsgID;
@@ -689,7 +695,7 @@ _show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,c
 	blob="asdfghjklqwertyuiopzxcvbnm";
 	c=3;
 	ntxt=txt;
-	cl("55"+self.name+" : "+self.hudmsgID+": "+txt);
+	//cl("55"+self.name+" : "+self.hudmsgID+": "+txt);
 	stop=undefined;
 	//cl("^3_show_hint_msg");
 	//cl("33hintmsg:"+txt);
@@ -704,10 +710,11 @@ _show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,c
 		//while(txt[r] == " " && r>0){ r--; }
 		//blob = StrRepl(txt,txt[size],rarr[r]); 
 		//if(c<0){ txt = StrRepl(txt,txt[size-2],txt[size]); }
-		if(c<0){ size++; c=1; }
+		if(c<0){ size+=chrs; c=1; }
 		//hudHint[0]="";
 		ntxt="";
 		//txt[size]=blob[r];
+		if(size>txt.size){ size=txt.size; } //well... a couple of hours took me to solve faster cypher with this ;)
 		for(i=0;i<size;i++){ ntxt+=txt[i]; }
 		if(size<txt.size){ hudHint[0]=ntxt+blob[r]; } else { hudHint[0]=ntxt; }
 		//data=self _get_override_data();
@@ -717,9 +724,11 @@ _show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,c
 				if(self.hudmsg[self.hudmsgID].override==true){
 					//data.alpha-=0.05; 
 					//cl("data");
-					cl("11stopped: "+txt);
+					cl("11stopped: "+self.hudmsg[self.hudmsgID-1].txt);
 					dur=0;
 					stop=true;
+					//self.hudmsg[self.hudmsgID-1].stop=true;
+					//self.hudmsg[self.hudmsgID-1].dur=0;
 					//self.hudmsg[self.hudmsgID].alpha-=0.05;
 					//a=self.hudmsg[self.hudmsgID].alpha;
 					//self _create_menu_text("hudHint"+msgID,hudHint,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,undefined,undefined,undefined,undefined);
@@ -751,7 +760,7 @@ _show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,c
 	}
 	//wait 1;
 	//while(_a>0){
-	self playLocalSound("cypher_start");
+	//self playLocalSound("cypher_start");
 	while(size>0 && !isDefined(stop)){
 		r=randomIntRange(0,blob.size);
 		//for(i=0;i<txt.size;i++){ if(txt[i] != " "){ txt[i]=" "; }}
@@ -770,7 +779,7 @@ _show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,c
 		//if(a==_a){ wait dur; }
 		//if(a>0){ a-=0.1; }
 		wait 0.05;
-		size--;
+		size-=chre;
 		//if(size == txt.size){ wait 1; }
 		self _destroy_menu("hudHint"+msgID); 
 		if(a<=0){ stop=true; }

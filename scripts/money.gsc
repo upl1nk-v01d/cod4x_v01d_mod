@@ -557,7 +557,7 @@ _kills(){
 		//cl("^3killed true");
 		if(isPlayer(attacker) && !attacker.isbot){
 			if(attacker.pers["team"]==self.team){
-				attacker.money["acc"] -= 100 * level.moneyMultiplier;
+				attacker.money["acc"] -= 1000 * level.moneyMultiplier;
 				//game["money"][attacker.name]=attacker.money["acc"];
 				//cl("^1attacker "+attacker.name+" has money: "+attacker.money["acc"]);
 				//cl("^1"+attacker.name+" has money: "+game["money"][attacker.name]);
@@ -610,7 +610,7 @@ _buy(){
 							self.haveTools["defkit"]=1;
 							//cl(self.haveTools["defkit"]);
 							//self maps\mp\gametypes\_gameobjects::setUseTime(level.defuseTime/2);
-							self playSound("weap_pickup");
+							self playSound("tools_defkit_buy");
 						}
 						self.money["acc"]-=int(self.hasChosen[i-1]);
 						self.spentMoney=true;

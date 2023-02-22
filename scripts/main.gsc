@@ -31,7 +31,7 @@ init()
 	level thread scripts\tactical::init();
 	//level thread scripts\bots_nav::init();
 
-	if (getDvar("v01d_version") == "") { setDvar("v01d_version", "v2.08"); }
+	if (getDvar("v01d_version") == "") { setDvar("v01d_version", "v2.11"); }
 	
 	setDvar( "scr_intermission_time", 10.0 );
 	//setDvar("bots_play_fire", false);
@@ -141,6 +141,8 @@ init()
 	precacheMenu("v01d_ct_taunts_2");
 	precacheMenu("v01d_ct_taunts_3");
 	precacheMenu("v01d_tools");
+	
+	level.fx_m203_gl = loadfx("explosions/grenadeexp_default");
 
 	level.st = gettime();
 	level.tp=0;
@@ -463,7 +465,7 @@ _player_spawn_loop(){
 		self thread _give_knife(0.5);
 		self thread _knife_hit();
 		self thread _explosives_pickup();
-		//self thread _bot_explosives_pickup();
+		self thread _bot_explosives_pickup();
 		self thread _weapon_cock_sound();
 		self thread _player_mouse();
 		self thread _hp_weapons_list();
@@ -487,6 +489,7 @@ _player_spawn_loop(){
 		//wait 20;
 		//self.alpha=1;
 		self takeWeapon("briefcase_bomb_mp");
+		self thread scripts\main::_flash("bright",1,0,0.1,1);
 	}
 }
 
@@ -693,57 +696,60 @@ _bot_explosives_pickup(){
 	//self SetWeaponAmmoClip("claymore_mp",self.haveClaymores);
 	for(;;){
 		c=20;
+		//while ( !self UseButtonPressed() ){	wait 0.05; }
 		if(self.pers["team"] != "spectator"){
-			//pickedUp=false;
-			botAngles = self GetPlayerAngles();
-			startPos = self getEye();
-			startPosForward = startPos + anglesToForward((botAngles[0],botAngles[1],0))*1200;
-			trace = bulletTrace(startPos,startPosForward,true,self);
-			pos = trace["position"];
-			//ent = trace["entity"];
-			if(isDefined(pos)){
-				//cl("33c:"+c);
-				delay=0.05;
-				closest = 2147483647; nr=undefined; dist=undefined;
-				for(i=0;i<level.claymoreArray.size;i++){
-					if(isDefined(level.claymoreArray[i].origin)){
-						dist = distance(pos,level.claymoreArray[i].origin); 
+			pickedUp=false;
+			//while (self UseButtonPressed() && c>=0){
+				myAngles = self GetPlayerAngles();
+				startPos = self getEye();
+				startPosForward = startPos + anglesToForward((myAngles[0],myAngles[1],0))*1200;
+				trace = bulletTrace(startPos,startPosForward,true,self);
+				pos = trace["position"];
+				//ent = trace["entity"];
+				if(isDefined(pos)){
+					//cl("33c:"+c);
+					closest = 2147483647; nr=undefined; dist=undefined;
+					for(i=0;i<level.claymoreArray.size;i++){
+						if(isDefined(level.claymoreArray[i])){
+							dist = distance(pos,level.claymoreArray[i].origin); 
+						}
+						if(isDefined(dist) && dist<32){ 
+							nr=i; 
+							if(c>=20){ self thread _progress_bar(1000,0,1); }
+						}
 					}
-					if(isDefined(dist) && dist<32){ 
-						nr=i; 
-						if(c>=20){ self thread _progress_bar(1000,0,1); }
+					//if(isDefined(nr) && !isDefined(level.claymoreArray[nr].removed) && c<=0){ 
+					if(isDefined(nr) && isDefined(level.claymoreArray[nr]) && c<=0){ 
+						//self.claymorearray[nr] notify("death");
+						level.claymoreArray[nr] delete();
+						wait 0.05;
+						//level.claymoreArray = _arr_remove(level.claymoreArray,level.claymoreArray[nr]);
+						self.inUse = false;
+						self GiveWeapon("claymore_mp");
+						self SwitchToWeapon("claymore_mp");
+						self playSound("weap_pickup");
+						wait 0.1;
+						self.haveClaymores+=1;
+						self SetWeaponAmmoClip("claymore_mp",self.haveClaymores);
+						//self SetWeaponAmmoStock("claymore_mp",self.haveClaymores);
+						//cl("55claymore arr size:"+self.claymorearray.size); 
+						//cl("55closest claymore nr:"+nr); 
+						cl("55getAmmoCount:"+self getAmmoCount("claymore_mp")); 
+						pickedUp=true;
+						c=20;
+						wait 0.5;
 					}
-				}
-				if(isDefined(nr) && c<=0){ 
-					//self.claymorearray[nr] notify("death");
-					self.claymorearray[nr] delete();
-					wait 0.05;
-					level.claymoreArray = _arr_remove(level.claymoreArray,level.claymoreArray[nr]);
-					self.inUse = false;
-					self GiveWeapon("claymore_mp");
-					self SwitchToWeapon("claymore_mp");
-					self playSound("weap_pickup");
-					wait 0.1;
-					//self.haveClaymores+=1;
-					//self SetWeaponAmmoClip("claymore_mp",self.haveClaymores);
-					//self SetWeaponAmmoStock("claymore_mp",self.haveClaymores);
-					//cl("55claymore arr size:"+self.claymorearray.size); 
-					//cl("55closest claymore nr:"+nr); 
-					//cl("55getAmmoCount:"+self getAmmoCount("claymore_mp")); 
-					pickedUp=true;
-					c=20;
-					delay=0.5;
-					wait 0.5;
-				}
-			}	
-			c--; wait 0.05; 
+				}	
+				c--; wait 0.05; 
+			//}
+			if (c>0 && pickedUp==false){ 
+				self.inUse = false;
+				//cl("11not picked up"); 
+				c=20; wait 0.2;
+			}
 		}
-		if (c>0 && pickedUp==false){ 
-			self.inUse = false;
-			//cl("11bot not picking up explosive"); 
-			c=20; wait 0.2;
-		}
-		wait delay;
+		//while( self UseButtonPressed() ){ wait 0.05; }
+		wait 0.05;
 	}
 }
 
@@ -1109,7 +1115,7 @@ _movement_accel_decel(){
 	c=0.3;
 	for(;;){
 		while(isAlive(self)){
-			if(isDefined(self.isReloading) && isDefined(self.isProning)){ wait 0.05; }
+			if((isDefined(self.isFiring) || isDefined(self.isReloading)) && isDefined(self.isProning)){ wait 0.05; }
 			mss=0.1;
 			self setMoveSpeedScale(mss);
 			while (self ForwardButtonPressed() || self BackButtonPressed() || self MoveLeftButtonPressed() || self MoveRightButtonPressed()){ self setMoveSpeedScale(mss); wait 0.05; if(mss<1){ mss+=0.10; }}
@@ -1289,6 +1295,8 @@ _playSoundInSpace(alias,origin,delay,listener){
 	org = spawn( "script_origin", origin );
 	org.origin = origin;
 	//cl("^2scr");
+	if(!isDefined(delay)){ delay=0.05; }
+	if(!isDefined(origin)){ origin=self.origin; }
 	wait delay;
 	if(isDefined(listener)){ org playSoundToPlayer(alias,listener); }
 	else { org playSound(alias); }
@@ -1296,7 +1304,7 @@ _playSoundInSpace(alias,origin,delay,listener){
 	org delete();
 }
 
-_blast(delay,dist,maxDist,blastOrigin,attacker,inflictor){
+_blast(delay,dist,maxDist,blastOrigin,attacker,inflictor,wname){
 	x = self.origin[0]-blastOrigin[0];
 	y = self.origin[1]-blastOrigin[1];
 	z = maxDist-dist;
@@ -1309,7 +1317,7 @@ _blast(delay,dist,maxDist,blastOrigin,attacker,inflictor){
 		if (isDefined(self.blastName) && isAlive(self)) {
 			//cl("blastName: "+self.blastName); 
 			if (isAlive(self) && self.blastName != "flash_grenade_mp"  || self.blastName != "smoke_grenade_mp") { 
-				RadiusDamage(blastOrigin, maxDist/2, 20, 1, attacker); 
+				RadiusDamage(blastOrigin, maxDist/2, 20, 1, attacker);
 				//self FinishPlayerDamage(inflictor, attacker, int(z), 0, "MOD_GRENADE_SPLASH", self.blastName,(0,0,0),(0,0,0),"j_torso",0);
 				//level thread _playSoundInSpace("distboom",blastOrigin,delay*2,self);
 				self thread _flash("blur",3*(dist/maxDist)*2,0,1,3*(dist/maxDist)); //type,amp,dur,t1,t2
@@ -1327,6 +1335,7 @@ _blast(delay,dist,maxDist,blastOrigin,attacker,inflictor){
 			else if (self.blastName == "rocket"){ self setVelocity((x,y,z)); }
 			else if (self.blastName == "electric"){ self setVelocity((x/4,y/4,z/4)); }
 			else if (self.blastName == "mortars"){ self setVelocity((x,y,z)); }
+			else if (self.blastName == "m203_gl"){ self setVelocity((x,y,z)); }
 			self.blastName = undefined;
 		}
 		//vectorToAngles
@@ -1353,18 +1362,18 @@ _projectiles_owner(){
 			self.projectile = projectiles[projectiles.size-1];
 			self.blastName = "rocket";
 			if(wname == "em1_mp"){ 
-				//self.projectile playLoopSound("em1_el_loop"); 
-				self.blastName = "electric";
-				self.projectile playSound("em1_el_zap"); 
+				self.projectile playLoopSound("em1_el_loop"); 
+				self.blastName = "electric"; 
 			}
 			self thread _projectiles_monitor(self.projectile,wname);
 		}
-		if(isSubstr(wname,"gl_") && isSubstr(wname,"_mp")){
+		
+		if((wname[0] == "g" && wname[1] == "l" && wname[2] == "_") || wname == "mm1_mp"){
 			//cl(self.name+" fired "+ wname);
 			projectiles = getentarray( "grenade", "classname" );
 			if(projectiles.size>0){
 				self.projectile = projectiles[projectiles.size-1];
-				self.blastName = "frag_grenade";
+				self.blastName = wname;
 				self thread _projectiles_monitor(self.projectile,wname); 
 				//cl(self.name+" fired m203");
 			}
@@ -1383,10 +1392,14 @@ _projectiles_monitor(weap,wname){
 	
 	while(isDefined(weap)){ 
 		if(blastOrigin == weap.origin){ break; }
-		wait 0.1;
-		blastOrigin = weap.origin;
+		else{ blastOrigin = weap.origin; }
+		wait 0.05;
+		//cl("attacker "+attacker.name+" weap.origin: "+weap.origin);
 	}
-	//cl("projectile ended");
+	
+	//weap waittill("explode");
+	
+	//cl("11attacker "+attacker.name+" projectile ended: "+self.blastName);
 	//weap waittill( "explode", blastOrigin );
 	//cl("^1grenade owner released: "+name);
 	//cl("^1projectile exploded by "+attacker.name);
@@ -1394,25 +1407,39 @@ _projectiles_monitor(weap,wname){
 	
 	if (isDefined(blastOrigin)) {
 		//cl("^2"+origin);
-		players = getentarray( "player", "classname" );
 		//level thread _playSoundInSpace("distboom",blastOrigin,0.7);
-		for( i = 0 ; i < players.size ; i++ )
-		{
-			dist = distance(blastOrigin, players[i].origin);
-			maxDist = 800;
-			if(dist<maxDist){
-				//cl("^2"+players[i].blastName);
-				delay = 0.1*(dist/maxDist);
-				players[i] thread _playSoundInSpace("distboom",blastOrigin,0.05,players[i]);
-				if(w == "em1_mp"){ 
-					dist /= 4;
-					maxDist /= 4;
-					if(isDefined(weap)){ weap playSound("em1_el_zap"); }
+		dist1=distance(attacker.origin,blastOrigin);
+		//cl("11attacker: "+attacker.name+" dist: "+ dist1);
+		if(wname == "em1_mp"){ 
+			self.projectile playSound("em1_el_zap"); 
+		}
+		if(wname[0] == "g" && wname[1] == "l" && wname[2] == "_" && dist1 <= 375){ 
+			//pl = spawnFx(fx, blastOrigin, (0,0,1), (cos(rot),sin(rot),0) );
+			//self _playSoundInSpace("grenade_explode_default",blastOrigin);
+			//playfx(3170, blastOrigin);
+			//expl = spawnFx( level.fx_m203_gl, blastOrigin);
+			//playfx(level.fx_m203_gl,blastOrigin);
+			cl("11surpressed blast to "+ wname); // gl activation after 375 world units
+		} else if (wname[0] != "_"){
+			players = getentarray( "player", "classname" );
+			for( i = 0 ; i < players.size ; i++ )
+			{
+				dist = distance(blastOrigin, players[i].origin);
+				maxDist = 800;
+				if(dist<maxDist){
+					//cl("^2"+players[i].blastName);
+					delay = 0.1*(dist/maxDist);
+					players[i] thread _playSoundInSpace("distboom",blastOrigin,0.05,players[i]);
+					if(w == "em1_mp"){ 
+						dist /= 4;
+						maxDist /= 4;
+						if(isDefined(weap)){ weap playSound("em1_el_zap"); }
+					}
+					players[i] thread _blast(delay,dist,maxDist,blastOrigin,attacker,weap,wname);
+					earthquake( 0.5, 0.75, blastOrigin, 1000 );
+					earthquake( 0.1, 3.7, blastOrigin, 3500 );
+					//players[i] setVelocity(0,0,400);
 				}
-				players[i] thread _blast(delay,dist,maxDist,blastOrigin,attacker,weap);
-				earthquake( 0.5, 0.75, blastOrigin, 1000 );
-				earthquake( 0.1, 3.7, blastOrigin, 3500 );
-				//players[i] setVelocity(0,0,400);
 			}
 		}
 	}
@@ -1970,6 +1997,8 @@ _killed(eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, t
 	//self.firingXP=0;
 	
 	self thread _unlink_veh();
+	
+	self thread _flash("bright",1,0,0,1);
 
 	if(isDefined(eInflictor)){	
 		dist = distance(self.origin,eInflictor.origin)+1;
@@ -2028,13 +2057,15 @@ _killed(eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, t
 	if (isDefined(level.bombOwner) && level.bombExploded==true && isDefined(eAttacker) && level.bombOwner.name == eAttacker.name && isSubStr(sMeansOfDeath, "MOD_EXPLOSIVE")) { sWeapon="c4_mp"; }
 	//cl("^1sWeapon: "+sWeapon);
 
+	if (isDefined(sMeansOfDeath) && sMeansOfDeath == "MOD_FALLING" || sMeansOfDeath == "MOD_IMPACT" || sMeansOfDeath == "MOD_SUICIDE" || sMeansOfDeath == "MOD_PROJECTILE_SPLASH" || sMeansOfDeath == "MOD_GRENADE_SPLASH") {
+		sc = "suicide";	
+		thread _sfx(sc);
+	}
+	
 	if (!isDefined(eAttacker)){
-		if (sMeansOfDeath == "MOD_FALLING" || sMeansOfDeath == "MOD_IMPACT" || sMeansOfDeath == "MOD_SUICIDE" || sMeansOfDeath == "MOD_PROJECTILE_SPLASH" || sMeansOfDeath == "MOD_GRENADE_SPLASH") {
 			sc = "suicide";	
 			//sc = sc + randomIntRange(1, 10);
 			thread _sfx(sc);
-		//} else if (sMeansOfDeath == "MOD_SUICIDE" && !isDefined(self.lastStand) && self hasPerk("specialty_pistoldeath") == false && !isDefined(eAttacker)) {
-		}
 	} else if (isDefined(eAttacker) && isPlayer(eAttacker)){ 
 		//if(eInflictor.classname == "player"){ eAttacker thread _quick_killcam(self, self getEntityNumber(), eInflictor, sWeapon, eAttacker); }
 		//cl(sWeapon); //cobra_20mm_mp
@@ -2281,7 +2312,7 @@ _dev_weapon_test(){
 	self.weaponModel=0;
 	//give = "m1014_reflex_mp";
 	//give+="_mp";
-	weapons=strTok("m1014_reflex_mp,g3_reflex_mp,ak47_reflex_mp",",");
+	weapons=strTok("m4_gl_mp,rpg_mp",",");
 	models=strTok("body_mp_arab_regular_assault,body_mp_usmc_assault,body_mp_usmc_sniper",",");
 	start=undefined; llb=undefined; lrb=undefined; hbb=undefined;
 	wait 1;
@@ -2954,6 +2985,21 @@ _player_is_proning(){
 	self.isProning=undefined;
 }
 
+_player_stop_moving(){
+	//self endon ( "death" );
+	self endon ( "disconnect" );
+	self endon( "intermission" );
+	self endon( "game_ended" );
+
+	while(isAlive(self) && self.isReloading){
+		if(isDefined(self.isReloading) && isDefined(self.isProning)){
+			self setMoveSpeedScale(0);
+		}
+		wait 0.05;
+	}
+	self.isProning=undefined;
+}
+
 mp_efa_bingoland(){
 	mapname = getDvar( "mapname" );
 	if(mapname == "mp_efa_bingoland")
@@ -3317,6 +3363,8 @@ _player_fired_weapon(){
 	
 	for(;;){
 		self waittill("weapon_fired");
+		self.isFiring=true;
+		self thread _delay_after_firing();
 		weapon = self GetCurrentWeapon();
 		//if(isSubStr(weapon,"grenade") || isSubStr(weapon,"claymore") || isSubStr(weapon,"knife")){ continue; }
 		//cl("11"+self.name+" fired weapon "+weapon);
@@ -3427,6 +3475,30 @@ _recoil(){
 				self setPlayerAngles((curView[0]-randomFloatRange(0.6, 0.9)*k, curView[1]-randomFloatRange(0.5, 0.8)*k, curView[2])); 
 				//if(self.isbot){ self.pers["bots"]["skill"]["aim_time"] = 2; }
 			//}
+		}
+		wait 0.05;
+	}
+}
+
+_delay_after_firing(delay,log){
+	self endon ( "weapon_fired" );
+	self endon ( "disconnect" );
+	self endon( "intermission" );
+	self endon( "game_ended" );
+	
+	if(!isDefined(delay)){ delay = 1; }
+
+	for(;;){
+		if(isAlive(self)){
+			c=20*delay;
+			if(isDefined(self.isFiring)){ 
+				while(isAlive(self) && !isDefined(self.isFiring) && c>0){
+					c--;
+					wait 0.05;
+				}
+				self.isFiring = undefined;
+				if(isDefined(log)){ cl(self.name+" has fired weapon"); }
+			}
 		}
 		wait 0.05;
 	}
@@ -4528,19 +4600,18 @@ _quick_killcam(victim, attackerNum, killcamentity, sWeapon, attacker){
 _flash(type,amp,dur,t1,t2){
 	self endon("disconnect");
 	//self endon("death");
-	if (self.isbot) { return; }
-	if (isDefined(self.isBlurrying)) { return; }
+	//if (self.isbot) { return; }
 	
-	if(!isDefined(dur)){ dur=0; }
-	if(!isDefined(amp)){ amp=2; }
-	if(!isDefined(t1)){ t1=1; }
-	if(!isDefined(t2)){ t2=1; }
+	if(!isDefined(dur) || dur<0){ dur=0; }
+	if(!isDefined(amp) || amp<0){ amp=1; }
+	if(!isDefined(t1) || t1<0){ t1=0; }
+	if(!isDefined(t2) || t2<0){ t2=0; }
 	
 	i=0;
 	//t1=t1*0.2;
 	//t2=t2*0.2;
-	s1=amp/t1;
-	s2=amp/t2;
+	//s1=amp/t1;
+	//s2=amp/t2;
 	
 	//cl("33dur:"+dur);
 	//cl("33amp:"+amp);
@@ -4548,8 +4619,9 @@ _flash(type,amp,dur,t1,t2){
 	//cl("33t2:"+t2);
 	
 	if (type=="blur"){ 
+		if (isDefined(self.isBlurrying)) { return; }
 		self.isBlurrying=true;
-		while( i<t1 && isAlive(self)){	self setClientDvar( "r_blur", amp*i/t1 );  i+=0.2; wait 0.05; }
+		while( i<t1 ){	self setClientDvar( "r_blur", amp*i/t1 );  i+=0.2; wait 0.05; }
 		wait dur; i=t2;
 		while( i>0 ){ self setClientDvar( "r_blur", amp*i/t2 ); i-=0.2; wait 0.05; }
 		self setClientDvar( "r_blur", 0 );
@@ -4557,10 +4629,18 @@ _flash(type,amp,dur,t1,t2){
 	}
 	
 	if (type=="bright"){ 
+		if (isDefined(self.isFlashing)) { return; }
+		self.isFlashing=true;
 		self SetClientDvars ("r_filmUseTweaks",1,"r_filmTweakEnable",1,"r_filmTweakBrightness",0);
-		while( i<amp && isAlive(self)){	self setClientDvar( "r_filmTweakBrightness", i );  i+=t1; wait 0.05; }
-		wait dur;
-		while( i>0 ){ self setClientDvar( "r_blur", i );  i-=t2; wait 0.05; }
-		//self SetClientDvars ("r_filmUseTweaks",1,"r_filmTweakEnable",1,"r_filmTweakBrightness",0);
+		while( i<t1 ){	self setClientDvar( "r_filmTweakBrightness", amp*i/t1 );  i+=0.2; wait 0.05; }
+		wait dur; i=t2;
+		while( i>0 ){ self setClientDvar( "r_filmTweakBrightness", amp*i/t2 ); i-=0.2; wait 0.05; }
+		if(isDefined(self.killcam) && self.killcam){
+			self SetClientDvars ("r_filmUseTweaks",1,"r_filmTweakEnable",1,"r_filmTweakBrightness",0);
+		} else {
+			self SetClientDvars ("r_filmUseTweaks",0,"r_filmTweakEnable",0,"r_filmTweakBrightness",0);
+		}
+		self.isFlashing=undefined;
+
 	}
 }
