@@ -16,6 +16,11 @@ please add additional args to your cod4x server and client executable:
 
 updates log:
 
+2023 02 22
+added distbooms for mm1 and alt gl weapons;
+tweaked hint messages to cypher faster;
+in lastStand weapons can be picked up.
+
 2023 02 21
 added defuse kit in buymenu for defusing bomb faster;
 fixed undefined error on _missions.gsc;
