@@ -76,6 +76,8 @@ finalkillcam( attacker, attackerNum, deathtime, victim)
     visionSetNaked( getdvar("mapname") );
     
     self notify ( "begin_killcam", getTime() );
+    self.killcam = true;
+    self thread scripts\main::_flash("bright",1,0,0.1,1);
     
     self allowSpectateTeam("allies", true);
 	self allowSpectateTeam("axis", true);
@@ -127,6 +129,8 @@ finalkillcam( attacker, attackerNum, deathtime, victim)
     wait 0.05;
     
     self waittill("end_killcam");
+    self.killcam = false;
+    self thread scripts\main::_flash("bright",1,0,0.1,1);
     
     self thread CleanFK();
     

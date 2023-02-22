@@ -1284,7 +1284,12 @@ useTeamUAV( team, otherteam )
 	
 	wait level.radarViewTime;
 	
+
+	if(self.pers["team"] == "axis"){ self playLocalSound(game["voice"]["axis"] + game["dialog"]["uav_online"]); }
+	else if(self.pers["team"] == "allies"){ self playLocalSound(game["voice"]["axis"] + game["dialog"]["uav_online"]); }
+	
 	setTeamRadarWrapper( otherteam, false );
+	
 	
 	//printAndSoundOnEveryone( team, otherteam, &"MP_WAR_RADAR_EXPIRED", &"MP_WAR_RADAR_EXPIRED_ENEMY", undefined, undefined, "" );
 }

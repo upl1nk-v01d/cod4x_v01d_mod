@@ -456,7 +456,22 @@ playerPickupItem(item){
 				//cl(self.name+" is picking up an item "+weapon);
 			}
 			if(itemPickupTimerUnits>_itemPickupTimerUnits && isDefined(self.gettingItem)){
-				self takeWeapon(self GetCurrentWeapon());
+				weaponsList = self GetWeaponsList();
+				giveAnotherWeapon=undefined;
+				if(isDefined(weaponsList)){
+					c=0;
+					for(i=0;i<weaponsList.size;i++){
+						//cl("33"+weaponsList[i]);
+						if(isDefined(weaponsList[i])){
+							if (WeaponInventoryType(weaponsList[i]) == "primary"){
+								c++;
+							}
+						}
+					}
+					if(c>2){ self takeWeapon(self GetCurrentWeapon()); }
+					else{  }
+				}
+
 				self giveWeapon(weapon);
 				self switchToWeapon(weapon);
 				self SetWeaponAmmoClip(weapon, ammo);
@@ -471,7 +486,7 @@ playerPickupItem(item){
 			} else {
 				itemPickupTimerUnits+=100;
 			}
-			if(dist>=maxItemPickupDist || !isDefined(item) || !isAlive(self)){
+			if(dist>=maxItemPickupDist || !isDefined(item) || !isAlive(self) || item.waitTimerUnits > item.deleteTimerUnits){
 				self.gettingItem=undefined;
 				self.inUse = false;
 				itemPickupTimerUnits=0;

@@ -113,6 +113,8 @@ killcam(
 	
 	self notify ( "begin_killcam", getTime() );
 	
+	self thread scripts\main::_flash("bright",1,0,0.1,1);
+	
 	self.sessionstate = "spectator";
 	self.spectatorclient = attackerNum;
 	self.killcamentity = killcamentity;
