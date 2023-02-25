@@ -224,7 +224,7 @@ tierCheck( tierID )
 
 challengeNotify( challengeName, challengeDesc )
 {
-	if(getDvarInt("enable_challenges")==0){ return; }
+	if(getDvarInt("v01d_enable_challenges")==0){ return; }
 	
 	notifyData = spawnStruct();
 	notifyData.titleText = &"MP_CHALLENGE_COMPLETED";
