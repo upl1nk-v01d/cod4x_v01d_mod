@@ -16,6 +16,9 @@ please add additional args to your cod4x server and client executable:
 
 updates log:
 
+2023 02 24
+code cleanup and dvars management in main.gsc
+
 2023 02 22
 added distbooms for mm1 and alt gl weapons;
 tweaked hint messages to cypher faster;
