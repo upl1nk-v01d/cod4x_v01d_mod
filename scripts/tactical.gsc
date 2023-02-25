@@ -4,20 +4,20 @@
 
 init()
 {	
-	//if(getDvar("dev") == ""){ setDvar("dev",1); }
+	//if(getDvar("v01d_dev") == ""){ setDvar("v01d_dev",1); }
 	//setDvar( "bots_play_move", 0 );
 	//setDvar( "bots_fire_ext", 0 );
 	//setDvar( "bots_aim_ext", 0 );
 	//level.doNotAddBots=true;
 
-	if (getDvarInt("dev")>0){
+	if (getDvarInt("v01d_dev")>0){
 		//setdvar( "developer_script", 1 );
 		//setdvar( "developer", 1 );		
 		//setdvar( "sv_mapRotation", "map " + getDvar( "mapname" ) );
 		//exitLevel( false );
 	}
 	
-	//if (!getdvarint("dev")>0){ return; }
+	//if (!getdvarint("v01d_dev")>0){ return; }
 	if (getdvarint("bots_main_debug")>0) { return; }
 	
 	//if (level.waypointCount != 0) { return; }
@@ -133,7 +133,7 @@ _node_info(){
 	self endon( "intermission" );
 	self endon( "game_ended" );
 	
-	if (!getDvarInt("dev")>0){ return; }
+	if (!getDvarInt("v01d_dev")>0){ return; }
 	if (self.isbot) { return; }
 	
 	for(;;){
@@ -174,7 +174,7 @@ _add_remove_nodes(){
 	self endon( "intermission" );
 	self endon( "game_ended" );
 	
-	if (!getDvarInt("dev")>0){ return; }
+	if (!getDvarInt("v01d_dev")>0){ return; }
 	if (getdvarint("bots_main_debug")>0) { return; }  
 	if (self.isbot) { return; }
 	
@@ -247,7 +247,7 @@ _add_remove_nodes(){
 						if (change == false){
 							self iprintln("^3deleting:"+nr);
 							delete = true; cl("delete");
-							level.nodes = _arr_remove(objs,objs[nr]);
+							level.nodes = scripts\main::_arr_remove(objs,objs[nr]);
 							level.nodes_quantity=level.nodes.size;
 							objs = undefined;
 							self iprintln("^3Node deleted");
@@ -547,7 +547,7 @@ _marked_nodes(){
 	self endon( "intermission" );
 	self endon( "game_ended" );
 	
-	if (!getDvarInt("dev")>0){ return; }
+	if (!getDvarInt("v01d_dev")>0){ return; }
 	if (self.isbot) { return; }
 	
 	//cl("^3_marked_nodes started on "+self.name);
@@ -594,7 +594,7 @@ _marked_bot(){
 	self endon( "intermission" );
 	self endon( "game_ended" );
 	
-	if (!getDvarInt("dev")>0){ return; }
+	if (!getDvarInt("v01d_dev")>0){ return; }
 	if (self.isbot) { return; }
 	
 	//cl("^3_marked_bot started on "+self.name);
@@ -617,7 +617,7 @@ _hud_draw_nodes(){
 	self endon ( "disconnect" );
 	self endon( "intermission" );
 	self endon( "game_ended" );	
-	if (!getDvarInt("dev")>0){ return; }
+	if (!getDvarInt("v01d_dev")>0){ return; }
 	if (self.isbot) {return;}
 	
 	//cl("^3starting _hud_draw_nodes thread "+self.name);
@@ -662,7 +662,7 @@ _hud_draw_tagged(){
 	self endon ( "disconnect" );
 	self endon( "intermission" );
 	self endon( "game_ended" );	
-	if (!getDvarInt("dev")>0){ return; }
+	if (!getDvarInt("v01d_dev")>0){ return; }
 	if (self.isbot) { return; }
 
 	for(;;){
@@ -693,7 +693,7 @@ _hud_draw_squad(){
 	self endon ( "disconnect" );
 	self endon( "intermission" );
 	self endon( "game_ended" );	
-	if (!getDvarInt("dev")>0){ return; }
+	if (!getDvarInt("v01d_dev")>0){ return; }
 	if (self.isbot) { return; }
 	
 	//cl("^3starting _hud_draw_squad thread on "+self.name);
@@ -730,7 +730,7 @@ _add_remove_squad(bot){
 	self endon ( "disconnect" );
 	self endon( "intermission" );
 	self endon( "game_ended" );	
-	if (!getDvarInt("dev")>0){ return; }
+	if (!getDvarInt("v01d_dev")>0){ return; }
 	if (self.isbot) { return; }
 	
 	exists=false;
@@ -745,7 +745,7 @@ _add_remove_squad(bot){
 		bot.approachNode = undefined;
 		self thread _squad_add_remove_snd("followme");
 	} else { 
-		self.squad = _arr_remove(self.squad,bot); 
+		self.squad = scripts\main::_arr_remove(self.squad,bot); 
 		bot.approachNode = undefined;
 		bot.marked=false;
 		self thread _squad_add_remove_snd("regroup");
@@ -912,7 +912,7 @@ _save_nodes()
 	self endon ( "disconnect" );
 	self endon( "intermission" );
 	self endon( "game_ended" );	
-	if (!getDvarInt("dev")>0){ return; }
+	if (!getDvarInt("v01d_dev")>0){ return; }
 	if (self.isbot) { return; }
 
 	for ( ;; )
@@ -987,30 +987,6 @@ _save_nodes()
 		while( self meleeButtonPressed() ){ wait 0.05; }
 	}
 }
-
-_arr_remove( arr, remover )
-{
-	new_arr = [];
-	for ( i = 0; i < arr.size; i++ )
-	{
-		index = arr[i];
-		
-		if (isDefined(index)){
-			if ( index != remover )
-				new_arr[ new_arr.size ] = index;
-		}
-	}
-	return new_arr;
-}
-
-/*cl(txt){
-	color = "";
-	txt+="";
-	if (isDefined(txt) && txt.size>1){
-		if(txt[0]=="^")	{ color="^"+txt[1]; }
-		print(color+"-- "+txt+" -- \n"); 
-	} else { print("!! undefined !! \n"); }
-}*/
 
 pl(txt){
 	color = "";

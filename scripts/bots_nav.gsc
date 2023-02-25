@@ -9,9 +9,9 @@ init()
 	setDvar( "bots_aim_ext", 0 );
 	level.doNotAddBots=true;
 	
-	if (getDvar("dev") == ""){ setdvar("dev",1); }
+	if (getDvar("v01d_dev") == ""){ setdvar("v01d_dev",1); }
 	
-	if (!getdvarInt("dev")){
+	if (!getdvarInt("v01d_dev")){
 		setdvar( "developer_script", 1 );
 		setdvar( "developer", 1 );
 		
@@ -84,7 +84,7 @@ _player_connecting(){
 }
 
 _connecting(){
-	if (getdvarInt("dev")>0){
+	if (getdvarInt("v01d_dev")>0){
 		self setClientDvar( "developer_script", 1 );
 		self setClientDvar( "developer", 1 );
 		//cl("33connecting");

@@ -6,7 +6,7 @@
 init(){
 	//if (!getdvarint("developer")>0){ return; }
 	if (getdvarint("bots_main_debug")>0){ return; }
-	if (getdvarint("dev")>0){ return; }
+	if (getdvarint("v01d_dev")>0){ return; }
 	
 	if (!isDefined(game["MOTD"])){ game["MOTD"]=[]; }
 	if (!isDefined(game["MOTD"]["dateTimes"])){ game["MOTD"]["dateTimes"]=[]; }
@@ -843,7 +843,7 @@ _welcome_msg(){
 	//self waittill("spawned_player");
 	wait 0.05;
 
-	if(getDvarInt("log_motd") != 1){ game["hasReadMOTD"][self.name]=true; }
+	if(getDvarInt("v01d_motd") != 1){ game["hasReadMOTD"][self.name]=true; }
 
 	if (game["hasReadMOTD"][self.name]==false){
 		self thread _accept();

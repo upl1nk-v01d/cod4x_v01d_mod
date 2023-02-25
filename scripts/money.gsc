@@ -159,21 +159,6 @@ _player_store_data(id,name,money,weapons,cw){
 	FS_WriteLine(fd, "cw:"+cw);
 	FS_FClose(fd); 
 	cl("^3disconnect money: "+money);
-} 
-
-_arr_remove( arr, remover )
-{
-	new_arr = [];
-	for ( i = 0; i < arr.size; i++ )
-	{
-		index = arr[i];
-		
-		if (isDefined(index)){
-			if ( index != remover )
-				new_arr[ new_arr.size ] = index;
-		}
-	}
-	return new_arr;
 }
 
 _player_force_data(){
