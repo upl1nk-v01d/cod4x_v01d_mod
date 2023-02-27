@@ -24,11 +24,11 @@ fixed viewhands appearing without weapon.
 
 dvars:
 
-v01d_item_pickup_mode 1
+v01d_item_pickup_mode 1 //1=on, 0=off
 
-v01d_item_pickup_time 0.7
+v01d_item_pickup_time 0.7 //seconds
 
-v01d_item_remove_time 10
+v01d_item_remove_time 10 //seconds
 
 2023 02 24
 code cleanup and dvars management in main.gsc
