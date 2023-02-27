@@ -16,6 +16,18 @@ please add additional args to your cod4x server and client executable:
 
 updates log:
 
+2023 02 27
+managed dvars for new item pickup mode;
+fixed damage bug on falling;
+fixed hud removing when player not alive;
+fixed viewhands appearing without weapon.
+
+dvars:
+
+v01d_item_pickup_mode 1
+v01d_item_pickup_time 0.7
+v01d_item_remove_time 10
+
 2023 02 24
 code cleanup and dvars management in main.gsc
 
