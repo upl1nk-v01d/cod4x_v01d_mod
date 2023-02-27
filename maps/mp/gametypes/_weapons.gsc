@@ -73,7 +73,7 @@ init()
 	level.botsWeapons=[];	
 	if(!isDefined(level.precachedItemsNum)){ level.precachedItemsNum=0; } //first precache
 	if(isDefined(level.skipPrecacheItems)){
-		level.skipPrecacheItems=StrTok("m16_mp,m16_acog_mp,m16_silencer_mp,m16_reflex_mp,mp5_acog_mp,mp5_reflex_mp,skorpion_silencer_mp,uzi_reflex_mp,uzi_silencer_mp,uzi_acog_mp,ak74u_silencer_mp,ak74u_reflex_mp,ak74u_acog_mp,m14_reflex_mp,p90_acog_mp,p90_reflex_mp,aw50_mp,aw50_acog_mp,g3_acog_mp,g3_silencer_mp,g36c_reflex_mp,m4_reflex_mp,m1014_grip_mp,rpd_acog_mp,rpd_grip_mp,rpd_reflex_mp,saw_acog_mp,saw_grip_mp,saw_reflex_mp,m60e4_acog_mp,m60e4_grip_mp,m60e4_reflex_mp", "," ); // those weapons will be not available in-game
+		level.skipPrecacheItems=StrTok("defaultweapon_mp,m16_mp,m16_acog_mp,m16_silencer_mp,m16_reflex_mp,mp5_acog_mp,mp5_reflex_mp,skorpion_silencer_mp,uzi_reflex_mp,uzi_silencer_mp,uzi_acog_mp,ak74u_silencer_mp,ak74u_reflex_mp,ak74u_acog_mp,m14_reflex_mp,p90_acog_mp,p90_reflex_mp,aw50_mp,aw50_acog_mp,g3_acog_mp,g3_silencer_mp,g36c_reflex_mp,m4_reflex_mp,m1014_grip_mp,rpd_acog_mp,rpd_grip_mp,rpd_reflex_mp,saw_acog_mp,saw_grip_mp,saw_reflex_mp,m60e4_acog_mp,m60e4_grip_mp,m60e4_reflex_mp", "," ); // those weapons will be not available in-game
 		//level.skipPrecacheItems=StrTok("m16_mp,m16_reflex_mp,m16_silencer_mp,m16_acog_mp,m16_gl_mp,aw50_mp,aw50_acog_mp,barrett_mp,barrett_acog_mp,skorpion_silencer_mp,skorpion_acog_mp,skorpion_reflex_mp,uzi_reflex_mp,uzi_silencer_mp,uzi_acog_mp,ak74u_silencer_mp,ak74u_reflex_mp,ak74u_acog_mp,m14_reflex_mp,p90_reflex_mp,ak47_reflex_mp,g3_reflex_mp,g36c_reflex_mp,m4_reflex_mp,m1014_grip_mp,m1014_reflex_mp,winchester1200_grip_mp,winchester1200_reflex_mp,rpd_acog_mp,rpd_grip_mp,rpd_reflex_mp,saw_acog_mp,saw_grip_mp,saw_reflex_mp,m60e4_acog_mp,m60e4_grip_mp,m60e4_reflex_mp", "," ); // those weapons will be not available in-game
 	}
 	// based on weaponList array, precache weapons in list
@@ -338,7 +338,7 @@ watchPickup()
 {
 	self endon("death");
 	
-	if(getDvar("v01d_pickup_item_mode") == "1"){ self thread watchPickupNew(); return; }
+	if(getDvar("v01d_item_pickup_mode") == "1"){ self thread watchPickupNew(); return; }
 	
 	weapname = self getItemWeaponName();
 	
@@ -435,8 +435,11 @@ playerPickupItem(item){
 	self endon("death");
 
 	if(!isDefined(item.ownersInventory)){ return; }
+	
+	pickupItemTime=1;
+	if(getDvarFloat("v01d_item_pickup_time") > 0){ pickupItemTime=getDvarFloat("v01d_item_pickup_time"); }
 
-	itemPickupTimerUnits=1000;
+	itemPickupTimerUnits=1000*pickupItemTime;
 	_itemPickupTimerUnits=itemPickupTimerUnits;
 	itemPickupTimerUnits=0;
 	maxItemPickupDist=48;
@@ -508,6 +511,7 @@ watchDroppedItem(){
 	
 	if(!isDefined(self.ownersInventory)){ return; }
 	self.deleteTimerUnits=100;
+	if(getDvarFloat("v01d_item_remove_time") > 0){ self.deleteTimerUnits=getDvarFloat("v01d_item_remove_time")*10; }
 	maxItemPickupDist=48;
 	self MoveZ(-2,self.deleteTimerUnits*0.1);
 	for(;;){
