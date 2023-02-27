@@ -16,7 +16,7 @@ init(){
 	
 	level.msgID=0;
 
-	level thread _connecting_loop();
+	//level thread _connecting_loop();
 	level thread _connected_loop();
 	level thread _get_motd_txt(1);
 }
@@ -1054,6 +1054,7 @@ _buy_menu_show(arr,prev,next,div){
 	//self endon( "game_ended" );
 
 	if (self.isbot){ return; }
+	
 	self.buyMenuShowNext=undefined;
 	self.buyMenuSelector=1;
 	self.buyMenuShow=arr; 

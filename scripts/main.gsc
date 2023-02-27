@@ -48,8 +48,11 @@ init(){
 	if(getDvar("v01d_bots_recoil_spicyness") == ""){ setDvar("v01d_bots_recoil_spicyness",0.2); } //bot recoil coefficient > 0.00
 	if(getDvar("v01d_log_players") == ""){ setDvar("v01d_log_players",1); } //logging real players into fs_homepath
 	if(getDvar("v01d_motd") == ""){ setDvar("v01d_motd",1); } //enabling playershowing MOTD when connected to server
-	if(getDvar("v01d_pickup_item_mode") == ""){ setDvar("v01d_pickup_item_mode",1); } //picking up weapons from ground takes time
+	if(getDvar("v01d_item_pickup_mode") == ""){ setDvar("v01d_item_pickup_mode",1); } //picking up weapons from ground takes time
+	if(getDvar("v01d_item_pickup_time") == ""){ setDvar("v01d_item_pickup_time",0.7); } //picking up weapons time
+	if(getDvar("v01d_item_remove_time") == ""){ setDvar("v01d_item_remove_time",10); } //picking up weapons time
 	if(getDvar("v01d_maps_randomizer") == ""){ setDvar("v01d_maps_randomizer",1); } //different random map loading
+	
 	
 	setDvar("pl",""); //in terminal argument a = show all players, r = real players, b = bot players
 	setDvar("m",""); //in terminal argument i = show current map and team score, f = fast restart, r = brutal restart
@@ -419,7 +422,7 @@ _dev_test_clcmds(){
 	//self setClientDvar("ui_ShowMenuOnly", "none");
 	//self scripts\menus::_create_menu_bg("hudWelcomeBG","CENTER","TOP",100,100,0,0,(1,1,1),1,1,"black",50,"fullscreen","fullscreen");
 	self _film_tweaks(1,0.05,"1 0.6 0.6","1 0.6 0.6",0.6,1,1,0,1);
-	//self _film_tweaks(0,0,"1 1 1","1 1 1",0.4,1,1,0,1.4);
+	//_film_tweaks(enable,blur,dtint,ltint,desat,glow,glowdesat,bright,contrast){
 }
 
 _dev_test_dp(to, from, dir){
@@ -980,6 +983,8 @@ _bot_balance_manage(){
 			axisScore = [[level._getTeamScore]]( "axis" );
 			alliesScore = [[level._getTeamScore]]( "allies" );
 		}
+		
+		if(maps\mp\gametypes\_globallogic::hitScoreLimit()){ return; }
 
 		if(axisScore>_axisScore){ game["teamWonRound"]="axis"; }
 		if(alliesScore>_alliesScore){ game["teamWonRound"]="allies"; }
@@ -1236,6 +1241,18 @@ _maps_randomizer(){
 		}
 	}
 }
+
+/*player_settings(id){
+	level endon ( "disconnect" );
+	filename = "playersdata/"+id;
+	fd = FS_FOpen( filename, "write" );
+	line = FS_ReadLine(csv);
+	i=0;
+	while (isDefined(line) && line != ""){ line = FS_ReadLine(csv); i++; }
+	FS_WriteLine(fd, "3rd:"+3rd);
+	FS_FClose(fd); 
+	cl("^3disconnect money: "+money);
+}*/
 
 mp_efa_bingoland(){
 	mapname = getDvar( "mapname" );
@@ -1897,7 +1914,7 @@ _fs(){
 				self.pers["lives"]=getDvarInt("scr_sab_numlives")-1;
 				self.isInTeam=self.pers["team"];
 			} else if(level.tp>level.gracePeriod+(level.gracePeriod/2) && self.hasSpawned!=true){ 
-				self [[level.spawnPlayer]]();
+				//self [[level.spawnPlayer]]();
 				self.pers["lives"]=1;
 				cl("44forcespawned "+self.name);
 			}
@@ -2047,6 +2064,10 @@ _film_tweaks(enable,blur,dtint,ltint,desat,glow,glowdesat,bright,contrast){
 	self setClientDvar("r_glowUseTweaks", enable);
 	self setClientDvar("r_glowTweakBloomDesaturation", glowdesat);
 }
+
+/*_player_3rd_person(){
+	setClientDvars("cg_thirdperson", 1); self.thirdPerson=false;
+}*/
 
 /* \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 
@@ -2358,7 +2379,7 @@ _recoil(){
 				else if(wclass=="rpg") { k=1.3; }
 				else if(wclass=="gl") { k=0.7; }
 				else if(wclass=="rifle") { k=1.9; }
-				else if(wclass=="mg") { k=1.3; }
+				else if(wclass=="mg") { k=0.6; }
 				else if(wclass=="smg") { k=1.5; }
 				else if(wclass=="pistol") { k=2.7; }
 				else if(wclass=="bolt") { k=1.7; }
@@ -2510,6 +2531,7 @@ _damaged(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint
 	k=1; seconds=10;
  
 	if (isPlayer(self) && isAlive(self) && isDefined(iDamage) && iDamage>0){
+		self thread _bot_prone_when_danger(300);
 		self notify("stop_location_selection");
 		if(iDamage>self.health*0.7){ self maps\mp\gametypes\_weapons::dropWeaponForDeath( eAttacker,true ); }
 		if (isDefined(eAttacker) && isPlayer(eAttacker)){ 
@@ -2539,11 +2561,24 @@ _damaged(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint
 		
 		if(isDefined(x) && isDefined(y)){
 			if (isDefined(self.velocity) && isDefined(self.prevOrigin)){ 
-				if (!isSubStr(sMeansOfDeath,"PROJECTILE") || !isSubStr(sMeansOfDeath,"GRENADE")){ self setVelocity((x/4,y/4,z/4)); }
-				else{ self setVelocity((x,y,z)); }
+				if (sMeansOfDeath == "MOD_PROJECTILE_SPLASH" || sMeansOfDeath == "MOD_GRENADE_SPLASH" || sMeansOfDeath == "MOD_EXPLOSIVE"){
+					self setVelocity((x,y,z));
+				}
+				else if (sMeansOfDeath == "MOD_PROJECTILE"){
+					self setVelocity((x/2,y/2,z/4));
+					iDamage=1;
+				}
+				else if (isSubStr(sMeansOfDeath,"_BULLET")){
+					self setVelocity((x/2,y/2,z/2));
+				}
+				else { self setVelocity((x,y,z)); }
 			} else {
 				self setVelocity((x/2,y/2,z/2));
 			}
+		}
+		
+		if (sMeansOfDeath == "MOD_FALLING"){
+			iDamage*=0.5;
 		}
 		
 		if (self GetStance() == "prone"){
@@ -2583,15 +2618,28 @@ _killed(eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, t
 	self thread _flash("bright",1,0,0,1);
 	
 	self thread _bot_prone_when_danger();
-
+	
 	if(isDefined(eInflictor)){	
 		dist = distance(self.origin,eInflictor.origin)+1;
 		x = self.origin[0]-eInflictor.origin[0];
 		y = self.origin[1]-eInflictor.origin[1];
 		z = 100;
-		if (!isSubStr(sMeansOfDeath,"PROJECTILE") || !isSubStr(sMeansOfDeath,"GRENADE")){
-			self setVelocity((x/2,y/2,10)); 
-		} else if (eInflictor.classname == "grenade" || eInflictor.classname == "rocket" && self GetStance() != "prone") {
+		
+		
+		if (sMeansOfDeath == "MOD_PROJECTILE_SPLASH" || sMeansOfDeath == "MOD_GRENADE_SPLASH" || sMeansOfDeath == "MOD_EXPLOSIVE"){
+			self setVelocity((x,y,z));
+		}
+		else if (sMeansOfDeath == "MOD_PROJECTILE"){
+			self setVelocity((x/2,y/2,z/4));
+		}
+		else if (isSubStr(sMeansOfDeath,"_BULLET")){
+			self setVelocity((x/2,y/2,z/2));
+		}
+		else if (isSubStr(sMeansOfDeath,"_FALLING") || isSubStr(sMeansOfDeath,"_SUICIDE") || isSubStr(sMeansOfDeath,"_MELEE")){
+			self setVelocity((x/2,y/2,4));
+		}		
+				
+		if (eInflictor.classname == "grenade" || eInflictor.classname == "rocket" && self GetStance() != "prone") {
 			if (dist<500){
 				z = 500-dist;
 				self setVelocity((x,y,z)); 
@@ -3174,7 +3222,7 @@ _bombPing(t){
 }
 
 _set_hud_wpt(hud, icon, sx, sy, a, px, py, pz, ent, dur, freq){
-	self endon ( "death" );
+	//self endon ( "death" );
 	self endon ( "disconnect" );
 	self endon( "intermission" );
 	self endon( "game_ended" );
@@ -3189,7 +3237,7 @@ _set_hud_wpt(hud, icon, sx, sy, a, px, py, pz, ent, dur, freq){
 	self.hudwpt[hud] SetWayPoint(false, icon);
 	self.hudwpt[hud].alpha = a;
 	
-	if (isDefined(self.ent)) { self.hudwpt[hud] SetTargetEnt(self.ent); /*cl("wpt on "+self.ent.name+" is set");*/ }
+	if (isDefined(self.ent)) { self.hudwpt[hud] SetTargetEnt(self.ent); }
 	else if (isDefined(px) && isDefined(py) && isDefined(pz)){ self.hudwpt[hud].x = px; self.hudwpt[hud].y = py; self.hudwpt[hud].z = pz; }
 	else if (isDefined(self.getInPos)){ self.hudwpt[hud].x = self.getInPos[0]; self.hudwpt[hud].y = self.getInPos[1]; self.hudwpt[hud].z = self.getInPos[2]; }
 	else if (isDefined(self.commanded)) { self.hudwpt[hud] SetTargetEnt(self.commanded); }
@@ -3965,19 +4013,24 @@ _changeBotWeapon(){
 	}
 }
 
-_bot_prone_when_danger(){
+_bot_prone_when_danger(distanceLimit,delay,origin){
 	self endon("disconnect");
 	self endon("game_ended");
 	self endon("intermission");
 	self endon("death");
 
 	if(!self.isbot) { return; }
+	if(!isDefined(distanceLimit) || distanceLimit<1){ distanceLimit=200; }
+	if(!isDefined(delay) || delay<0){ delay=0; }
+	if(!isDefined(origin)){ origin=self.origin; }
+	if(!isDefined(origin)){ cl("11no origin defined in _bot_prone_when_danger()"); return; }
 	
+	wait delay;
 	players = getentarray( "player", "classname" );
 	for(i=0;i<players.size;i++){
 		if(players[i].isbot){
 			dist=distance(players[i].origin,self.origin);
-			if(isDefined(dist) && dist<200 && randomInt(3>1)){
+			if(isDefined(dist) && dist<distanceLimit){
 				self botAction( "+goprone" );
 				self botAction( "-gocrouch" );
 				self botAction( "-gostand" );

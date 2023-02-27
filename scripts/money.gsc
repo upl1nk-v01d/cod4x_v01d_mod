@@ -542,7 +542,7 @@ _kills(){
 		//cl("^3killed true");
 		if(isPlayer(attacker) && !attacker.isbot){
 			if(attacker.pers["team"]==self.team){
-				attacker.money["acc"] -= 1000 * level.moneyMultiplier;
+				attacker.money["acc"] -= 100 * level.moneyMultiplier;
 				//game["money"][attacker.name]=attacker.money["acc"];
 				//cl("^1attacker "+attacker.name+" has money: "+attacker.money["acc"]);
 				//cl("^1"+attacker.name+" has money: "+game["money"][attacker.name]);
