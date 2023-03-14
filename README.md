@@ -17,11 +17,21 @@ please add additional args to your cod4x server and client executable:
 
 dvars:
 
-v01d_item_pickup_mode 1 //1=on, 0=off
+v01d_bots_inbalance_feature 1 //round loosing team gets one bot: 1=on, 0=off
 
-v01d_item_pickup_time 0.7 //seconds
+v01d_bots_recoil_spicyness 0.2 //bot recoil coefficient must be greater than 0.00
 
-v01d_item_remove_time 10 //seconds
+v01d_log_players 1 //logging real players into fs_homepath: 1=on, 0=off
+
+v01d_motd 1 //enabling playershowing MOTD when connected to server: 1=on, 0=off
+
+v01d_item_pickup_mode 1 //picking up weapons from ground takes time: 1=on, 0=off
+
+v01d_item_pickup_time 0.7 //picking up weapons time in seconds
+
+v01d_item_remove_time 10 //weapon burrying in ground time in seconds
+
+v01d_maps_randomizer //random map loading on match end: 1=on, 0=off
 
 -------------------------------------------
 
