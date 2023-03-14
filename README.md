@@ -13,22 +13,22 @@ important note:
 please add additional args to your cod4x server and client executable:
 +set r_xassetnum xmodel=2300 material=4096 weapon=256 loaded_sound=2400
 
+dvars:
+v01d_item_pickup_mode 1 //1=on, 0=off
+v01d_item_pickup_time 0.7 //seconds
+v01d_item_remove_time 10 //seconds
+
 
 updates log:
+
+2023 03 14
+fixed hint messages overlaying;
 
 2023 02 27
 managed dvars for new item pickup mode;
 fixed damage bug on falling;
 fixed hud removing when player not alive;
 fixed viewhands appearing without weapon.
-
-dvars:
-
-v01d_item_pickup_mode 1 //1=on, 0=off
-
-v01d_item_pickup_time 0.7 //seconds
-
-v01d_item_remove_time 10 //seconds
 
 2023 02 24
 code cleanup and dvars management in main.gsc
