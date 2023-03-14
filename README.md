@@ -13,6 +13,8 @@ important note:
 please add additional args to your cod4x server and client executable:
 +set r_xassetnum xmodel=2300 material=4096 weapon=256 loaded_sound=2400
 
+-------------------------------------------
+
 dvars:
 
 v01d_item_pickup_mode 1 //1=on, 0=off
@@ -21,6 +23,7 @@ v01d_item_pickup_time 0.7 //seconds
 
 v01d_item_remove_time 10 //seconds
 
+-------------------------------------------
 
 updates log:
 
