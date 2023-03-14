@@ -223,6 +223,8 @@ doArtillery(origin, owner, team)
 	
 	callStrike( owner, targetpos, yaw );
 	
+	thread scripts\main::_bot_prone_when_danger(300,0,targetpos);
+	
 	wait 8.5;
 	
 	found = false;
@@ -976,8 +978,12 @@ hardpointNotify( hardpointType, streakVal )
 			//notifyData.notifyText = "Press 6 or B to access Tools";
 			notifyData.sound = level.hardpointInforms[hardpointType];
 			//self maps\mp\gametypes\_hud_message::notifyMessage( notifyData );
-			self thread scripts\menus::_show_hint_msg(level.hardpointHints[hardpointType],0,3,320,40,0,0,"left","middle",0,0,"objective",1.6,2.8,(0.9,1,0.9),1,(0.2,0.3,0.7),1,1,true,undefined,false);
-			self thread scripts\menus::_show_hint_msg(notifyData.notifyText,0.5,3,320,70,0,0,"left","middle",0,0,"objective",1.6,1.8,(0.9,1,0.9),1,(0.2,0.3,0.7),1,1,true,undefined,false);
+			self thread scripts\menus::_show_hint_msg(level.hardpointHints[hardpointType],0,3,320,40,0,0,"left","middle",0,0,"objective",1.6,2.8,(0.9,1,0.9),1,(0.2,0.3,0.7),1,1,true,undefined,true);
+			if (isDefined(game["hasReadHardPointToolsMessage"][self.name]) && game["hasReadHardPointToolsMessage"][self.name] != true){ 
+				self thread scripts\menus::_show_hint_msg(notifyData.notifyText,0.5,3,320,70,0,0,"left","middle",0,0,"objective",1.6,1.8,(0.9,1,0.9),1,(0.2,0.3,0.7),1,1,true,undefined);
+				game["hasReadHardPointToolsMessage"][self.name]=true; 
+			}
+			//_show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,cx,cy,override,chrs,chre)
 			self playLocalSound(notifyData.sound);
 		//}
 	}
@@ -1286,7 +1292,7 @@ useTeamUAV( team, otherteam )
 	
 
 	if(self.pers["team"] == "axis"){ self playLocalSound(game["voice"]["axis"] + game["dialog"]["uav_online"]); }
-	else if(self.pers["team"] == "allies"){ self playLocalSound(game["voice"]["axis"] + game["dialog"]["uav_online"]); }
+	else if(self.pers["team"] == "allies"){ self playLocalSound(game["voice"]["allies"] + game["dialog"]["uav_online"]); }
 	
 	setTeamRadarWrapper( otherteam, false );
 	
