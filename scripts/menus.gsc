@@ -13,6 +13,7 @@ init(){
 	if (!isDefined(game["MOTD"]["reports"])){ game["MOTD"]["reports"]=[]; }
 	if (!isDefined(game["hasReadMOTD"])){ game["hasReadMOTD"]=[]; }
 	if (!isDefined(game["hasReadHintMessage"])){ game["hasReadHintMessage"]=[]; }
+	if (!isDefined(game["hasReadHardPointToolsMessage"])){ game["hasReadHardPointToolsMessage"]=[]; }
 	
 	level.msgID=0;
 
@@ -67,10 +68,10 @@ _dev_test_hud(){
 		wait 0.5;
 		
 		//self _show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,cx,cy,override,chrs,chre){
-		self thread _show_hint_msg("press FIRE button to select",0,3,0,300,0,0,"left","middle",0,0,"default",1.6,1.6,(1,1,0),1,(1,1,0),0.5,1,undefined,undefined);
-		wait 0.5;
-		self thread _show_hint_msg("press ADS button to return",0.3,3,0,318,0,0,"left","middle",0,0,"default",1.6,1.6,(1,1,0),1,(1,1,0),0.5,1,undefined,undefined,true);
-		wait 1;
+		self thread _show_hint_msg("press FIRE button to select",1,3,0,300,0,0,"left","middle",0,0,"default",1.6,1.6,(1,1,0),1,(1,1,0),0.5,1,undefined,undefined);
+		//wait 0.5;
+		self thread _show_hint_msg("press ADS button to return",2,3,0,318,0,0,"left","middle",0,0,"default",1.6,1.6,(1,1,0),1,(1,1,0),0.5,1,undefined,undefined,true);
+		//wait 1;
 		//self.hudmsg[1]=true;
 		
 		//_show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,cx,cy,override){
@@ -89,6 +90,7 @@ _spawn_loop(){
 	
 	if (!isDefined(game["hasReadMOTD"][self.name])){ game["hasReadMOTD"][self.name]=false; }
 	if (!isDefined(game["hasReadHintMessage"][self.name])){ game["hasReadHintMessage"][self.name]=false; }
+	if (!isDefined(game["hasReadHardPointToolsMessage"][self.name])){ game["hasReadHardPointToolsMessage"][self.name]=false; }
 	
 	for(;;){
 		self waittill("spawned_player");
@@ -640,6 +642,107 @@ _get_override_data(){
 	//}
 }
 
+_hint_msg_process(player,msgID,txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,cx,cy,override,chrs,chre){
+	_a=a;
+	aprev=1;
+	hudHint=[];
+	hudHint[0]="";
+	size=0;
+	blob="asdfghjklqwertyuiopzxcvbnm";
+	c=3;
+	ntxt=txt;
+	//cl("55"+self.name+" : "+self.hudmsgID+": "+txt);
+	stop=undefined;
+	
+	//cl("timer start");
+	//for(t=0;t<delay*20;t++){ wait 0.05; }
+	//cl("timer end");
+
+	while(size<txt.size && !isDefined(stop)){
+		r=randomIntRange(0,blob.size);
+		//blob[size]=rarr[r];
+		//while(txt[r] == " " && r>0){ r--; }
+		//blob = StrRepl(txt,txt[size],rarr[r]); 
+		//if(c<0){ txt = StrRepl(txt,txt[size-2],txt[size]); }
+		if(c<0){ size+=chrs; c=1; }
+		//hudHint[0]="";
+		ntxt="";
+		//txt[size]=blob[r];
+		if(size>txt.size){ size=txt.size; } //well... a couple of hours took me to solve faster cypher with this ;)
+		for(i=0;i<size;i++){ ntxt+=txt[i]; }
+		if(size<txt.size){ hudHint[0]=ntxt+blob[r]; } else { hudHint[0]=ntxt; }
+		//data=self _get_override_data();
+		//if(isDefined(self.hudmsg[self.hudmsgID-1])){ 
+		if(isDefined(self)){
+			if(isDefined(self.override)){ 
+				if(self.override==true){
+					//cl("11stopped: "+self.txt);
+					dur=0;
+					//stop=true;
+					a-=0.1; dur=0; 
+				} else if(self.override==false){
+				} else {
+				}
+			}
+		} else {
+			//self _create_menu_text("hudHint"+msgID,hudHint,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,_a,gc,ga,sort,undefined,undefined,undefined,undefined);
+		}
+		player _create_menu_text("hudHint"+msgID,hudHint,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,undefined,undefined,undefined,undefined);
+		//self _create_menu_text("hudHint",hudHint,"default", 1.6,1.4,(r,g,b),_a,(0,0,0),0,300,300,"center","middle",ox,oy,1);
+		//_create_menu_text(hud,arr,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,selector,scolor,div,skip);		
+		player playLocalSound("cypher1");
+		//self playLocalSound("mouse_click");
+		//if(a<_a){ _a+=0.1; }
+		wait 0.05;
+		c--;
+		if(size == txt.size && !isDefined(stop)){ 
+			waitUnits = dur*20;
+			while(waitUnits>0 && !isDefined(stop) && !isDefined(self.override)){ 
+				waitUnits--;
+				wait 0.05; 
+			}
+			//cl("while ended on "+player.name);
+		}
+		player _destroy_menu("hudHint"+msgID); 
+		if(a<=0){ stop=true; }
+	}
+	//wait 1;
+	//while(_a>0){
+	//self playLocalSound("cypher_start");
+	while(size>0 && !isDefined(stop)){
+		r=randomIntRange(0,blob.size);
+		//for(i=0;i<txt.size;i++){ if(txt[i] != " "){ txt[i]=" "; }}
+		//while(txt[r] == " " && r>0){ r--; }
+		//txt = StrRepl(txt,txt[r],blob[r]);
+		ntxt="";
+		for(i=0;i<size-1;i+=2){ ntxt+=txt[i]; ntxt+=txt[i+1]; }
+		ntxt+=blob[r];					//stop=true;
+
+		hudHint[0]=ntxt;
+		
+		if(isDefined(self.override)){ 
+			if(self.override==true){
+				a-=0.1;
+			} else if(self.override==false){
+			} else {
+				//stop=true;
+			}
+		}
+		player _create_menu_text("hudHint"+msgID,hudHint,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort);
+		//_create_menu_text(hud,arr,ft,fsz,fsc,color,a,gc,ga,x,y,ax,ay,ox,oy,sort,selector,scolor,div,skip){		
+		player playLocalSound("cypher1");
+		//self playLocalSound("mouse_click");
+		//if(ntxt.size==txt.size+3){ wait dur; }
+		//if(a==_a){ wait dur; }
+		//if(a>0){ a-=0.1; }
+		wait 0.05;
+		size-=chre;
+		//if(size == txt.size){ wait 1; }
+		player _destroy_menu("hudHint"+msgID); 
+		if(a<=0){ stop=true; }
+	}
+}
+
 _show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,cx,cy,override,chrs,chre){
 	self endon ( "disconnect" );
 	//self endon ( "death" );
@@ -667,18 +770,16 @@ _show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,c
 	if (!isDefined(fsz)){ fsz=1.6; }
 	if (!isDefined(fsc)){ fsc=1.4; }
 	if (!isDefined(sort)){ sort=1; }
-	if (!isDefined(chrs)){ chrs=3; }
-	if (!isDefined(chre)){ chre=3; }
+	if (!isDefined(chrs)){ chrs=2; }
+	if (!isDefined(chre)){ chre=2; }
 	
 	while(!isDefined(self.hudmsgID)){ wait 0.05; }
-	self.hudmsgID++;
 	//level.msgID++;
 	//msgID_prev=self.hudmsg[player.hudmsg.size];
-	_a=a;
+	self.hudmsgID++;
 	self.hudmsg[self.hudmsgID]=spawnStruct();
-	//self.hudmsg[self.hudmsgID].override=override;
 	self.hudmsg[self.hudmsgID].alpha=a;
-	self.hudmsg[self.hudmsgID].override=override;
+	//self.hudmsg[self.hudmsgID].override=override;
 	self.hudmsg[self.hudmsgID].txt=txt;
 	self.hudmsg[self.hudmsgID].stop=undefined;
 	self.hudmsg[self.hudmsgID].dur=dur;
@@ -686,17 +787,6 @@ _show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,c
 	//cl("11override:"+self.hudmsg[self.hudmsgID-1]);
 	msgID=self.hudmsgID;
 	//msgID=level.msgID;
-	aprev=1;
-	hudHint=[];
-	hudHint[0]="";
-	//self.showHint=true;
-	wait delay;
-	size=0;
-	blob="asdfghjklqwertyuiopzxcvbnm";
-	c=3;
-	ntxt=txt;
-	//cl("55"+self.name+" : "+self.hudmsgID+": "+txt);
-	stop=undefined;
 	//cl("^3_show_hint_msg");
 	//cl("33hintmsg:"+txt);
 	//cl("33"+txt.size);
@@ -704,86 +794,13 @@ _show_hint_msg(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,c
 	if(isDefined(cx)){ x=x-(txt.size*fsc*6.45)/2; }
 	if(isDefined(cy)){ y=y-(txt.size*fsc*6.45)/2; }
 	
-	while(size<txt.size && !isDefined(stop)){
-		r=randomIntRange(0,blob.size);
-		//blob[size]=rarr[r];
-		//while(txt[r] == " " && r>0){ r--; }
-		//blob = StrRepl(txt,txt[size],rarr[r]); 
-		//if(c<0){ txt = StrRepl(txt,txt[size-2],txt[size]); }
-		if(c<0){ size+=chrs; c=1; }
-		//hudHint[0]="";
-		ntxt="";
-		//txt[size]=blob[r];
-		if(size>txt.size){ size=txt.size; } //well... a couple of hours took me to solve faster cypher with this ;)
-		for(i=0;i<size;i++){ ntxt+=txt[i]; }
-		if(size<txt.size){ hudHint[0]=ntxt+blob[r]; } else { hudHint[0]=ntxt; }
-		//data=self _get_override_data();
-		//if(isDefined(self.hudmsg[self.hudmsgID-1])){ 
-		if(isDefined(self.hudmsg[self.hudmsgID])){
-			if(isDefined(self.hudmsg[self.hudmsgID].override)){ 
-				if(self.hudmsg[self.hudmsgID].override==true){
-					//data.alpha-=0.05; 
-					//cl("data");
-					cl("11stopped: "+self.hudmsg[self.hudmsgID-1].txt);
-					dur=0;
-					stop=true;
-					//self.hudmsg[self.hudmsgID-1].stop=true;
-					//self.hudmsg[self.hudmsgID-1].dur=0;
-					//self.hudmsg[self.hudmsgID].alpha-=0.05;
-					//a=self.hudmsg[self.hudmsgID].alpha;
-					//self _create_menu_text("hudHint"+msgID,hudHint,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,undefined,undefined,undefined,undefined);
-					//a-=0.05; dur=0; 
-					//cl("override:"+override); 
-					//self _change_menu("hudHint"+(msgID-1),"a",aprev);
-					//aprev-=0.02;
-				} else if(self.hudmsg[self.hudmsgID].override==false){
-					//self _create_menu_text("hudHint"+msgID,hudHint,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,undefined,undefined,undefined,undefined);
-					//a=_a;
-				} else {
-					//stop=true;
-				}
-			}
-		} else {
-			//self _create_menu_text("hudHint"+msgID,hudHint,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,_a,gc,ga,sort,undefined,undefined,undefined,undefined);
-		}
-		self _create_menu_text("hudHint"+msgID,hudHint,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,undefined,undefined,undefined,undefined);
-		//self _create_menu_text("hudHint",hudHint,"default", 1.6,1.4,(r,g,b),_a,(0,0,0),0,300,300,"center","middle",ox,oy,1);
-		//_create_menu_text(hud,arr,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,selector,scolor,div,skip);		
-		self playLocalSound("cypher1");
-		//self playLocalSound("mouse_click");
-		//if(a<_a){ _a+=0.1; }
-		wait 0.05;
-		c--;
-		if(size == txt.size && !isDefined(stop)){ wait dur; }
-		self _destroy_menu("hudHint"+msgID); 
-		if(a<=0){ stop=true; }
-	}
+	if(isDefined(override) && override==true){ self.hudmsg[self.hudmsgID-1].override=true; }
+	
+	self.hudmsg[self.hudmsgID] thread _hint_msg_process(self,msgID,txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,cx,cy,override,chrs,chre);
+
 	//wait 1;
-	//while(_a>0){
-	//self playLocalSound("cypher_start");
-	while(size>0 && !isDefined(stop)){
-		r=randomIntRange(0,blob.size);
-		//for(i=0;i<txt.size;i++){ if(txt[i] != " "){ txt[i]=" "; }}
-		//while(txt[r] == " " && r>0){ r--; }
-		//txt = StrRepl(txt,txt[r],blob[r]);
-		ntxt="";
-		for(i=0;i<size-1;i+=2){ ntxt+=txt[i]; ntxt+=txt[i+1]; }
-		ntxt+=blob[r];
-		hudHint[0]=ntxt;
-		//if(isDefined(override)){ a-=0.1; }
-		self _create_menu_text("hudHint"+msgID,hudHint,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort);
-		//_create_menu_text(hud,arr,ft,fsz,fsc,color,a,gc,ga,x,y,ax,ay,ox,oy,sort,selector,scolor,div,skip){		
-		self playLocalSound("cypher1");
-		//self playLocalSound("mouse_click");
-		//if(ntxt.size==txt.size+3){ wait dur; }
-		//if(a==_a){ wait dur; }
-		//if(a>0){ a-=0.1; }
-		wait 0.05;
-		size-=chre;
-		//if(size == txt.size){ wait 1; }
-		self _destroy_menu("hudHint"+msgID); 
-		if(a<=0){ stop=true; }
-	}
+	
+	//self.hudmsg[self.hudmsgID-1].override = true;
 	//cl("33"+self.name+" hud ended");
 }
 

@@ -196,9 +196,6 @@ init(){
 		player thread _projectiles_owner();
 		player thread _menu_response();
 		player thread _player_spectate();
-		
-		//player thread _dev_sound_test();
-		//player thread _dev_weapon_test();
 	} 
 }
 
@@ -651,7 +648,7 @@ _dev_weapon_test(){
 		if(!isDefined(self.weaponModel)){ self.weaponModel=0; }
 		if(self LeanLeftButtonPressed()){ llb=true; start=true; }
 		if(self LeanRightButtonPressed()){ lrb=true; start=true; }
-		if(self HoldBreathButtonPressed()){ hbb=true; start=true; }
+		//if(self HoldBreathButtonPressed()){ hbb=true; start=true; }
 		players = getentarray( "player", "classname" );
 		if(isDefined(start)){
 			if(isDefined(hbb)){
@@ -1002,10 +999,10 @@ _bot_balance_manage(){
 
 		if(isDefined(game["teamWonRound"])){			
 			if(game["teamWonRound"]=="axis"){ 
-				if(axisCount>4){ exec("tr ax"); }
+				if(axisCount>=4){ exec("tr ax"); }
 				wait 0.3;
 			} else if(game["teamWonRound"]=="allies"){ 
-				if(alliesCount>4){ exec("tr al"); }
+				if(alliesCount>=4){ exec("tr al"); }
 				wait 0.3;
 			}
 		}
@@ -1821,10 +1818,15 @@ _welcome(tm,ctm)
 	self notify( "bots_kill_menu" );
 	self.ps_ended = true;
 	
+	angles = self getPlayerAngles();
+	self setPlayerAngles((angles[0], 0, angles[2])); 
+
 	if (self.isbot) { 
 		wait 0.05;
 	} else {	
 		self playLocalSound( "hello1" );
+		wait 0.1;
+		self scripts\main::_film_tweaks(0,0,"1 1 1","1 1 1",0.4,1,1,0,1.4);
 	}
 			
 	switch ( self.pers["team"] ) {
@@ -1969,7 +1971,7 @@ _player_spawn_loop(){
 	self setClientDvar( "v01d_tools_bp", 1 );
 	self.firingXP=0;
 	self.isBlurrying=undefined;
-	
+		
 	for(;;){
 		self waittill("spawned_player");	
 
@@ -2606,6 +2608,8 @@ _killed(eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, t
 	
 	self setMoveSpeedScale(1);
 	
+	self notify("stop_location_selection");
+	
 	self.haveC4=0;
 	self.haveClaymores=0;
 	self.haveFragGrenades=0;
@@ -2619,6 +2623,8 @@ _killed(eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, t
 	
 	self thread _bot_prone_when_danger();
 	
+	//cl("^2"+eAttacker.name+" killed ^3"+self.name+" with MOD: ^1"+sMeansOfDeath);
+	
 	if(isDefined(eInflictor)){	
 		dist = distance(self.origin,eInflictor.origin)+1;
 		x = self.origin[0]-eInflictor.origin[0];
@@ -2626,25 +2632,22 @@ _killed(eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, t
 		z = 100;
 		
 		
-		if (sMeansOfDeath == "MOD_PROJECTILE_SPLASH" || sMeansOfDeath == "MOD_GRENADE_SPLASH" || sMeansOfDeath == "MOD_EXPLOSIVE"){
-			self setVelocity((x,y,z));
-		}
-		else if (sMeansOfDeath == "MOD_PROJECTILE"){
-			self setVelocity((x/2,y/2,z/4));
+		if (sMeansOfDeath == "MOD_PROJECTILE" || sMeansOfDeath == "MOD_IMPACT"){
+			self setVelocity((x/4,y/4,z/4));
 		}
 		else if (isSubStr(sMeansOfDeath,"_BULLET")){
-			self setVelocity((x/2,y/2,z/2));
+			self setVelocity((x/4,y/4,z/4));
 		}
 		else if (isSubStr(sMeansOfDeath,"_FALLING") || isSubStr(sMeansOfDeath,"_SUICIDE") || isSubStr(sMeansOfDeath,"_MELEE")){
 			self setVelocity((x/2,y/2,4));
-		}		
-				
-		if (eInflictor.classname == "grenade" || eInflictor.classname == "rocket" && self GetStance() != "prone") {
-			if (dist<500){
-				z = 500-dist;
-				self setVelocity((x,y,z)); 
-			}
-		} else if (eInflictor.model == "projectile_hellfire_missile") {
+		} 
+		else if (sMeansOfDeath == "MOD_PROJECTILE_SPLASH" || sMeansOfDeath == "MOD_GRENADE_SPLASH" || sMeansOfDeath == "MOD_EXPLOSIVE"){
+			if (dist<500){ z = 500-dist; }
+			if(self GetStance() == "prone"){ z/=4; }
+			self setVelocity((x,y,z));
+		}
+
+		if (eInflictor.model == "projectile_hellfire_missile") {
 			if (dist<1000){
 				z = 1000-dist;
 				self setVelocity((x,y,z*2)); 
@@ -2673,7 +2676,7 @@ _killed(eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, t
 		
 	if (isDefined(level.bombOwner) && level.bombExploded==true && isDefined(eAttacker) && level.bombOwner.name == eAttacker.name && isSubStr(sMeansOfDeath, "MOD_EXPLOSIVE")) { sWeapon="c4_mp"; }
 
-	if (isDefined(sMeansOfDeath) && sMeansOfDeath == "MOD_FALLING" || sMeansOfDeath == "MOD_IMPACT" || sMeansOfDeath == "MOD_SUICIDE" || sMeansOfDeath == "MOD_PROJECTILE_SPLASH" || sMeansOfDeath == "MOD_GRENADE_SPLASH") {
+	if (isDefined(sMeansOfDeath) && sMeansOfDeath == "MOD_FALLING" || sMeansOfDeath == "MOD_IMPACT" || sMeansOfDeath == "MOD_SUICIDE") {
 		sc = "suicide";	
 		thread _sfx(sc);
 	}
@@ -2689,7 +2692,7 @@ _killed(eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, t
 				eAttacker.pers["lives"]+=1;
 				if (eAttacker.team != self.team) { eAttacker iprintln("^2You earned 1 life!"); }
 			}
-			if(isDefined(game["money"][eAttacker.name])){ game["money"][eAttacker.name] += 100; }
+			if(isDefined(game["money"][eAttacker.name])){ game["money"][eAttacker.name] += 200; }
 			ks = "knife";	
 			thread _sfx ( ks );
 		}
@@ -2942,7 +2945,7 @@ _projectiles_monitor(weap,wname){
 			for( i = 0 ; i < players.size ; i++ )
 			{
 				dist = distance(blastOrigin, players[i].origin);
-				maxDist = 800;
+				maxDist = 500;
 				delay = 0.05*(dist/maxDist);
 				thread _playSoundInSpace("distboom",blastOrigin,delay,players[i]);
 				if(dist<maxDist){
@@ -2993,7 +2996,7 @@ _grenade_monitor(weap){
 		for( i = 0 ; i < players.size ; i++ )
 		{
 			dist = distance(blastOrigin, players[i].origin);
-			maxDist = 600;
+			maxDist = 350;
 			delay = 0.05*(dist/maxDist);
 			thread _playSoundInSpace("distboom",blastOrigin,delay,players[i]);
 			if(dist<maxDist){
@@ -3505,19 +3508,24 @@ _hp_weapons_list(){
 
 	if(self.isbot){ return; }
 	while(1){
-		if(isDefined(self.pers["hardPointItem"])){
+		/*if(isDefined(self.pers["hardPointItem"])){
 			if(self.pers["hardPointItem"] == "radar_mp"){ self setClientDvar( "ui_uav_client", 1 ); } else { self setClientDvar( "ui_uav_client", 0 ); }
 			if(self.pers["hardPointItem"] == "airstrike_mp"){ self setClientDvar( "ui_airstrike_client", 1 ); } else { self setClientDvar( "ui_airstrike_client", 0 ); }
 			if(self.pers["hardPointItem"] == "helicopter_mp"){ self setClientDvar( "ui_helicopter_client", 1 ); } else { self setClientDvar( "ui_helicopter_client", 0 ); }
 			if(self.pers["hardPointItem"] == "artillery_mp"){ self setClientDvar( "ui_artillery_client", 1 ); } else { self setClientDvar( "ui_artillery_client", 0 ); }
-		}
-		/*if(isDefined(self.pers["hardPointItem"])){
-			if (self getAmmoCount("radar_mp")>0){ self setClientDvar( "ui_uav_client", 1 ); } else { self setClientDvar( "ui_uav_client", 0 ); self SetWeaponAmmoClip("radar_mp",0); }
-			if (self getAmmoCount("airstrike_mp")>0){ self setClientDvar( "ui_airstrike_client", 1 ); } else { self setClientDvar( "ui_airstrike_client", 0 ); self SetWeaponAmmoClip("airstrike_mp",0); }
-			if (self getAmmoCount("helicopter_mp")>0){ self setClientDvar( "ui_helicopter_client", 1 ); } else { self setClientDvar( "ui_helicopter_client", 0 ); self SetWeaponAmmoClip("helicopter_mp",0); }
-			if (self getAmmoCount("artillery_mp")>0){ self setClientDvar( "ui_artillery_client", 1 ); } else { self setClientDvar( "ui_artillery_client", 0 ); self SetWeaponAmmoClip("artillery_mp",0); }
 		}*/
 		wait 0.5;
+		weaponsList = self GetWeaponsList();
+		if(isDefined(weaponsList)){
+			for(i=0;i<weaponsList.size;i++){
+				ammoList[i] = self getAmmoCount(weaponsList[i]);
+				//cl("weapon: "+weaponsList[i]+", ammo: "+ammoList[i]);
+				if (isDefined(weaponsList[i]) && weaponsList[i]=="radar_mp" && self getAmmoCount("radar_mp")>0){ self setClientDvar( "ui_uav_client", 1 ); } else { self setClientDvar( "ui_uav_client", 0 ); }
+				if (isDefined(weaponsList[i]) && weaponsList[i]=="airstrike_mp" && self getAmmoCount("airstrike_mp")>0){ self setClientDvar( "ui_airstrike_client", 1 ); } else { self setClientDvar( "ui_airstrike_client", 0 ); }
+				if (isDefined(weaponsList[i]) && weaponsList[i]=="helicopter_mp" && self getAmmoCount("helicopter_mp")>0){ self setClientDvar( "ui_helicopter_client", 1 ); } else { self setClientDvar( "ui_helicopter_client", 0 ); }
+				if (isDefined(weaponsList[i]) && weaponsList[i]=="artillery_mp" && self getAmmoCount("artillery_mp")>0){ self setClientDvar( "ui_artillery_client", 1 ); } else { self setClientDvar( "ui_artillery_client", 0 ); }
+			}
+		} 
 	}
 }
 
