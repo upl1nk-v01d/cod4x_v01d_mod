@@ -31,7 +31,7 @@ v01d_item_pickup_time 0.7 //picking up weapons time in seconds
 
 v01d_item_remove_time 10 //weapon burrying in ground time in seconds
 
-v01d_maps_randomizer //random map loading on match end: 1=on, 0=off
+v01d_maps_randomizer 1 //random map loading on match end: 1=on, 0=off
 
 -------------------------------------------
 
