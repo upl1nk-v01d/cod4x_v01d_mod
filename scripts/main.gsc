@@ -42,16 +42,16 @@ init(){
 	level thread scripts\tactical::init();
 	//level thread scripts\bots_nav::init();
 
-	if(getDvar("v01d_version") == ""){ setDvar("v01d_version", "v2.11"); }
-	if(getDvar("v01d_dev") == ""){ setDvar("v01d_dev",""); } //enabe v01d mod dev mode (args: "nav", "weap")
-	if(getDvar("v01d_bots_inbalance_feature") == ""){ setDvar("v01d_bots_inbalance_feature",1); } //round loosing team gets one bot
-	if(getDvar("v01d_bots_recoil_spicyness") == ""){ setDvar("v01d_bots_recoil_spicyness",0.2); } //bot recoil coefficient > 0.00
-	if(getDvar("v01d_log_players") == ""){ setDvar("v01d_log_players",1); } //logging real players into fs_homepath
-	if(getDvar("v01d_motd") == ""){ setDvar("v01d_motd",1); } //enabling playershowing MOTD when connected to server
-	if(getDvar("v01d_item_pickup_mode") == ""){ setDvar("v01d_item_pickup_mode",1); } //picking up weapons from ground takes time
-	if(getDvar("v01d_item_pickup_time") == ""){ setDvar("v01d_item_pickup_time",0.7); } //picking up weapons time
-	if(getDvar("v01d_item_remove_time") == ""){ setDvar("v01d_item_remove_time",10); } //picking up weapons time
-	if(getDvar("v01d_maps_randomizer") == ""){ setDvar("v01d_maps_randomizer",1); } //different random map loading
+	if(getDvar("v01d_version") == ""){ setDvar("v01d_version", "v2.12"); }
+	if(getDvar("v01d_dev") == ""){ setDvar("v01d_dev",""); } //enabe v01d mod dev mode args: "nav", "weap"
+	if(getDvar("v01d_bots_inbalance_feature") == ""){ setDvar("v01d_bots_inbalance_feature",1); } //round loosing team gets one bot: 1=on, 0=off
+	if(getDvar("v01d_bots_recoil_spicyness") == ""){ setDvar("v01d_bots_recoil_spicyness",0.2); } //bot recoil coefficient must be greater than 0.00
+	if(getDvar("v01d_log_players") == ""){ setDvar("v01d_log_players",1); } //logging real players into fs_homepath: 1=on, 0=off
+	if(getDvar("v01d_motd") == ""){ setDvar("v01d_motd",1); } //enabling playershowing MOTD when connected to server: 1=on, 0=off
+	if(getDvar("v01d_item_pickup_mode") == ""){ setDvar("v01d_item_pickup_mode",1); } //picking up weapons from ground takes time: 1=on, 0=off
+	if(getDvar("v01d_item_pickup_time") == ""){ setDvar("v01d_item_pickup_time",0.7); } //picking up weapons time in seconds
+	if(getDvar("v01d_item_remove_time") == ""){ setDvar("v01d_item_remove_time",10); } //weapon burrying in ground time in seconds
+	if(getDvar("v01d_maps_randomizer") == ""){ setDvar("v01d_maps_randomizer",1); } //random map loading on match end: 1=on, 0=off
 	
 	
 	setDvar("pl",""); //in terminal argument a = show all players, r = real players, b = bot players
