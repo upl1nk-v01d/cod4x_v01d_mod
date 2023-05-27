@@ -44,7 +44,7 @@ updates log:
 2023 05 26
 converted mm1 to projectile type weapon; 
 fixed em1 flyby and hit sound; 
-fixed swaping at4 issue; 
+fixed swaping at4 issue.
 
 2023 05 21
 added 4 new weapons: 
