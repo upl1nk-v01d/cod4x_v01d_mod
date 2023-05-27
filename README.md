@@ -4,11 +4,11 @@ the script files for cod4x provided by v01d
 
 -------------------------------------------
 
-updated v01d mod.ff, iwd and other mod files at https://drive.google.com/drive/folders/186GyQw-vKV_bFqAfxdYtRPXcxtaSnoCb
+updated 2023.05.26 v01d mod.ff, iwd and other mod files at https://drive.google.com/drive/folders/186GyQw-vKV_bFqAfxdYtRPXcxtaSnoCb
 
 -------------------------------------------
 
-important note:
+important notes:
 
 please add additional args to your cod4x server and client executable:
 +set r_xassetnum xmodel=2300 material=4096 weapon=256 loaded_sound=2400
@@ -37,6 +37,25 @@ v01d_maps_randomizer 1 //random map loading on match end: 1=on, 0=off
 
 updates log:
 
+2023 05 26
+converted mm1 to projectile type weapon
+fixed em1 flyby and hit sound
+fixed swaping at4 issue
+
+2023 05 21
+added 4 new weapons: 
+remington r5, svu, ump45 & pytaek.
+
+2023 05 19
+added 4 new weapons: 
+ak12, arx160, cz805 & honeybadge.
+
+2023 05 16
+fixed gametype change on new loading level
+
+2023 04 22
+fixing item pickup issues;
+
 2023 03 14
 fixed hint messages overlaying;
 
@@ -55,18 +74,18 @@ tweaked hint messages to cypher faster;
 in lastStand weapons can be picked up.
 
 2023 02 21
-added defuse kit in buymenu for defusing bomb faster;
-fixed undefined error on _missions.gsc;
-dropped weapons moving into ground.
+added defuse kit in menu for defusing bomb faster.
 
 2023 02 19
-added dvar v01d_maps_randomizer to turn on/off;
+added dvar v01d_maps_randomizer to turn on/off 
 map randomizer, set default to 1.
 
 2023 02 12
 made workaround with item pickup;
-new item pickup mode dvar v01d_pickup_item_mode set to 1;
 fixed bot starring on c4 and claymore.
+
+2023 02 08
+fixed bots stop moving after a while.
 
 2023 02 04
 adjusted bots fire interval with dp;
