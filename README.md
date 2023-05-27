@@ -1,6 +1,6 @@
 # cod4x v01d mod files
 
-the script files for cod4x provided by v01d
+the mod files for cod4x provided by v01d
 
 -------------------------------------------
 
