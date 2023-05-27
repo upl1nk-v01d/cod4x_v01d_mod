@@ -54,6 +54,8 @@ init(){
 	if(getDvar("v01d_item_pickup_time") == ""){ setDvar("v01d_item_pickup_time",0.7); } //picking up weapons time in seconds
 	if(getDvar("v01d_item_remove_time") == ""){ setDvar("v01d_item_remove_time",10); } //weapon burrying in ground time in seconds
 	if(getDvar("v01d_maps_randomizer") == ""){ setDvar("v01d_maps_randomizer",1); } //random map loading on match end: 1=on, 0=off
+	if(getDvar("v01d_suicide_sfx") == ""){ setDvar("v01d_suicide_sfx",1); } //suicide screaming sounds: 1=on, 0=off
+	if(getDvar("v01d_knifed_sfx") == ""){ setDvar("v01d_knifed_sfx",1); } //knifed screaming sounds: 1=on, 0=off
 	
 	
 	setDvar("pl",""); //in terminal argument a = show all players, r = real players, b = bot players
@@ -85,7 +87,7 @@ init(){
 	level.hudMarkers = [];
 	level.slowMo=false;
 	level.gracePeriod = 60;
-	level._sfx=false;
+	level.screams_sfx=false;
 	
 	/*
 	level.classSniper = StrTok("svg100,dragunov,m21", "," );
@@ -2697,13 +2699,17 @@ _killed(eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, t
 	if (isDefined(level.bombOwner) && level.bombExploded==true && isDefined(eAttacker) && level.bombOwner.name == eAttacker.name && isSubStr(sMeansOfDeath, "MOD_EXPLOSIVE")) { sWeapon="c4_mp"; }
 
 	if (isDefined(sMeansOfDeath) && sMeansOfDeath == "MOD_FALLING" || sMeansOfDeath == "MOD_IMPACT" || sMeansOfDeath == "MOD_SUICIDE" || sMeansOfDeath == "MOD_WORLDSPAWN") {
-		sc = "suicide";	
-		thread _sfx(sc,0.2,1.2);
+		if(getDvar("v01d_suicide_sfx") == "1"){
+			sc = "suicide";	
+			thread _screams_sfx(sc,0.2,1.2);
+		}
 	}
 	
 	if (!isDefined(eAttacker)){
+		if(getDvar("v01d_suicide_sfx") == "1"){
 			sc = "suicide";	
-			thread _sfx(sc,0.2,1.2);
+			thread _screams_sfx(sc,0.2,1.2);
+		}
 	} else if (isDefined(eAttacker) && isPlayer(eAttacker)){ 
 		self.kb = eAttacker;
 		if(sMeansOfDeath == "MOD_MELEE") //
@@ -2713,22 +2719,27 @@ _killed(eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, t
 				if (eAttacker.team != self.team) { eAttacker iprintln("^2You earned 1 life!"); }
 			}
 			if(isDefined(game["money"][eAttacker.name])){ game["money"][eAttacker.name] += 200; }
-			ks = "knife";	
-			thread _sfx(ks,0.2,1.7);
+			if(getDvar("v01d_knifed_sfx") == "1"){
+				ks = "knife";	
+				thread _screams_sfx(ks,0.2,1.7);
+			}
 		}
 		else if (eAttacker == self){
 			if (sMeansOfDeath == "MOD_FALLING" || sMeansOfDeath == "MOD_IMPACT" || sMeansOfDeath == "MOD_SUICIDE" || sMeansOfDeath == "MOD_PROJECTILE_SPLASH" || sMeansOfDeath == "MOD_GRENADE_SPLASH") {
-				sc = "suicide";	
-				thread _sfx(sc,0.2,1.2);
+				if(getDvar("v01d_suicide_sfx") == "1"){
+					sc = "suicide";	
+					thread _screams_sfx(sc,0.2,1.2);
+				}
 			}
 		}
 		else if (isDefined(eAttacker.team) && eAttacker.team == self.team && getDvar("g_gametype") != "dm"){  
 			if (level.inOvertime == false) {
 				eAttacker.pers["lives"]-=1; eAttacker iprintln("^1You lost live for team killing\n");
 			}
-			
-			sc = "suicide";	
-			thread _sfx(sc,0.2,1.2);
+			if(getDvar("v01d_suicide_sfx") == "1"){
+				sc = "suicide";	
+				thread _screams_sfx(sc,0.2,1.2);
+			}
 		}
 		
 		if(isDefined(sMeansOfDeath) && sMeansOfDeath == "MOD_HEAD_SHOT"){ self.headShot=true; }
@@ -3805,19 +3816,19 @@ _bs()
 	wait 0.10;
 }
 
-_sfx(s,del,dur)
+_screams_sfx(s,del,dur)
 {
 	players = getentarray( "player", "classname" );
 	wait del;
-	if(level._sfx == true){ return; }
-	level._sfx=true;
+	if(level.screams_sfx == true){ return; }
+	level.screams_sfx=true;
 	for( i = 0 ; i < players.size ; i++ ){
-		if(isDefined(players[i]._sfx)){ break; }
+		//if(isDefined(players[i]._sfx)){ break; }
 		players[i] playLocalSound (s);
 		//players[i]._sfx=true;
 	}
 	wait dur;
-	level._sfx=false;
+	level.screams_sfx=false;
 }
 
 /* \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
