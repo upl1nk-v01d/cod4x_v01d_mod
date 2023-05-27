@@ -33,6 +33,10 @@ v01d_item_remove_time 10 //weapon burrying in ground time in seconds
 
 v01d_maps_randomizer 1 //random map loading on match end: 1=on, 0=off
 
+v01d_suicide_sfx 1 // //suicide screaming sounds: 1=on, 0=off
+
+v01d_knifed_sfx 1 // //knifed screaming sounds: 1=on, 0=off
+
 -------------------------------------------
 
 updates log:
