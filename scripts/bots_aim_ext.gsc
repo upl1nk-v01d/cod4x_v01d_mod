@@ -71,9 +71,16 @@ _start_aim_ext()
 			self.pers["bots"]["skill"]["old_shoot_after_time"] = self.pers["bots"]["skill"]["shoot_after_time"];
 		if(!isDefined(self.pers["bots"]["skill"]["old_bone_update_interval"]))
 			self.pers["bots"]["skill"]["old_bone_update_interval"] = self.pers["bots"]["skill"]["bone_update_interval"];
+		if(!isDefined(self.pers["bots"]["skill"]["old_reaction_time"]))
+			self.pers["bots"]["skill"]["old_reaction_time"] = self.pers["bots"]["skill"]["reaction_time"];
+		if(!isDefined(self.pers["bots"]["skill"]["old_init_react_time"]))
+			self.pers["bots"]["skill"]["old_init_react_time"] = self.pers["bots"]["skill"]["init_react_time"];
+		if(!isDefined(self.pers["bots"]["skill"]["old_fov"]))
+			self.pers["bots"]["skill"]["old_fov"] = self.pers["bots"]["skill"]["fov"];
 		
 		self.pers["bots"]["skill"]["aim_offset_time"] = 100;
 		self.pers["bots"]["skill"]["bone_update_interval"] = 100;
+		self.pers["bots"]["skill"]["bones"] = "j_spineupper";
 
     	self thread _upd_aim();
     	self thread _upd_wpts();
@@ -124,7 +131,7 @@ _aimspeed_mod(k)
 		if(isDefined(self.pers["bots"]["skill"]["old_semi_time"]))
 			self.pers["bots"]["skill"]["semi_time"] = self.pers["bots"]["skill"]["old_semi_time"];
 		if(isDefined(self.pers["bots"]["skill"]["old_shoot_after_time"]))
-			self.pers["bots"]["skill"]["shoot_after_time"] = self.pers["bots"]["skill"]["old_shoot_after_time"];
+			self.pers["bots"]["skill"]["shoot_after_time"] = self.pers["bots"]["skill"]["old_shoot_after_time"]*2;
 		if(isDefined(self.pers["bots"]["skill"]["old_bone_update_interval"]))
 			self.pers["bots"]["skill"]["bone_update_interval"] = self.pers["bots"]["skill"]["old_bone_update_interval"];
 	} 
@@ -143,6 +150,10 @@ _upd_aim(){
 	if (!isDefined(self.pers["bots"]["skill"]["semi_time"])) {return;}
 	if (!isDefined(self.pers["bots"]["skill"]["aim_offset_time"])) {return;}
 	if (!isDefined(self.pers["bots"]["skill"]["aim_offset_amount"])) {return;}
+	if (!isDefined(self.pers["bots"]["skill"]["reaction_time"])) {return;}
+	if (!isDefined(self.pers["bots"]["skill"]["init_react_time"])) {return;}
+	if (!isDefined(self.pers["bots"]["skill"]["fov"])) {return;}
+	
 	
 	self.swc = 1;
 	self.pers["bots"]["skill"]["aim_time"] = 1;
@@ -160,6 +171,13 @@ _upd_aim(){
 	 			if(dp<0){ dp *= -1; }
 	 			if(dp==0){ dp += 0.001; }
 	 			kills=self.pers["kills"];
+	 			if(isDefined(kills) && kills > 0){
+	 				self.pers["bots"]["skill"]["reaction_time"] = self.pers["bots"]["skill"]["reaction_time"] - (10 / kills); 
+	 				self.pers["bots"]["skill"]["init_react_time"] = self.pers["bots"]["skill"]["init_react_time"] - (10 / kills); 
+	 				self.pers["bots"]["skill"]["fov"] = self.pers["bots"]["skill"]["fov"] - (1 / kills); 
+	 				//cl(self.name+" has "+kills+" kills");
+	 				//cl(self.name+" has "+self.pers["bots"]["skill"]["fov"]);
+	 			}
 	 			if(self.pers["team"] == "axis") { roundwins=[[level._getTeamScore]]("allies"); }
 	 			else if(self.pers["team"] == "allies") { roundwins=[[level._getTeamScore]]("axis"); }
 				if(!isDefined(roundwins)) { roundwins=0; }
@@ -264,6 +282,7 @@ _bot_aimspots(){
 						aimspot = (r,r,r);
 						//t = spawn( "script_origin", aimspot);
 						self.bot.target.offset=aimspot;
+						self.bot.target.origin=org*0.1;
 						aimspeed=2;
 						self.pers["bots"]["skill"]["aim_time"] = aimspeed;
 						while (aimspeed>0.2){ 

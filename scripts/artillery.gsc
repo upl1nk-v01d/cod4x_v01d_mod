@@ -16,7 +16,7 @@ startBarrage( endPos, startPos )
 		if (player.pers["team"] == self.pers["team"]){
 			if(player.pers["team"] == "axis"){
 				player PlaySoundToPlayer( "mp_artillery_t", player );
-			} else if (player.pers["team"] == "axis") {
+			} else if (player.pers["team"] == "allies") {
 				player PlaySoundToPlayer( "mp_artillery_ct", player );		
 			}
 		}
@@ -262,5 +262,6 @@ calculateDirection( pos )
 	}
 	
 	self thread startBarrage( pos, startLocation );
+	thread scripts\main::_bot_prone_when_danger(500,0,pos);
 }
 
