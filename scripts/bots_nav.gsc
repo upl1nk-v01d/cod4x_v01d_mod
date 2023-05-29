@@ -15,11 +15,19 @@ init()
 		setDvar( "bots_fire_ext", 0 );
 		setDvar( "bots_aim_ext", 0 );
 		level.doNotAddBots=true;
-
 	}
 	
 	//if (!getdvarint("v01d_dev")>0){ return; }
 	if (getdvarint("bots_main_debug")>0) { return; }
+	
+	precacheShader("compass_waypoint_defend");
+	precacheShader("compass_waypoint_target");
+	precacheShader("compass_waypoint_bomb");
+	precacheShader("compassping_enemy"); 
+	precacheShader("compassping_player"); 
+	precacheShader("map_artillery_selector"); 
+
+	level.icon = "map_artillery_selector";
 	
 	//if (level.waypointCount != 0) { return; }
 	
@@ -27,15 +35,25 @@ init()
 	level.nodes_quantity = 0;
 	level.node_types = StrTok("any,mg,sniper,grenadier,rocket",",");
 	
+	level.grid = [];
+	level.grid_quantity = 0;
+	
 	level.sniper_weapons = StrTok("tac330_sil_mp,mors_acog_mp,svg100_mp,barrett_mp,dragunov_mp,m40a3_mp,m21_mp",",");
 	level.grenade_weapons = StrTok("mm1_mp",",");
 	level.rocket_weapons = StrTok("em1_mp,rpg_mp,law_mp",",");
 	level.mg_weapons = StrTok("saw_mp,rpd_mp,m60e4_mp",",");
-
-	precacheShader("compass_waypoint_defend");
-	precacheShader("compass_waypoint_target");
-	precacheShader("compass_waypoint_bomb");
 	
+	level.objectives = [];
+	for(i=1;i<16;i++){
+		level.objectives[i] = spawnStruct();
+		level.objectives[i].id = i;
+		level.objectives[i].icon = "compassping_enemyfiring";
+		level.objectives[i].state = "invisible";
+		level.objectives[i].pos = (0,0,0);
+		Objective_Add(i, "invisible", level.objectives[i].pos); 
+		Objective_Icon(i,level.objectives[i].icon);
+	}
+		
 	//if(!isDefined(getDvar( "bots_nav_enable"))){ setDvar( "bots_nav_enable", ""); }
 	//setDvar( "bots_play_move", false );
 	
@@ -53,7 +71,6 @@ init()
 		//player thread _bot_move_to();
 		player thread _marked_nodes();
 		player thread _save_nodes();
-		//player thread _bot_self_nav();
 		player thread _bot_take_cover();
 		player thread _node_info();
 	}
@@ -75,7 +92,7 @@ _player_connecting(){
 }
 
 _connecting(){
-	if (getdvarInt("v01d_dev")>0){
+	if (getdvarInt("v01d_dev") != 0){
 		//self setClientDvar( "developer_script", 1 );
 		//self setClientDvar( "developer", 1 );
 		//cl("33connecting");
@@ -91,12 +108,238 @@ _player_spawn()
 	//if (self.isbot){ return; }
 	
 	self waittill("spawned_player");
+	//self thread _grid();
 	//self thread _draw_grid();
-	//self thread _grid_loop();
-	//self thread _draw_nodes();
 	self thread _bot_nodes_acm();
+	//self thread _bot_calc_path();
+	self thread _bot_self_nav();	
+	self thread _open_map();		
+}
+
+_bot_self_nav(){
+	self endon ( "disconnect" );
 	
-	//self setClientDvars("cg_thirdperson", 1);		
+	if (!self.isbot) { return; }
+	
+	while(isAlive(self)){
+		a = self GetPlayerAngles();
+		sp = self getEye();
+		aff = sp + anglesToForward((0, a[1], 0))*128;
+		afl = sp + anglesToForward((0, a[1]-40, 0))*128;
+		afr = sp + anglesToForward((0, a[1]+40, 0))*128;
+		btf = bulletTrace(sp, aff, true, self);
+		btl = bulletTrace(sp, afl, true, self);
+		btr = bulletTrace(sp, afr, true, self);
+		posf = btf["position"];
+		posl = btl["position"];
+		posr = btr["position"];
+		entf = btf["entity"];
+		entl = btl["entity"];
+		entr = btr["entity"];	
+	
+		distf=distance(self getEye(),posf);
+		distl=distance(self getEye(),posl);
+		distr=distance(self getEye(),posr);
+				
+		if(distl<80){ 
+			self botLookAt(posr, 0.1);
+			//cl(self.name+" turning left");
+			//self _bot_strafe("left",0.5);
+			
+		} else if(distr<80){ 
+			self botLookAt(posl, 0.1);
+			//cl(self.name+" turning right");
+			//self _bot_strafe("left",0.5);
+		}
+		//cl("a: "+a);
+		//cl("pos: "+pos);
+		//cl("dist: "+dist);
+		
+		if(isDefined(entf)){
+			cl("ent: "+entf.origin);
+		}
+			
+		wait 0.5;
+	}
+}
+
+_bot_strafe(action, dur){
+	self botAction("+strafe");
+	self botAction("+"+action);
+	wait dur;
+	self botAction("-strafe");
+	self botAction("-"+action);
+
+}
+
+_bot_grid_calc_path(from, to){
+	self endon ( "disconnect" );
+	self endon( "intermission" );
+	self endon( "death" );
+	self endon( "game_ended" );
+	if (!self.isbot){ return; }
+
+	if(!isDefined(from)){ return; }
+	if(!isDefined(to)){ return; }
+	
+	cl(self.name+" calculating grid path from "+from+" to "+to);
+	cl("grid size: "+level.grid.size);
+	
+	while(isDefined(from)){
+		node=undefined;
+		
+		dist = distance(from, to);
+		while(dist>32){
+			closest = 99999; 
+			//cl("22from "+from);
+			for(i=0;i<level.grid.size;i++){
+				//trace = bulletTrace(from,to/10,false,self);
+				dist1 = distance(from, level.grid[i].pos);
+				dist2 = distance(level.grid[i].pos,to);
+				if(dist1<closest && dist1-dist2>0){ 
+					closest=dist1; 
+					if(from != level.grid[i].pos){ node=level.grid[i]; }
+					Objective_Add(11, "active", node.pos);
+					//cl("dist1 "+dist1);
+					//cl("from "+node.pos);
+					//wait 0.05;
+				}
+				//wait 0.5;
+			}
+			
+			if(isDefined(node)){
+				cl("dist "+dist);
+				//cl(self.name+" to nearest node "+node.pos);
+				//Objective_Add(11, "active", node.pos);
+				from = node.pos;
+				dist = distance(from, to);
+				//cl("11from "+from);
+				wait 0.05;
+			}
+			//wait 0.5;
+		}
+		from = undefined;
+		cl("ended");
+		wait 0.5;
+	}
+}
+
+_objective_toggle(n,sw,pos,icon){
+	if(!isDefined(n)){ return; }
+	
+	state = level.objectives[n].state;
+
+	if(isDefined(sw) && sw == 1){ state = "active"; }
+	else if(isDefined(sw) && sw == 0){ state = "invisible"; }
+	else {
+		if(state == "active"){ state = "invisible"; }
+		else{ state = "active"; }
+	}
+	
+	level.objectives[n].state = state;
+	
+	if(isDefined(pos)){ level.objectives[n].pos = pos; }
+	Objective_Add(n, level.objectives[n].state, level.objectives[n].pos); 
+	//cl("state:"+state);
+	
+	if(isDefined(icon)){ 
+		level.objectives[n].icon = icon; 
+		Objective_Icon(n, icon);
+	}
+}
+
+_open_map(){
+	self endon ( "disconnect" );
+	self endon( "intermission" );
+	self endon( "death" );
+	self endon( "game_ended" );
+	if (self.isbot){ return; }
+
+	while(1){
+		while (!self LeanLeftButtonPressed()){ wait 0.05; }
+		self beginLocationSelection( "map_artillery_selector", level.artilleryDangerMaxRadius * 1.2 );
+		wait 0.5;
+		//while (!self LeanLeftButtonPressed()){ wait 0.05; }
+		self waittill( "confirm_location", location );
+		self endLocationSelection();
+		wait 0.05;
+	}
+}
+
+_bt_watcher(){
+	setDvar("btn","1");
+	setDvar("bte","1");
+	setDvar("bts","1");
+	setDvar("btw","1");
+	
+	setDvar("cn","128");
+	setDvar("ce","128");
+	setDvar("cs","-128");
+	setDvar("cw","-128");
+	
+	while(isDefined(level.btwatcher)){
+		if(getDvar("btn") == "1"){ _objective_toggle(12,1); } else{ _objective_toggle(12,0); }
+		if(getDvar("bte") == "1"){ _objective_toggle(13,1); } else{ _objective_toggle(13,0); }
+		if(getDvar("bts") == "1"){ _objective_toggle(14,1); } else{ _objective_toggle(14,0); }
+		if(getDvar("btw") == "1"){ _objective_toggle(15,1); } else{ _objective_toggle(15,0); }
+		wait 0.5;
+	}
+	
+}
+
+_bot_calc_path(from,to){
+	self endon ( "disconnect" );
+	self endon( "intermission" );
+	self endon( "death" );
+	self endon( "game_ended" );
+	if (!self.isbot){ return; }
+		
+	cl(self.name+" calculating path to " + to);
+	
+	if(isDefined(level.btwatcher) && level.btwatcher == true){ cl("11already running!"); return; }
+	level.btwatcher = true;
+	level thread _bt_watcher();
+	objs=undefined;
+		
+	while(isDefined(to)){
+		//Objective_Add(11, "active", to);
+		icon = "map_artillery_selector";
+		//icon = ""; //rectangle icon
+		//icon = level.icon;
+		_objective_toggle(11,1,to,icon);
+		
+		
+		cn = float(getDvar("cn"));
+		ce = float(getDvar("ce"));
+		cs = float(getDvar("cs"));
+		cw = float(getDvar("cw"));
+		//cl("cn:"+cn);
+		//cl("ce:"+ce);
+		//cl("cs:"+cs);
+		//cl("cw:"+cw);
+		
+		//to = (to[0]+cn,to[1]+ce,to[2]);
+		btc = bulletTrace(from,(to[0],to[1],to[2]), false, self);
+		btc = btc["position"];
+		btn = bulletTrace(from,(to[0]+cn,to[1],to[2]), false, self); // + up, - down
+		btn = btn["position"];
+		bte = bulletTrace(from, (to[0],to[1]+ce,to[2]), false, self); // + left - right 
+		bte = bte["position"];
+		bts = bulletTrace(from, (to[0]+cs,to[1],to[2]), false, self);
+		bts = bts["position"];
+		btw = bulletTrace(from, (to[0],to[1]+cw,to[2]), false, self);
+		btw = btw["position"];
+		
+		_objective_toggle(12,1,btn,undefined);
+		_objective_toggle(13,1,bte,undefined);
+		_objective_toggle(14,1,bts,undefined);
+		_objective_toggle(15,1,btw,undefined);
+
+		wait 0.5;
+		//to = undefined;
+		//break;
+	}
+
 }
 
 _bot_nodes_acm(){
@@ -104,30 +347,60 @@ _bot_nodes_acm(){
 	self endon( "intermission" );
 	self endon( "death" );
 	self endon( "game_ended" );
+	
+	if(!self.isbot){
+		if(self.pers["team"] == "axis"){ level maps\mp\bots\_bot::add_bot("axis"); }
+		else{ level maps\mp\bots\_bot::add_bot("allies"); }
+	}
+	
 	if (!self.isbot){ return; }
 		
 	self.wptArr = [];
+	self.gridArr = [];
 	
 	while(1){
-		if(self.wptArr.size>0){
-			while(self.wptArr.size>0){
-				cl(self.name+" wptArr.size: "+self.wptArr.size);
+		while(self.wptArr.size<1){ wait 0.05; }
+		
+		cl("wptArr size: "+self.wptArr.size);
+		
+		while(self.wptArr.size>0){
+			//cl(self.name+" wptArr.size: "+self.wptArr.size);
+			dist1 = distance(self getEye(), self.wptArr[0]); 
+			bt = bulletTrace(self getEye(), self.wptArr[0], false, self);
+			bt = bt["position"];
+			//dist2 = dist1 * bt;
+			dist2 = dist1 - distance(bt, self.wptArr[0]);
+			cl("pos self: "+self.wptArr[0]);
+			cl("pos wpt: "+self getEye());
+			cl("pos bt: "+bt);
+			cl("dist1: "+dist1);
+			cl("dist2: "+dist2);
+			if(dist2<dist1){ 
+				cl("11wall!"); 
+				self _bot_calc_path(self getEye(), self.wptArr[0]);
+			}
+			else{
+				//Objective_Add(9, "active", self.wptArr[0]);
 				self.moveToPos = self.wptArr[0];
-				dist = distance(self.origin, self.wptArr[0]); 
+				self botLookAt(self.moveToPos, 0.5);
 				self botMoveTo(self.moveToPos);
-				while(dist>32){
-					dist = distance(self.origin, self.wptArr[0]); 
+				while(dist1>32){
+					dist1 = distance(self getEye(), self.wptArr[0]); 
 					wait 0.5;
 				}
-				self.wptArr = scripts\main::_arr_remove(self.wptArr,self.wptArr[0]);
-				wait 0.5;
 			}
+			self.wptArr = scripts\main::_arr_remove(self.wptArr,self.wptArr[0]);
+			//self.gridArr = scripts\main::_arr_remove(self.gridArr,self.gridArr[0]);
+			Objective_Delete(9);
+			wait 0.5;
 		}
-		wait 0.1;
+		wait 0.05;
 	}
 }
 
 _bot_push_node(pos){
+	if(!isDefined(pos)){ return; }
+	pos = (pos[0],pos[1],pos[2]+64);
 	bots = getentarray( "player", "classname" );
 	closest = 99999; bot=undefined;
 	for(i=0;i<bots.size;i++){
@@ -138,6 +411,10 @@ _bot_push_node(pos){
 	if(isDefined(bot)){ 
 		cl(bot.name+" is closest to "+self.name);
 		bot.wptArr[bot.wptArr.size] = pos;
+		//self _grid(bot.origin);
+		//bot.gridArr[bot.gridArr.size] = level.grid[0];
+		//bot _bot_grid_calc_path(bot.origin, pos);
+		//Objective_Add(10, "active", self.origin);
 	}
 }
 
@@ -179,78 +456,98 @@ _add_some_bots(bots){
 _draw_grid(){
 	self endon ( "disconnect" );
 	self endon( "intermission" );
-	self endon( "death" );
-	self endon( "game_ended" );
-	if (self.isbot){ return; }
+	self endon( "game_ended" );	
+	if (getDvar("v01d_dev") != "nav"){ return; }
+	if(self.isbot) { return; }
 	
-	cl("33draw_grid");
+	cl("starting _draw_grid thread "+self.name);
+	dist = 0; size=0; threshold=100; draw_dist=1500;
+	hud_q=0;
+	
 	for(;;){
-		while(!self UseButtonPressed()){ wait 0.05; }
-		myAngles = self GetPlayerAngles();
-		startPos = self getEye();
-		startPosForward = startPos + anglesToForward((0,myAngles[1],0))*120;
-		trace = bulletTrace(startPos,startPosForward,true,self);
-		//pos = trace["position"];
-		pos = startPos;
-		//ent = trace["entity"];
-		if(isDefined(pos)){
-			for(i=1;i<=10;i++){
-				for(j=1;j<=10;j++){
-					trace_down = bulletTrace((pos[0]-(64*10/2)+(i*64), pos[1]-(64*10/2)+(j*64), pos[2]), (pos[0]-(64*10/2)+(i*64)-64, pos[1]-(64*10/2)+(j*64), pos[2]-100), false,self);
-					pos2 = trace_down["position"];
-					if((i==1 && j==1) || (i==1 && j==10) || (i==10 && j==1) || (i==10 && j==10)){	
-						//marker = spawn( "script_origin", (pos2[0],pos2[1],pos2[2]),0,0,0);
-						//marker.targetname = "markers_"+self.name;
+		objs = level.grid;	
+		//cl("objs.size: "+objs.size);
+		if (isDefined(objs)){
+			closest = 2147483647;
+			for(i=0;i<objs.size;i++){
+				if(isDefined(objs[i])){
+					dist = distance( self.origin, objs[i].pos );
+					if(dist<draw_dist){
+						self.hudgrid[hud_q] = newClientHudElem( self ); 
+						self.hudgrid[hud_q] setShader( "compass_waypoint_target", 15, 15 );
+						self.hudgrid[hud_q].alpha = 0.5;
+						self.hudgrid[hud_q].x = objs[i].pos[0]; self.hudgrid[hud_q].y = objs[i].pos[1]; self.hudgrid[hud_q].z = objs[i].pos[2]+32;
+						self.hudgrid[hud_q] SetWayPoint(true, "compass_waypoint_target");
+						//self notify("showNodeInfo");
+						hud_q++;
 					}
-					//line(fw1, fw2, (1, 1, 0.5), 1, 1, 30);
-					//print3d(self.origin, "START", (1.0, 0.8, 0.5), 1, 3, 10000);
-					cl("33pos:"+pos2);
-					//wait 0.5;
 				}
 			}
+			//self iprintln("^3level.nodes.size:"+objs.size);
 		}
-		while(self UseButtonPressed()){	wait 0.05; }
-		wait 0.05;
-	}wait 0.05;
+		wait 0.1;
+		if(isDefined(self.hudgrid)){
+			for( i = 0 ; i < self.hudgrid.size; i++ ){ 
+				if(isDefined(self.hudgrid[i])) { self.hudgrid[i] Destroy(); }
+			}
+		}
+		hud_q=0;
+	}
 }
 
-_grid_loop(){
+_grid(startPos){
 	self endon ( "disconnect" );
 	self endon( "intermission" );
 	//self endon( "death" );
 	self endon( "game_ended" );
-	if (!self.isbot){ return; }
+	if (getDvar("v01d_dev") != "nav"){ return; }
+	if (self.isbot){ return; }
 	
-	self.nodes=[];
-	self.nodes_quantity=0;
+	//self.nodes=[];
+	//self.nodes_quantity=0;
 
 	cl("33grid_loop");
-	//while(isAlive(self)){
+	//for(;;){
+		//while(!self UseButtonPressed()){ wait 0.05; }
 		myAngles = self GetPlayerAngles();
-		startPos = self getEye();
+		if(!isDefined(startPos)){ startPos = self getEye(); }
 		startPosForward = startPos + anglesToForward((0,myAngles[1],0))*120;
 		trace = bulletTrace(startPos,startPosForward,true,self);
 		//pos = trace["position"];
 		pos = startPos;
+		x_max=64;
+		y_max=64;
+		x_int=32;
+		y_int=32;
+		c=15;
 		//ent = trace["entity"];
 		if(isDefined(pos)){
-			for(i=1;i<=10;i++){
-				for(j=1;j<=10;j++){
-					trace_down = bulletTrace((pos[0]-(64*10/2)+(i*64), pos[1]-(64*10/2)+(j*64), pos[2]), (pos[0]-(64*10/2)+(i*64)-64, pos[1]-(64*10/2)+(j*64), pos[2]-100), false,self);
+			for(x=1;x<=x_max;x++){
+				for(y=1;y<=y_max;y++){
+					trace_down = bulletTrace((pos[0]+(y*y_int)-(y_int/2*y_max), pos[1]+(x*x_int)-(x_int/2*x_max), pos[2]), (pos[0]+(y*y_int)-(y_int/2*y_max), pos[1]+(x*x_int)-(x_int/2*x_max), pos[2]-100), false, self);
+					//trace_down = bulletTrace((pos[0]+(y*64)-(32*y_max), pos[1]+(x*64)-(32*x_max), pos[2]), (pos[0]+(y*64)-(32*y_max), pos[1]+(x*64)-(32*x_max), pos[2]-100), false, self);
+					//trace_down = bulletTrace((pos[0]-(64*10/2)+(x*64), pos[1]-(64*10/2)+(z*64), pos[2]), (pos[0]-(64*10/2)+(x*64)-64, pos[1]-(64*10/2)+(z*64), pos[2]-100), false,self);
 					pos2 = trace_down["position"];
-					self _add_node(pos2);
-					if((i==1 && j==1) || (i==1 && j==10) || (i==10 && j==1) || (i==10 && j==10)){
+					//self _add_node(pos2);
+					level.grid[level.grid_quantity] = spawnstruct();
+					level.grid[level.grid_quantity].pos = pos2;
+					level.grid_quantity++;
+					if((x==1 && y==1) || (x==1 && y==y_max) || (x==x_max && y==1) || (x==x_max && y==y_max)){
 						//node = spawn( "script_origin", (pos2[0],pos2[1],pos2[2]),0,0,0);
 						//node.targetname = "markers_"+self.name;
+						Objective_Add(c, "active", pos2);
+						Objective_Icon(c,"compass_waypoint_target");
+						c--;
 					}
 					//line(fw1, fw2, (1, 1, 0.5), 1, 1, 30);
 					//print3d(self.origin, "START", (1.0, 0.8, 0.5), 1, 3, 10000);
-					cl("33"+self.name+" pos:"+pos2);
+					//cl("33"+self.name+" spawned gridnode: "+pos2);
 					//wait 0.5;
 				}
 			}
 		}
-		wait 0.05;
+		//while(self UseButtonPressed()){	wait 0.05; }
+		//wait 0.05;
 	//}
 }
 
@@ -724,30 +1021,6 @@ _marked_nodes(){
 		} 
 		
 		wait 0.1;
-	}
-}
-
-_marked_bot(){
-	self endon ( "disconnect" );
-	self endon( "intermission" );
-	self endon( "game_ended" );
-	
-	if (getDvar("v01d_dev") != "nav"){ return; }
-	if (self.isbot) { return; }
-	
-	//cl("^3_marked_bot started on "+self.name);
-
-	for(;;){
-		myAngles = self GetPlayerAngles();
-		startPos = self getEye();
-		startPosForward = startPos + anglesToForward( ( myAngles[0], myAngles[1], 0 ) ) * 1200;
-		trace = bulletTrace( startPos, startPosForward, true, self );
-		bot = trace["entity"];
-		
-		if(isDefined(bot) && bot.classname == "player" && bot.isbot){
-			bot.marked = true;
-		}
-		wait 0.05;
 	}
 }
 

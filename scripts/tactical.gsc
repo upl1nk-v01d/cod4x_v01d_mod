@@ -63,24 +63,6 @@ _add_some_bots(bots){
 	}
 }
 
-_bot_self_nav(){
-	self endon ( "disconnect" );
-	self endon( "intermission" );
-	self endon( "game_ended" );
-	
-	if (!getdvarint("developer")>0){ return; }
-	if (!self.isbot) { return; }
-
-	for(;;){
-		if(isAlive(self)){
-			//self.execute=true;
-			//cl("executed");	
-			wait 5;
-		}
-		wait 1;
-	}
-}
-
 _openMap(){
 	self beginLocationSelection( "map_artillery_selector", level.artilleryDangerMaxRadius * 1.2 );
 	self endon( "stop_location_selection" );
@@ -94,8 +76,6 @@ _openMap(){
 	self iprintln(location);
 	return true;
 }
-
-
 
 _hud_draw_tagged(){
 	self endon ( "disconnect" );
@@ -162,6 +142,30 @@ _hud_draw_squad(){
 				if(isDefined(objs[i])){ self.hud_squad[i] Destroy(); } 
 			}
 		}
+	}
+}
+
+_marked_bot(){
+	self endon ( "disconnect" );
+	self endon( "intermission" );
+	self endon( "game_ended" );
+	
+	if (getDvar("v01d_dev") != "nav"){ return; }
+	if (self.isbot) { return; }
+	
+	//cl("^3_marked_bot started on "+self.name);
+
+	for(;;){
+		myAngles = self GetPlayerAngles();
+		startPos = self getEye();
+		startPosForward = startPos + anglesToForward( ( myAngles[0], myAngles[1], 0 ) ) * 1200;
+		trace = bulletTrace( startPos, startPosForward, true, self );
+		bot = trace["entity"];
+		
+		if(isDefined(bot) && bot.classname == "player" && bot.isbot){
+			bot.marked = true;
+		}
+		wait 0.05;
 	}
 }
 

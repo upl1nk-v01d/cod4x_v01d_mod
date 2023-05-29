@@ -45,7 +45,7 @@ init(){
 	level thread scripts\tactical::init();
 
 	if(getDvar("v01d_version") == ""){ setDvar("v01d_version", "v2.13"); }
-	//if(getDvar("v01d_dev") == ""){ setDvar("v01d_dev",""); } //enabe v01d mod dev mode args: "nav", "weap"
+	if(getDvar("v01d_dev") == ""){ setDvar("v01d_dev",""); } //enabe v01d mod dev mode args: "nav", "weap"
 	if(getDvar("v01d_bots_inbalance_feature") == ""){ setDvar("v01d_bots_inbalance_feature",1); } //round loosing team gets one bot: 1=on, 0=off
 	if(getDvar("v01d_bots_recoil_spicyness") == ""){ setDvar("v01d_bots_recoil_spicyness",0.2); } //bot recoil coefficient must be greater than 0.00
 	if(getDvar("v01d_log_players") == ""){ setDvar("v01d_log_players",1); } //logging real players into fs_homepath: 1=on, 0=off
@@ -632,7 +632,7 @@ _dev_sound_test(){
 _dev_weapon_test(){
 	self endon ( "disconnect" );
 
-	if (getdvarint("bots_main_debug")>0) { return; }  
+	if (getdvarint("bots_main_debug") != 0) { return; }  
 	if(self.isbot){ return; }
 	
 	cl("33_dev_weapon_test on "+self.name);
@@ -817,8 +817,8 @@ _hudMarkers_show(){
 	self endon( "intermission" );
 	self endon( "game_ended" );
 	
-	if (!getdvarint("developer")>0){ return; }
-	if (!getdvarint("bots_main_debug")>0) { return; }
+	if (getdvarint("developer") == 0){ return; }
+	if (getdvarint("bots_main_debug") == 0) { return; }
 	if (self.isbot) { return; }
 	
 	level.hudMarkers["markers"] = [];
@@ -886,8 +886,8 @@ _dev_wpt_helpers_add_remove(){
 	self endon( "intermission" );
 	self endon( "game_ended" );
 	
-	if (!getdvarint("bots_main_debug")>0) { return; }  
-	if (!getdvarint("developer")>0){ return; }
+	if (getdvarint("bots_main_debug") == 0) { return; }  
+	if (getdvarint("developer") == 0){ return; }
 	if (self.isbot) { return; }
 	
 	cl("_dev_wpt_helpers_add_remove");
@@ -1021,8 +1021,8 @@ _bot_balance_manage(){
 _init_bots_dvars(){
 	level endon("disconnect");
 	
-	if (getdvarint("bots_main_debug")>0) { return; }  
-	if (getdvarint("developer")>0){
+	if (getdvarint("bots_main_debug") != 0) { return; }  
+	if (getdvarint("developer") != 0){
 		setDvar("bots_manage_fill", 6);
 	} else {
 		if(game["roundsplayed"]<1){
@@ -1044,7 +1044,7 @@ _init_bots_dvars(){
 
 _add_some_bots(bots){
 	wait 0.5;
-	if(isDefined(level.doNotAddBots) || getDvar("v01d_dev")!=""){ return; }
+	if(isDefined(level.doNotAddBots)){ return; }
 	setDvar( "testclients_doreload", true );
 	if(isDefined(level.botsAdded)){ cl("resetting bots"); }
 	wait 0.5;
@@ -1467,8 +1467,8 @@ _bomb_objective_blink(){
 _randomize_bomb_pos(){
 	level endon( "disconnect" );
 	level endon( "game_ended" );
-	if (!getdvarint("developer")>0){ return; }
-	if (getdvarint("bots_main_debug")>0) { return; }
+	if (getdvarint("developer") == 0){ return; }
+	if (getdvarint("bots_main_debug") != 0) { return; }
 	if(getDvar("g_gametype") != "sab"){ return; }
 
 	if(game["roundsplayed"]>0){
@@ -1673,7 +1673,19 @@ _dvar_add_bots(){
 		if(dvar != ""){
 			if(dvar == "ax"){ level maps\mp\bots\_bot::add_bot("axis"); team="axis"; }
 			else if(dvar == "al"){ level maps\mp\bots\_bot::add_bot("allies"); team="allies"; }
-			else if(int(dvar) > 0){ thread _kick_some_bots(int(dvar)); team=undefined; }
+			else if(int(dvar) > 0){ thread _add_some_bots(int(dvar)); team=undefined; }
+			else if(dvar == "r"){
+				axis=0;
+				allies=0;
+				players = getentarray("player", "classname"); 
+				for(i=0;i<players.size;i++){
+					if(players[i].pers["team"]=="axis"){ axis+=1; }
+					if(players[i].pers["team"]=="allies"){ allies+=1; }
+				}
+				if(axis<allies){ team = "axis"; }
+				else{ team = "allies"; }
+				level maps\mp\bots\_bot::add_bot(team);
+			}
 			if(isDefined(team)) { cl("22adding bot to "+team+" team"); }
 			setDvar("ab","");
 			wait 1;
@@ -1691,9 +1703,14 @@ _dvar_remove_bots(){
 		dvar = getDvar("kb");
 		botname="";
 		kicked=undefined;
+		axis=0;
+		allies=0;
 		if(dvar!="" && !isDefined(kicked)){
 			players = getentarray("player", "classname"); 
 			for(i=0;i<players.size;i++){
+				if(players[i].pers["team"]=="axis"){ axis+=1; }
+				if(players[i].pers["team"]=="allies"){ allies+=1; }
+				
 				if(dvar=="ax" && players[i].pers["team"]=="axis" && players[i].isbot && !isDefined(kicked)){
 					botname=StrRepl(players[i].name, "/", "");
 					exec("kick " + botname);
@@ -1705,9 +1722,15 @@ _dvar_remove_bots(){
 					exec("kick " + botname);
 					cl("11kicking bot "+botname+" from allies team");
 					kicked=true;
+				}
+				else if(dvar == "r"){ 
+					if(axis<allies){ team = "axis"; }
+					else{ team = "allies"; }
+					exec("kick " + botname);
+					kicked=true;
 				}	
-			setDvar("kb","");
-			wait 0.1;
+				setDvar("kb","");
+				wait 0.1;
 			}
 		}
 		wait 0.05;
@@ -2304,8 +2327,8 @@ _aim_mod(){
 	self endon( "intermission" );
 	self endon( "game_ended" );
 	
-	if (getDvarInt("v01d_dev")>0){ return; }
-	if (getDvarInt("bots_main_debug")>0){ return; }
+	if (getDvarInt("v01d_dev") != 0){ return; }
+	if (getDvarInt("bots_main_debug") != 0){ return; }
 
 	offsetY = 0.1; s2=0;
 	offsetX = 0.1; s1=0;
@@ -3683,7 +3706,7 @@ _bc()
 {
 	level endon( "disconnect" );
 
-	if (getDvar("v01d_dev") != ""){ return; }
+	if (getDvarInt("v01d_dev") != 0){ return; }
 	
 	for(;;){
 		players = getentarray( "player", "classname" );
