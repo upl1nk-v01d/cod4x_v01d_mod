@@ -6,7 +6,7 @@
 init(){
 	//if (!getdvarint("developer")>0){ return; }
 	if (getdvarint("bots_main_debug")>0){ return; }
-	if (getdvarint("v01d_dev")>0){ return; }
+	if (getdvarint("v01d_dev") != 0){ return; }
 	
 	if (!isDefined(game["MOTD"])){ game["MOTD"]=[]; }
 	if (!isDefined(game["MOTD"]["dateTimes"])){ game["MOTD"]["dateTimes"]=[]; }
@@ -1003,7 +1003,8 @@ _map_datetime_menu(){
 	wait 1;
 	for(;;){
 		dev=getDvar("v01d_dev");
-		if(isDefined(dev) && dev!=""){ dev = "v01d devmode"; }
+		if(isDefined(dev) && dev != "" && dev != "0"){ dev = "v01d devmode"; }
+		else{ dev = "";}
 		version=getDvar("v01d_version");
 		map=getDvar("mapname");
 		realTime = getRealTime();

@@ -44,7 +44,7 @@ init(){
 	level thread scripts\bots_nav::init();
 	level thread scripts\tactical::init();
 
-	if(getDvar("v01d_version") == ""){ setDvar("v01d_version", "v2.13"); }
+	if(getDvar("v01d_version") == ""){ setDvar("v01d_version", "v2.17"); }
 	if(getDvar("v01d_dev") == ""){ setDvar("v01d_dev",""); } //enabe v01d mod dev mode args: "nav", "weap"
 	if(getDvar("v01d_bots_inbalance_feature") == ""){ setDvar("v01d_bots_inbalance_feature",1); } //round loosing team gets one bot: 1=on, 0=off
 	if(getDvar("v01d_bots_recoil_spicyness") == ""){ setDvar("v01d_bots_recoil_spicyness",0.2); } //bot recoil coefficient must be greater than 0.00
@@ -56,8 +56,7 @@ init(){
 	if(getDvar("v01d_maps_randomizer") == ""){ setDvar("v01d_maps_randomizer",1); } //random map loading on match end: 1=on, 0=off
 	if(getDvar("v01d_suicide_sfx") == ""){ setDvar("v01d_suicide_sfx",1); } //suicide screaming sounds: 1=on, 0=off
 	if(getDvar("v01d_knifed_sfx") == ""){ setDvar("v01d_knifed_sfx",1); } //knifed screaming sounds: 1=on, 0=off
-	
-	
+		
 	setDvar("pl",""); //in terminal argument a = show all players, r = real players, b = bot players
 	setDvar("m",""); //in terminal argument i = show current map and team score, f = fast restart, r = brutal restart
 	setDvar("timescale", 1);
@@ -75,6 +74,23 @@ init(){
 	}
 
 	if (getDvar("g_gametype") == "") { setDvar("g_gametype","sab"); }
+	
+	if (!isDefined(game["waypointless_map"])){ game["waypointless_map"]="off"; }
+	if (!isDefined(game["realPlayers"])){ game["realPlayers"]=0; }
+	if (!isDefined(game["botPlayers"])){ game["botPlayers"]=0; }
+	if (!isDefined(game["isConnecting"])){ game["isConnecting"]=[]; }
+	if (!isDefined(game["isJoinedSpectators"])){ game["isJoinedSpectators"]=[]; }
+	if (!isDefined(game["nextMap"])){ game["nextMap"]=""; }
+	if (!isDefined(game["nextMapIndex"])){ game["nextMapIndex"]=0; }
+	if (!isDefined(game["prevMap"])){ game["prevMap"]=""; }
+	if (!isDefined(game["mapList"])){ game["mapList"]=[]; }
+	if (!isDefined(game["teamWonRound"])){ game["teamWonRound"]=""; }
+	if (!isDefined(game["devmode"])){ game["devmode"]="off"; }
+	
+	if(!isDefined(game["_t_m_static"])){game["_t_m_static"] = randomIntRange(1, 15);}
+	if(!isDefined(game["_ct_m_static"])){game["_ct_m_static"] = randomIntRange(1, 5);}
+	if(!isDefined(game["_t_m_"])){game["_t_m_"] = game["_t_m_static"];}
+	if(!isDefined(game["_ct_m_"])){game["_ct_m_"] = game["_t_m_static"];}
 	
 	level._maps = StrTok("mp_ancient_ultimate,12,mp_carentan,14,mp_rasalem,12,mp_efa_lake,8,mp_bo2carrier,12,mp_bog,16,mp_summit,18,mp_backlot,16,mp_harbor_v2,16,mp_sugarcane,8,mp_csgo_assault,12,mp_csgo_inferno,12,mp_csgo_office,12,mp_csgo_overpass,12,mp_csgo_mirage,12,mp_finca,12,mp_csgo_safehouse,10,mp_csgo_cbble,12,mp_csgo_shortdust,12,mp_csgo_stmarc,8,mp_ins_panj,10,mp_creek,12,mp_csgo_mirage,12,mp_csgo_overpass,12,mp_ins_heights,12,mp_ins_peak,12", "," );
 	level._weapons = StrTok("knife_mp", "," );
@@ -116,22 +132,6 @@ init(){
 	level.playedStartingMusic=true;
 	level.kickOneBot=undefined;
 	level.addOneBot=undefined;
-
-	if (!isDefined(game["waypointless_map"])){ game["waypointless_map"]="off"; }
-	if (!isDefined(game["realPlayers"])){ game["realPlayers"]=0; }
-	if (!isDefined(game["botPlayers"])){ game["botPlayers"]=0; }
-	if (!isDefined(game["isConnecting"])){ game["isConnecting"]=[]; }
-	if (!isDefined(game["isJoinedSpectators"])){ game["isJoinedSpectators"]=[]; }
-	if (!isDefined(game["nextMap"])){ game["nextMap"]=""; }
-	if (!isDefined(game["nextMapIndex"])){ game["nextMapIndex"]=0; }
-	if (!isDefined(game["prevMap"])){ game["prevMap"]=""; }
-	if (!isDefined(game["mapList"])){ game["mapList"]=[]; }
-	if (!isDefined(game["teamWonRound"])){ game["teamWonRound"]=""; }
-	
-	if(!isDefined(game["_t_m_static"])){game["_t_m_static"] = randomIntRange(1, 15);}
-	if(!isDefined(game["_ct_m_static"])){game["_ct_m_static"] = randomIntRange(1, 5);}
-	if(!isDefined(game["_t_m_"])){game["_t_m_"] = game["_t_m_static"];}
-	if(!isDefined(game["_ct_m_"])){game["_ct_m_"] = game["_t_m_static"];}
 
 	if (level.waypointCount == 0) {
 		game["waypointless_map"]="on";
@@ -4098,7 +4098,9 @@ _changeBotWeapon(){
 
 	self takeAllWeapons(); 
 	wait 0.3;
-
+	self GiveWeapon("knife_mp");
+	self setSpawnWeapon("knife_mp");
+	
 	for(i=0;i<2;i++){	//give 2 weapons to bot
 		w2=randomIntRange(0,level.botsWeapons.size);
 		self GiveWeapon( level.botsWeapons[w2] );

@@ -4,28 +4,35 @@
 
 init()
 {	
-	//setDvar("v01d_dev","nav");
-
-	if (getDvar("v01d_dev") == "nav"){
-		//setdvar( "developer_script", 1 );
-		//setdvar( "developer", 1 );		
-		//setdvar( "sv_mapRotation", "map " + getDvar( "mapname" ) );
-		//exitLevel( false );
-		setDvar( "bots_play_move", 0 );
-		setDvar( "bots_fire_ext", 0 );
-		setDvar( "bots_aim_ext", 0 );
-		level.doNotAddBots=true;
-	}
-	
-	//if (!getdvarint("v01d_dev")>0){ return; }
-	if (getdvarint("bots_main_debug")>0) { return; }
-	
 	precacheShader("compass_waypoint_defend");
 	precacheShader("compass_waypoint_target");
 	precacheShader("compass_waypoint_bomb");
 	precacheShader("compassping_enemy"); 
+	precacheShader("compassping_enemyfiring"); 
 	precacheShader("compassping_player"); 
 	precacheShader("map_artillery_selector"); 
+	
+	//setDvar("v01d_dev","nav");
+
+	if (getDvar("v01d_dev") == "nav"){
+		if (isDefined(game["devmode"]) && game["devmode"] != "on"){ 
+			game["devmode"]="on"; 
+			//setdvar( "developer_script", 1 );
+			//setdvar( "developer", 1 );		
+			//setdvar( "sv_mapRotation", "map " + getDvar( "mapname" ) );
+			exitLevel( false );
+			setDvar( "bots_play_move", 0 );
+			setDvar( "bots_fire_ext", 0 );
+			setDvar( "bots_aim_ext", 0 );
+			level.doNotAddBots=true;
+			//wait 5;
+		}
+	} else {
+		game["devmode"] = "off";
+	}
+	
+	//if (!getdvarint("v01d_dev")>0){ return; }
+	if (getdvarint("bots_main_debug")>0) { return; }
 
 	level.icon = "map_artillery_selector";
 	
@@ -108,10 +115,12 @@ _player_spawn()
 	//if (self.isbot){ return; }
 	
 	self waittill("spawned_player");
+	
+	if (getDvar("v01d_dev") != "nav"){ return; }
+	
 	//self thread _grid();
 	//self thread _draw_grid();
 	self thread _bot_nodes_acm();
-	//self thread _bot_calc_path();
 	self thread _bot_self_nav();	
 	self thread _open_map();		
 }
@@ -155,9 +164,9 @@ _bot_self_nav(){
 		//cl("pos: "+pos);
 		//cl("dist: "+dist);
 		
-		if(isDefined(entf)){
-			cl("ent: "+entf.origin);
-		}
+		//if(isDefined(entf)){
+		//	cl("ent: "+entf.origin);
+		//}
 			
 		wait 0.5;
 	}
@@ -274,8 +283,8 @@ _bt_watcher(){
 	
 	setDvar("cn","128");
 	setDvar("ce","128");
-	setDvar("cs","-128");
-	setDvar("cw","-128");
+	setDvar("cs","128");
+	setDvar("cw","128");
 	
 	while(isDefined(level.btwatcher)){
 		if(getDvar("btn") == "1"){ _objective_toggle(12,1); } else{ _objective_toggle(12,0); }
@@ -285,6 +294,212 @@ _bt_watcher(){
 		wait 0.5;
 	}
 	
+}
+
+_calc_indents(pos){
+	//cn = float(getDvar("cn"));
+	//ce = float(getDvar("ce"));
+	//cs = float(getDvar("cs"));
+	//cw = float(getDvar("cw"));
+		
+	//cl("cn:"+cn);
+	//cl("ce:"+ce);
+	//cl("cs:"+cs);
+	//cl("cw:"+cw);
+	
+	//to = (to[0]+cn,to[1]+ce,to[2]);
+	
+	//tg = (btn[0]+(btc[0]-btn[0])+(btc[0]-bts[0]),bte[1]+(btc[1]-bte[1])+(btc[1]-btw[1]),btc[2]);
+	//tg = (bte[0]+(bte[0]-btc[0]),bte[1],bte[2]);
+	//tg = (bts[0],bts[1]+(bts[1]-btc[1]),bts[2]);
+	//tg = (btw[0],btw[1]+(btw[1]-btc[1]),btw[2]);
+
+	afn = pos + anglesToForward((0,90,0)*32);
+	afe = pos + anglesToForward((0,0,90)*32);
+	afs = pos + anglesToForward((0,-90,0)*32);
+	afw = pos + anglesToForward((0,0,-90)*32);
+
+	btn = bulletTrace(pos,(pos[0]+32,pos[1],pos[2]), false, self); // + up, - down
+	btn = btn["position"];
+	bte = bulletTrace(pos,(pos[0],pos[1]+32,pos[2]), false, self); // + left - right 
+	bte = bte["position"];
+	bts = bulletTrace(pos,(pos[0]-32,pos[1],pos[2]), false, self);
+	bts = bts["position"];
+	btw = bulletTrace(pos,(pos[0],pos[1]-32,pos[2]), false, self);
+	btw = btw["position"];
+	
+	//_objective_toggle(11,1,to,icon);
+	//_objective_toggle(12,1,btn,undefined);
+	//_objective_toggle(13,1,bte,undefined);
+	//_objective_toggle(14,1,bts,undefined);
+	//_objective_toggle(15,1,btw,undefined);
+	
+	//pos = from;
+
+	dist1 = distance(pos,btn);
+	dist2 = distance(pos,bte);
+	dist3 = distance(pos,bts);
+	dist4 = distance(pos,btw);
+	
+	//cl("dist1: "+dist1); 
+	//cl("dist2: "+dist2); 
+	//cl("dist3: "+dist3); 
+	//cl("dist4: "+dist4); 
+	
+	//if(dist1>dist2 && dist1>dist3 && dist1>dist4){ to = btn; cl("dist1"); }
+	//if(dist2>dist1 && dist2>dist3 && dist2>dist4){ to = bte; cl("dist2"); }
+	//if(dist3>dist1 && dist3>dist2 && dist3>dist4){ to = bts; cl("dist3"); }
+	//if(dist4>dist1 && dist4>dist2 && dist4>dist3){ to = btw; cl("dist4"); } 
+
+	distx=dist2-dist4;
+	disty=dist1-dist3;
+		
+	pos = (pos[0]+disty,pos[1]+distx,pos[2]);
+		
+	return pos;
+}
+
+_chk_dest_dist(from,to){
+	wptl = from;
+	wptr = from;
+	wptlp = from;
+	wptrp = from;
+	wptlArr = [];
+	wptrArr = [];
+	btl = undefined;
+	btr = undefined;
+	al = (0,0,0);
+	ar = (0,0,0);
+	alm = 0;
+	arm = 0;
+	matched1 = false;
+	matched2 = false;
+	match1 = (0,0,0);
+	match2 = (0,0,0);
+	threshold=100;
+	c=0;
+	while(c<100){	
+		al = VectorToAngles(from-to);
+		ar = VectorToAngles(from-to);
+		if(isDefined(wptl)){ al = VectorToAngles(wptl-to); }
+		if(isDefined(wptr)){ ar = VectorToAngles(wptr-to); }
+		if(isDefined(matched1)){ ar = VectorToAngles(match1-to); }
+		if(isDefined(matched2)){ ar = VectorToAngles(match2-to); }
+		//if(isDefined(matched)){ al = VectorToAngles(wptr-to); }
+		//if(isDefined(matcheself.calculating = undefined;d)){ ar = VectorToAngles(wptr-to); }
+		//afl = wptl + anglesToForward((a[0],a[1]+90,a[2]+al))*32;
+		//afr = wptr + anglesToForward((a[0],a[1]-90,a[2]+al))*32;
+		afl = wptl + anglesToForward((0,al[1]+90+alm,0))*32; // Y X Z
+		afr = wptr + anglesToForward((0,ar[1]-90+arm,0))*32;
+		aflf = wptl + anglesToForward((0,0,al[2]+90))*32;
+		afrf = wptr + anglesToForward((0,0,ar[2]+90))*32;
+
+		btl = bulletTrace(wptl, afl, false, self);
+		btr = bulletTrace(wptr, afr, false, self);
+		btlf = bulletTrace(wptl, aflf, false, self);
+		btrf = bulletTrace(wptr, afrf, false, self);
+		
+		btl = btl["position"];
+		btr = btr["position"];
+		btlf = btlf["position"];
+		btrf = btrf["position"];
+
+		btl = _calc_indents(btl);
+		btr = _calc_indents(btr);
+		btlf = _calc_indents(btlf);
+		btrf = _calc_indents(btrf);
+		
+		dist1 = distance(btl,wptl);
+		dist2 = distance(btr,wptr);
+		//cl("dist1:"+dist1);
+		//cl("dist2:"+dist2);
+		//if(isDefined(btl)){ dist1 = distance(wptl,btl); }
+		//if(isDefined(btr)){ dist2 = distance(wptr,btr); }
+		if(dist1<20){ alm += 45; }
+		if(dist2<20){ arm -= 45; }
+
+		distlf = distance(btl,btlf);
+		distrf = distance(btr,btrf);
+		
+		if(distlf>20){ wptl = btlf; }
+		if(distrf>20){ wptr = btrf; }
+		
+		//cl("distlf:"+distlf);
+		//cl("distrf:"+distrf);
+		
+		match1 = bulletTrace(btl, to, false, self);
+		match2 = bulletTrace(btr, to, false, self);
+		match1 = match1["position"];
+		match2 = match2["position"];
+		dist1m = distance(match1,to);
+		dist2m = distance(match2,to);
+		
+		//cl("dist1m:"+dist1m);
+		//cl("dist2m:"+dist2m);
+
+		_objective_toggle(11,1,btl,"map_artillery_selector");
+		_objective_toggle(12,1,btr,"");
+		//if(dist1m<1 || dist2m <1 && !isDefined(matched)){ 
+			//matched = true;
+			//self.calculating = undefined; 
+			//break;
+		//}		
+		if(dist1m<5){ 
+			al = VectorToAngles(match1-to); 
+			matched1 = true; 
+			alm = 90;
+		}
+		if(dist2m<5){ 
+			ar = VectorToAngles(match2-to); 
+			matched2 = true; 
+			arm = -90;
+		}
+		
+		//from = btl;
+		wptl = (btl[0],btl[1],btl[2]);
+		wptlArr[wptlArr.size] = wptl;
+		//wptlp = wptl;
+		//self _add_node((wptl[0],wptl[1],wptl[2])); // 2 = Up/Down [Y]
+		//from = btr;
+		wptr = (btr[0],btr[1],btr[2]);
+		wptrArr[wptlArr.size] = wptr;
+		//wptrp = wptr;
+		//self _add_node((wptr[0],wptr[1],wptr[2]));
+		//self.wptArr[self.wptArr.size] = wpt;
+		//wait 0.05;
+		_objective_toggle(11,0,wptl,"");
+		_objective_toggle(12,0,wptr,"");
+		
+		dist1 = distance(wptl,to);
+		dist2 = distance(wptr,to);
+		
+		cl("distl:"+dist1);
+		cl("distr:"+dist2);
+		//cl("wptl:"+wptl);
+		//cl("wptr:"+wptr);
+		
+
+		if(dist1 < 64){ matched1 = true; cl("matched1"); c=threshold; self.wptArr = wptlArr; }
+		else if(dist2 < 64){ matched2 = true; cl("matched2"); c=threshold; self.wptArr = wptrArr; }
+		
+
+		if(matched1){ _objective_toggle(11,1,match1,"map_artillery_selector"); }
+		if(matched2){ _objective_toggle(12,1,match2,""); }
+		
+		//if(dist1m < 1){ matched1 = true; cl("22matched1"); c=threshold; wptlArr[wptlArr.size-1] = match1; self.wptArr = wptlArr; }
+		//else if(dist2m < 1){ matched2 = true; cl("22matched2"); c=threshold; wptrArr[wptrArr.size-1] = match2; self.wptArr = wptrArr; }
+		
+		if(matched1 || matched2){ 
+			self.calculating = "success";
+			break; 
+		}
+		
+		c++; cl("c:"+c);
+		if(c>threshold){ 
+			self.calculating = "failed";
+			break;
+		}
+	}
 }
 
 _bot_calc_path(from,to){
@@ -298,47 +513,36 @@ _bot_calc_path(from,to){
 	
 	if(isDefined(level.btwatcher) && level.btwatcher == true){ cl("11already running!"); return; }
 	level.btwatcher = true;
-	level thread _bt_watcher();
+	//level thread _bt_watcher();
 	objs=undefined;
+	self.calculating = undefined;
 		
-	while(isDefined(to)){
+	icon = "map_artillery_selector";
+	//_objective_toggle(11,1,to,icon);
+		
+	//while(isDefined(self.calculating) && self.calculating == ""){
 		//Objective_Add(11, "active", to);
-		icon = "map_artillery_selector";
+		
 		//icon = ""; //rectangle icon
 		//icon = level.icon;
-		_objective_toggle(11,1,to,icon);
+		//_objective_toggle(11,1,to,icon);
 		
+		//wait 1;
 		
-		cn = float(getDvar("cn"));
-		ce = float(getDvar("ce"));
-		cs = float(getDvar("cs"));
-		cw = float(getDvar("cw"));
-		//cl("cn:"+cn);
-		//cl("ce:"+ce);
-		//cl("cs:"+cs);
-		//cl("cw:"+cw);
-		
-		//to = (to[0]+cn,to[1]+ce,to[2]);
-		btc = bulletTrace(from,(to[0],to[1],to[2]), false, self);
-		btc = btc["position"];
-		btn = bulletTrace(from,(to[0]+cn,to[1],to[2]), false, self); // + up, - down
-		btn = btn["position"];
-		bte = bulletTrace(from, (to[0],to[1]+ce,to[2]), false, self); // + left - right 
-		bte = bte["position"];
-		bts = bulletTrace(from, (to[0]+cs,to[1],to[2]), false, self);
-		bts = bts["position"];
-		btw = bulletTrace(from, (to[0],to[1]+cw,to[2]), false, self);
-		btw = btw["position"];
-		
-		_objective_toggle(12,1,btn,undefined);
-		_objective_toggle(13,1,bte,undefined);
-		_objective_toggle(14,1,bts,undefined);
-		_objective_toggle(15,1,btw,undefined);
+		from = bulletTrace(from,(to[0],to[1],to[2]), false, self);
+		from = from["position"];
+		from = _calc_indents(from);
 
-		wait 0.5;
+		self _chk_dest_dist(from,to);
+				
+		while(isDefined(self.calculating) && self.calculating != "failed" && self.calculating != "success"){ wait 0.05; };
+		cl("22calc ended");
+		//self.calculating = undefined;
+		cl("self.calculating:"+ self.calculating);
+		wait 0.05;
 		//to = undefined;
 		//break;
-	}
+	//}
 
 }
 
@@ -357,42 +561,78 @@ _bot_nodes_acm(){
 		
 	self.wptArr = [];
 	self.gridArr = [];
+	self.calculating = undefined;
+	nr=undefined;
 	
 	while(1){
 		while(self.wptArr.size<1){ wait 0.05; }
 		
 		cl("wptArr size: "+self.wptArr.size);
-		
-		while(self.wptArr.size>0){
-			//cl(self.name+" wptArr.size: "+self.wptArr.size);
-			dist1 = distance(self getEye(), self.wptArr[0]); 
-			bt = bulletTrace(self getEye(), self.wptArr[0], false, self);
+								
+		for(i=0;i<self.wptArr.size;i++){
+			if(isDefined(self.wptArr[i])){
+				//self.wptArr = scripts\main::_arr_remove(self.wptArr,self.wptArr[i]);
+				nr = i;
+				break;
+			}
+		}
+
+		while(self.wptArr.size>0 && isDefined(nr) && isDefined(self.wptArr[nr])){
+			cl(self.name+" wptArr.size: "+self.wptArr.size);
+			dist1 = distance(self getEye(), self.wptArr[nr]); 
+			bt = bulletTrace(self getEye(), self.wptArr[nr], false, self);
 			bt = bt["position"];
 			//dist2 = dist1 * bt;
-			dist2 = dist1 - distance(bt, self.wptArr[0]);
-			cl("pos self: "+self.wptArr[0]);
+			dist2 = dist1 - distance(bt, self.wptArr[nr]);
+			cl("pos self: "+self.wptArr[nr]);
 			cl("pos wpt: "+self getEye());
 			cl("pos bt: "+bt);
 			cl("dist1: "+dist1);
 			cl("dist2: "+dist2);
-			if(dist2<dist1){ 
+			if(dist2<dist1 && !isDefined(self.calculating)){ 
 				cl("11wall!"); 
-				self _bot_calc_path(self getEye(), self.wptArr[0]);
+				self.calculating = "processing";
+				self _bot_calc_path(self getEye(), self.wptArr[nr]);
+				level.btwatcher = undefined;
 			}
-			else{
+			//else{
 				//Objective_Add(9, "active", self.wptArr[0]);
-				self.moveToPos = self.wptArr[0];
+				if(isDefined(self.calculating) && self.calculating != "success"){ 
+					//self.wptArr = scripts\main::_arr_remove(self.wptArr,self.wptArr[nr]);
+					nr = undefined;
+					self.calculating = undefined;
+					break; 
+				}
+				self.moveToPos = self.wptArr[nr];
 				self botLookAt(self.moveToPos, 0.5);
 				self botMoveTo(self.moveToPos);
+				c=0;
 				while(dist1>32){
-					dist1 = distance(self getEye(), self.wptArr[0]); 
-					wait 0.5;
+					//cl("dist1:"+dist1);
+					dist1 = distance(self getEye(), self.wptArr[nr]); 
+					wait 0.05;
+					c++;
+					if(c>100){ break; }
 				}
-			}
-			self.wptArr = scripts\main::_arr_remove(self.wptArr,self.wptArr[0]);
+				if(c>100){ 
+					cl("approach timed out"); 
+					self.wptArr = [];
+				} else {
+					self.wptArr = scripts\main::_arr_remove(self.wptArr,self.wptArr[nr]);
+					nr = undefined;
+				}
+				//for(i=0;i<self.wptArr.size;i++){
+				//	if(isDefined(self.wptArr[i])){
+				//		self.wptArr = scripts\main::_arr_remove(self.wptArr,self.wptArr[i]);
+				//		break;
+				//	}
+				//}
+			//}
+			
 			//self.gridArr = scripts\main::_arr_remove(self.gridArr,self.gridArr[0]);
-			Objective_Delete(9);
-			wait 0.5;
+			//Objective_Delete(9);
+			//cl("wpt "+nr+" passed");
+			wait 0.05;
 		}
 		wait 0.05;
 	}
@@ -688,7 +928,7 @@ _add_remove_nodes(){
 					}
 				} 
 				if (use == true && delete == false && change == false){ 
-					self _add_node((self.origin[0],self.origin[1],self.origin[2]-20)); 
+					self _add_node((self.origin[0],self.origin[1],self.origin[2]-40)); 
 					//self _add_node((pos[0],pos[1],pos[2]-20)); 
 					delete = false; change = false; 
 					self iprintln("^3Node added");
@@ -1032,7 +1272,7 @@ _hud_draw_nodes(){
 	if (self.isbot) {return;}
 	
 	//cl("^3starting _hud_draw_nodes thread "+self.name);
-	dist = 0; size=0; threshold=100;
+	dist = 0; size=0; threshold=30;
 	hud_q=0;
 	
 	for(;;){
