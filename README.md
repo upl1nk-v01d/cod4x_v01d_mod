@@ -13,8 +13,6 @@ important notes:
 please add additional args to your cod4x server and client executable:
 +set r_xassetnum xmodel=2300 material=4096 weapon=256 loaded_sound=2400
 
-if you want check new bots nav development beta phase, set dvar v01d_dev to 'nav' and type in terminal 'm r'
-
 -------------------------------------------
 
 dvars:
