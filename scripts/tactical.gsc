@@ -13,8 +13,8 @@ init()
 		//setdvar( "sv_mapRotation", "map " + getDvar( "mapname" ) );
 		//exitLevel( false );
 		setDvar( "bots_play_move", 0 );
-		setDvar( "bots_fire_ext", 0 );
-		setDvar( "bots_aim_ext", 0 );
+		setDvar( "bots_fire_ext", 1 );
+		setDvar( "bots_aim_ext", 1 );
 		level.doNotAddBots=true;
 
 	}

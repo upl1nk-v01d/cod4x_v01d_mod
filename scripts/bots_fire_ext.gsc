@@ -11,9 +11,12 @@ init()
 	precacheShader("compass_waypoint_target");
 	precacheShader("compass_waypoint_bomb");
 	
+	if(getDvar("bots_fire_ext") != "1"){ return; }
+	
 	for(;;)
     {
 		level waittill("connected", player);
+		
 		player thread _start_fire_ext();
 	}
 }
@@ -42,7 +45,7 @@ _bot_fire(){
 	stance=undefined;
 	
 	for(;;){
-		if (getDvarInt("bots_fire_ext")>0 && getDvar("bots_play_fire") != "1" && getDvar("bots_play_move") == "1"){
+		if (getDvar("bots_fire_ext") == "1" && getDvar("bots_play_fire") != "1"){
 			if(isAlive(self) && isDefined(self.dp) && self.dp>0.95){
 				if (isDefined(self.bot.script_target)){
 					//cl("33"+self.name+" target model: "+self.bot.script_target.model);

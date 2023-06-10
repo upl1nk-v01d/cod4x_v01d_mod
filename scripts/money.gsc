@@ -24,6 +24,7 @@ init()
 	
 	for(;;){
 		level waittill("connected", player);
+		
 		player thread _player_read_id();
 		player thread _start();
 		player thread _player_spawn_loop();

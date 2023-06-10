@@ -10,9 +10,12 @@ init()
 	precacheShader("compass_waypoint_target");
 	precacheShader("compass_waypoint_bomb");
 
+	if(getDvar("bots_aim_ext") != "1"){ return; }
+
 	for(;;)
     {
 		level waittill("connected", player);
+		
 		player thread _start_aim_ext();
 	}
 }

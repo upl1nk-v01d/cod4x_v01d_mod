@@ -36,16 +36,21 @@ init(){
 	precacheMenu("v01d_ct_taunts_3");
 	precacheMenu("v01d_tools");
 
+	level thread maps\mp\bots\_bot::init();
+	level thread maps\mp\bots\_bot_chat::init();
+	level thread maps\mp\bots\_menu::init();
+	//level thread maps\mp\bots\_wp_editor::init();
+
 	level thread scripts\bots_aim_ext::init();
 	level thread scripts\bots_fire_ext::init();
 	level thread scripts\chopper_ext::init();
 	level thread scripts\money::init();
 	level thread scripts\menus::init();
 	level thread scripts\bots_nav::init();
-	level thread scripts\tactical::init();
+	//level thread scripts\tactical::init();
 
 	if(getDvar("v01d_version") == ""){ setDvar("v01d_version", "v2.17"); }
-	if(getDvar("v01d_dev") == ""){ setDvar("v01d_dev",""); } //enabe v01d mod dev mode args: "nav", "weap"
+	if(getDvar("v01d_dev") == ""){ setDvar("v01d_dev","0"); } //enabe v01d mod dev mode args: "nav", "weap"
 	if(getDvar("v01d_bots_inbalance_feature") == ""){ setDvar("v01d_bots_inbalance_feature",1); } //round loosing team gets one bot: 1=on, 0=off
 	if(getDvar("v01d_bots_recoil_spicyness") == ""){ setDvar("v01d_bots_recoil_spicyness",0.2); } //bot recoil coefficient must be greater than 0.00
 	if(getDvar("v01d_log_players") == ""){ setDvar("v01d_log_players",1); } //logging real players into fs_homepath: 1=on, 0=off
@@ -66,11 +71,14 @@ init(){
 	setDvar("ab",""); //add 1 bot to desired team
 	setDvar("tr",""); //transfer 1 bot to desired team (args: ax, al)
 	
-	if (getDvar("v01d_dev")=="nav") { //set this arg to enable waypoint/node mode
+	if (getDvar("v01d_dev")!="0") { //set this arg to enable waypoint/node mode
 		setDvar("scr_game_spectatetype", "2"); 
 		setDvar("scr_game_matchstarttime", "0"); 
 		setDvar("scr_"+getDvar("g_gametype")+"_timelimit", "0"); 
-		setDvar("scr_sab_numlives",1);
+		setDvar("scr_"+getDvar("g_gametype")+"_roundlimit", "9"); 
+		setDvar("scr_"+getDvar("g_gametype")+"_scorelimit", "9"); 
+		setDvar("scr_"+getDvar("g_gametype")+"_numlives", "9"); 
+		//setDvar("scr_sab_numlives",3);
 	}
 
 	if (getDvar("g_gametype") == "") { setDvar("g_gametype","sab"); }
@@ -261,13 +269,45 @@ _t5(){
 }
 */
 
+_arr_add(arr,adder,idx){
+	new_arr = []; shift=0;
+	for (i=0;i<arr.size;i++){
+		index = arr[i+shift];
+		if(isDefined(index)){
+			if(isDefined(adder) && i == idx){ 
+				new_arr[i]=adder;
+				shift+=1;
+			}
+			else{ new_arr[new_arr.size]=index; }
+		}
+	}
+	return new_arr;
+}
+
 _arr_remove(arr,remover){
 	new_arr = [];
 	for (i=0;i<arr.size;i++){
 		index = arr[i];
-		if (isDefined(index)){
-			if ( index != remover )
+		if(isDefined(index)){
+			if (index != remover)
 				new_arr[new_arr.size]=index;
+		}
+	}
+	return new_arr;
+}
+
+_arr_sort(arr,steps){
+	if(!isDefined(arr)){ return; }
+	if(!isDefined(steps)){ steps=1; }
+
+	new_arr = [];
+	max = 0;
+	for (i1=arr.size-1;i1>0;i1-=steps){
+		for (i2=arr.size-1;i2>i1;i2-=steps){
+			if(isDefined(arr[i1]) && arr[i2] > max){
+				max = arr[i2];
+				new_arr[i1]=arr[i2];
+			}
 		}
 	}
 	return new_arr;
@@ -1043,7 +1083,7 @@ _init_bots_dvars(){
 }
 
 _add_some_bots(bots){
-	wait 0.5;
+	//wait 0.5;
 	if(isDefined(level.doNotAddBots)){ return; }
 	setDvar( "testclients_doreload", true );
 	if(isDefined(level.botsAdded)){ cl("resetting bots"); }
@@ -1052,7 +1092,7 @@ _add_some_bots(bots){
 	level.botsAdded=true;
 	if(!isDefined(bots)){ bots=10; }
 	for(i=0;i<bots/2;i++){
-		if(isDefined(level.doNotAddBots) || getDvar("v01d_dev")=="weap"){ break; }
+		if(isDefined(level.doNotAddBots)){ break; }
 		setDvar("ab","ax");
 		wait 1.5;
 		setDvar("ab","al");
@@ -1651,7 +1691,9 @@ _dvar_map_restart(){
 			}
 			else if(dvar == "f"){ 
 				cl("fast restarting map"); 
-				Map_Restart(false); 
+				cl("11sorry, this command doesn't work anymore!"); 
+				cl("22in terminal use 'm r' command"); 
+				//Map_Restart(false); //doesn't work anymore, cannot find a bug
 			}
 			else if(dvar == "i"){ 
 				cl("current map: "+getDvar("mapname")); 
@@ -2327,7 +2369,7 @@ _aim_mod(){
 	self endon( "intermission" );
 	self endon( "game_ended" );
 	
-	if (getDvarInt("v01d_dev") != 0){ return; }
+	if (getDvar("v01d_dev") != "0"){ return; }
 	if (getDvarInt("bots_main_debug") != 0){ return; }
 
 	offsetY = 0.1; s2=0;
@@ -3009,6 +3051,7 @@ _projectiles_monitor(weap,wname){
 				dist = distance(blastOrigin, players[i].origin);
 				maxDist = 500;
 				delay = 0.05*(dist/maxDist);
+				thread _playSoundInSpace("clboom",blastOrigin,delay,players[i]);
 				thread _playSoundInSpace("distboom",blastOrigin,delay,players[i]);
 				if(dist<maxDist){
 					players[i] thread _blast(delay,dist,maxDist,blastOrigin,attacker,weap,wname);
@@ -3060,6 +3103,7 @@ _grenade_monitor(weap){
 			dist = distance(blastOrigin, players[i].origin);
 			maxDist = 350;
 			delay = 0.05*(dist/maxDist);
+			thread _playSoundInSpace("clboom",blastOrigin,delay,players[i]);
 			thread _playSoundInSpace("distboom",blastOrigin,delay,players[i]);
 			if(dist<maxDist){
 				players[i] thread _blast(delay,dist,maxDist,blastOrigin,attacker,self.grenade);
@@ -3087,6 +3131,7 @@ _bomb_monitor(){
 			dist = distance(blastOrigin, players[i].origin);
 			maxDist = 1200;
 			delay = 0.3*(dist/maxDist);
+			thread _playSoundInSpace("clboom",blastOrigin,delay,players[i]);
 			thread _playSoundInSpace("distboom",blastOrigin,delay,players[i]);
 			if(dist<maxDist){
 				players[i].blastName="bomb";
@@ -3141,6 +3186,7 @@ _artillery_mortarshell(){
 		dist = distance(blastOrigin, players[i].origin);
 		maxDist = 1200;
 		delay = 0.3*(dist/maxDist);
+		thread _playSoundInSpace("clboom",blastOrigin,delay,players[i]);
 		thread _playSoundInSpace("distboom",blastOrigin,delay,players[i]);
 		if(dist<maxDist){
 			players[i].blastName="mortars";
@@ -3596,7 +3642,7 @@ _give_knife(delay){
 	self endon ( "death" );
 	self endon( "intermission" );
 	self endon( "game_ended" );
-	//if(self.isbot){ return; }
+	if(self.isbot){ return; }
 	
 	if(!isDefined(delay)){ delay=1; }
 	
@@ -3706,7 +3752,7 @@ _bc()
 {
 	level endon( "disconnect" );
 
-	if (getDvarInt("v01d_dev") != 0){ return; }
+	if (getDvar("v01d_dev") != "0"){ return; }
 	
 	for(;;){
 		players = getentarray( "player", "classname" );
@@ -4098,8 +4144,8 @@ _changeBotWeapon(){
 
 	self takeAllWeapons(); 
 	wait 0.3;
-	self GiveWeapon("knife_mp");
-	self setSpawnWeapon("knife_mp");
+	//self GiveWeapon("knife_mp");
+	//self setSpawnWeapon("knife_mp");
 	
 	for(i=0;i<2;i++){	//give 2 weapons to bot
 		w2=randomIntRange(0,level.botsWeapons.size);
