@@ -14,7 +14,7 @@ init()
 	
 	setDvar("bots_play_move", 1);
 	setDvar("v01d_dev","0");
-	setDvar("v01d_dev","nav");
+	//setDvar("v01d_dev","nav");
 
 	if (getDvar("v01d_dev") == "nav"){
 		//if (isDefined(game["devmode"]) && game["devmode"] != "on"){ 
@@ -1044,18 +1044,18 @@ _bot_grid_calc_path(from, to){
 						if(dist1 < 128){
 							self.gridArr[nr] = level.nodes[i].pos;
 							stop = true;
-							return;
+							break;
 						}
 					}
 				}
 
-				if(point == self.gridArr[nr]){ return; }
+				if(point == self.gridArr[nr]){ break; }
 				point = self.gridArr[nr];
 				//if(dist1 > 128){ stop = true; }
 				//cl("point:"+point);
 			}
 		}
-		wait 0.5;
+		wait 0.05;
 	}
 }
 
