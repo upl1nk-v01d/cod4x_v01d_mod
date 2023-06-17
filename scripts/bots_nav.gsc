@@ -14,21 +14,21 @@ init()
 	
 	setDvar("bots_play_move", 1);
 	setDvar("v01d_dev","0");
-	//setDvar("v01d_dev","nav");
+	setDvar("v01d_dev","nav");
 
 	if (getDvar("v01d_dev") == "nav"){
-		if (isDefined(game["devmode"]) && game["devmode"] != "on"){ 
+		//if (isDefined(game["devmode"]) && game["devmode"] != "on"){ 
 			game["devmode"]="on"; 
 			//setdvar( "developer_script", 1 );
 			//setdvar( "developer", 1 );		
 			//setdvar( "sv_mapRotation", "map " + getDvar( "mapname" ) );
-			exitLevel( false );
+			//exitLevel( false );
 			setDvar( "bots_play_move", 0 );
 			setDvar( "bots_aim_ext", 1 );
 			setDvar( "bots_fire_ext", 1 );
 			//level.doNotAddBots=true;
 			//wait 5;
-		}
+		//}
 	} else {
 		game["devmode"] = "off";
 	}
@@ -44,8 +44,8 @@ init()
 	level.nodes_quantity = 0;
 	level.node_types = StrTok("any,mg,sniper,grenadier,rocket",",");
 	
-	level.grid = [];
-	level.grid_quantity = 0;
+	//level.grid = [];
+	//level.grid_quantity = 0;
 	
 	level.objectivePos = undefined;
 	if(isDefined(level.sabBomb)){
@@ -130,12 +130,13 @@ _player_spawn()
 		self waittill("spawned_player");
 		
 		
-		//self thread _grid();
+		self thread _bot_start_nav();
+		self thread _grid();
 		//self thread _hud_draw_grid();
 		self thread _bot_nodes_acm();
 		self thread _bot_self_nav();	
 		self thread _open_map();		
-		self thread _bot_start_nav();
+		//self thread _bot_go_to_objective();
 		self thread _bot_look_at_bombpos();
 		self thread _bot_look_at_enemy();
 	}
@@ -176,15 +177,24 @@ _bot_start_nav(){
 	self endon( "intermission" );
 	self endon( "death" );
 	self endon( "game_ended" );
+
+	if(!self.isbot){
+		if(self.pers["team"] == "axis"){ level maps\mp\bots\_bot::add_bot("axis"); }
+		else{ level maps\mp\bots\_bot::add_bot("allies"); }
+	}
+
 	if (!self.isbot){ return; }
 	
 	//self.approachNode = undefined;
 	cl("_start_nav started on "+self.name);
 	
+	self.wptArr = [];
+	self.gridArr = [];
+	self.calculating = undefined;
+	
 	//self thread _add_wpt_for_bomb();
 	//self thread _nav_loop();
 	//self thread _bot_following_player();
-	self thread _bot_go_to_objective();
 	
 	//self setClientDvars("cg_thirdperson", 1);	
 	
@@ -326,10 +336,10 @@ _bot_go_to_objective(){
 	if (!self.isbot){ return; }
 	
 	cl("_bot_go_to_objective started on "+self.name);
-
-	wptTrail = [];
+	
 	wait 0.5;
-	nr = undefined;
+	nr = 0;
+	point = self getEye(); 
 	
 	while(isAlive(self)){
 		if(isDefined(level.nodes)){
@@ -342,18 +352,18 @@ _bot_go_to_objective(){
 			
 			for(i=0;i<level.nodes.size;i++){
 				//cl("level.nodes.size: "+level.nodes.size);
-				dist1 = distance(self getEye(), level.nodes[i].pos); 				
-				dist2 = distance(self getEye(), level.objectivePos);
+				dist1 = distance(point, level.nodes[i].pos); 				
+				dist2 = distance(point, level.objectivePos);
 				dist3 = distance(level.nodes[i].pos, level.objectivePos);
-				eye = self getEye();
+				eye = point;
 				distz = level.nodes[i].pos[2] - eye[2];
 				//cl("distz: "+distz);
 				bombObj = dist2 - dist3;
 				pos = level.objectivePos;
 				wptPos = level.nodes[i].pos;
-				btpWpt = BulletTracePassed(self getEye(), (wptPos[0],wptPos[1],wptPos[2]+64), false, self);
-				btBomb = BulletTracePassed(self getEye(), (pos[0],pos[1],pos[2]+64), false, self);
-				btBombPos = BulletTrace(self getEye(), (pos[0],pos[1],pos[2]+64), false, self);
+				btpWpt = BulletTracePassed(point, (wptPos[0],wptPos[1],wptPos[2]+64), false, self);
+				btBomb = BulletTracePassed(point, (pos[0],pos[1],pos[2]+64), false, self);
+				btBombPos = BulletTrace(point, (pos[0],pos[1],pos[2]+64), false, self);
 				btBombPos = btBombPos["position"];
 				//btbomb = (btbomb["position"][0],btbomb["position"][1],btbomb["position"][2]);
 				//bt = _calc_indents(bt);
@@ -368,17 +378,18 @@ _bot_go_to_objective(){
 				
 				if(btBomb){
 					self.wptArr[self.wptArr.size] = btBombPos;
+					break;
 					//self.movingToObj = true;
 					//cl("11movingToObj");
-				} /*else if(isDefined(self.calculating) && self.calculating != "success"){ 
+				} else if(isDefined(self.calculating) && self.calculating != "success"){ 
 					//cl("11failed");
 					if(dist1 > 64 && dist1<closest && distz < 0){ 
 						closest = dist1; 
 						nr = i; 
-						cl(self.name+" nr: "+nr);
-						//self _bot_calc_path(self getEye(), pos);
+						//cl(self.name+" nr: "+nr);
 					}
-				} */ else if (isDefined(bombObj) && bombObj > 64 && bombObj < closest && nr != i){
+				} else if (isDefined(bombObj) && bombObj > -256 && bombObj < closest){
+				//} else if (isDefined(bombObj) && bombObj > -128 && dist1 < closest){
 					//self.calculating = "failed";  
 					//cl("11i: "+i+" bombObj: "+bombObj);
 					closest = bombObj;
@@ -394,16 +405,17 @@ _bot_go_to_objective(){
 				//cl("isDefined nr!");
 				_objective_toggle(9,1,level.nodes[nr].pos,"map_artillery_selector");
 				self.wptArr[self.wptArr.size] = level.nodes[nr].pos;
+				point = level.nodes[nr].pos;
 				//self _bot_calc_path(self getEye(), level.nodes[nr].pos);
 				//self botLookAt(level.nodes[nr].pos, 0.1);
-				if(!isDefined(self.hasEnemy)){
-					self thread _bot_look_at(level.nodes[nr].pos,undefined,randomFloatRange(0.1,0.5),randomFloatRange(0.1,0.5));
-				}
+				//if(!isDefined(self.hasEnemy)){
+				//	self thread _bot_look_at(level.nodes[nr].pos,undefined,randomFloatRange(0.1,0.5),randomFloatRange(0.1,0.5));
+				//}
 				//cl("11"+self.name+" goes to "+level.nodes[nr].pos);
 				
-				while(isDefined(self.moveToPos)){
-					wait 0.5;
-				}
+				//while(isDefined(self.moveToPos)){
+				//	wait 0.5;
+				//}
 				//nr+=1;
 			}
 			//self.calculating = undefined;
@@ -416,7 +428,7 @@ _bot_go_to_objective(){
 			//	wait 1;
 			//}
 		}
-		wait 1;
+		wait 0.05;
 	}
 }
 
@@ -790,16 +802,8 @@ _bot_nodes_acm(){ //bot nodes accumulation
 	//self endon( "death" );
 	self endon( "game_ended" );
 	
-	if(!self.isbot){
-		if(self.pers["team"] == "axis"){ level maps\mp\bots\_bot::add_bot("axis"); }
-		else{ level maps\mp\bots\_bot::add_bot("allies"); }
-	}
-	
 	if (!self.isbot){ return; }
 		
-	self.wptArr = [];
-	self.gridArr = [];
-	self.calculating = undefined;
 	nr=undefined;
 	
 	while(isAlive(self)){
@@ -855,14 +859,18 @@ _bot_nodes_acm(){ //bot nodes accumulation
 				while(isAlive(self) && isDefined(dist1) && dist1>32 && c<3){ 
 					dist1 = distance(self getEye(), self.wptArr[nr]); 
 					if(self.wptArr.size==1 && isDefined(dist1) && dist1<256){ 
+						//self _bot_move_to_pos(self.moveToPos);
 						self botAction( "+gocrouch"); 
 						//cl("22"+self.name+" searching!");
 					}
 					if(self.wptArr.size==1 && isDefined(dist1) && dist1<64){ 
 						//self.moveToPos = undefined;
-						//cl("22"+self.name+" destination reached!");
+						cl("22"+self.name+" destination reached!");
 						self.wptArr = scripts\main::_arr_remove(self.wptArr,self.wptArr[nr]);
+						if(isDefined(self.nodeStance) && self.nodeStance != "any" ){ self botAction( "+go"+ self.nodeStance); }
+						else { self botAction( "+gocrouch"); }
 						nr = undefined;
+						wait 0.05;
 						break;
 					}
 					else{ 
@@ -878,18 +886,18 @@ _bot_nodes_acm(){ //bot nodes accumulation
 					else{ c=0; }
 					if(c>2){ 
 						//self.moveToPos = self.origin; 
-						cl("prevPos!");
+						//cl("prevPos!");
 						//bombPos = level.objectivePos;
-						//self _bot_calc_path(self getEye(), bombPos);
+						//self _bot_calc_path(self getEye(), level.objectivePos);
 					}
 					if(c>=3){ 
-						cl("approach timed out"); 
+						//cl("approach timed out"); 
 						self.wptArr = [];
 						self.moveToPos = undefined;
 					} 
 				}
 				
-				self.moveToPos = undefined;
+				//self.moveToPos = undefined;
 				for(i=0;i<self.wptArr.size;i++){
 					if(isDefined(self.wptArr[i])){
 						self.wptArr = scripts\main::_arr_remove(self.wptArr,self.wptArr[i]);
@@ -945,7 +953,7 @@ _add_some_bots(bots){
 _bot_grid_calc_path(from, to){
 	self endon ( "disconnect" );
 	self endon( "intermission" );
-	self endon( "death" );
+	//self endon( "death" );
 	self endon( "game_ended" );
 	if (!self.isbot){ return; }
 
@@ -953,43 +961,100 @@ _bot_grid_calc_path(from, to){
 	if(!isDefined(to)){ return; }
 	
 	cl(self.name+" calculating grid path from "+from+" to "+to);
-	cl("grid size: "+level.grid.size);
+	cl("grid size: "+self.gridArr.size);
 	
-	while(isDefined(from)){
-		node=undefined;
-		
-		dist = distance(from, to);
-		while(dist>32){
-			closest = 99999; 
-			//cl("22from "+from);
-			for(i=0;i<level.grid.size;i++){
-				//trace = bulletTrace(from,to/10,false,self);
-				dist1 = distance(from, level.grid[i].pos);
-				dist2 = distance(level.grid[i].pos,to);
-				if(dist1<closest && dist1-dist2>0){ 
-					closest=dist1; 
-					if(from != level.grid[i].pos){ node=level.grid[i]; }
-					Objective_Add(11, "active", node.pos);
-					//cl("dist1 "+dist1);
-					//cl("from "+node.pos);
-					//wait 0.05;
+	nr = 0;
+	point = self getEye(); 
+	stop = undefined;
+	
+	while(isAlive(self) && !isDefined(stop)){
+		if(isDefined(self.gridArr)){
+			_objective_toggle(9,0);
+			closest = 999;
+			dist1 = undefined;
+			dist2 = undefined;
+			
+			for(i=0;i<self.gridArr.size;i++){
+				if(!isAlive(self)){ break; }
+				//cl("self.gridArr.size: "+self.gridArr.size);
+				dist1 = distance(point, self.gridArr[i]); 				
+				dist2 = distance(point, level.objectivePos);
+				dist3 = distance(self.gridArr[i], level.objectivePos);
+				dist4 = distance(self getEye(), level.objectivePos);
+				eye = point;
+				distz = self.gridArr[i][2] - eye[2];
+				//cl("distz: "+distz);
+				bombObj = dist2 - dist3;
+				pos = level.objectivePos;
+				wptPos = self.gridArr[i];
+				btpWpt = BulletTracePassed(point, (wptPos[0],wptPos[1],wptPos[2]+64), false, self);
+				btBomb = BulletTracePassed(point, (pos[0],pos[1],pos[2]+64), false, self);
+				btBombPos = BulletTrace(point, (pos[0],pos[1],pos[2]+64), false, self);
+				btBombPos = btBombPos["position"];
+				//btbomb = (btbomb["position"][0],btbomb["position"][1],btbomb["position"][2]);
+				//bt = _calc_indents(bt);
+				//distbt = distance(self getEye(), btbomb)+32;
+				//cl("22i: "+i+" dist1: "+dist1);
+				//_objective_toggle(9,1,wptPos,"");
+				//cl("22i: "+i+" dist2: "+dist2);
+				//cl("22i: "+i+" bombObj: "+bombObj);
+				//if(!isDefined(distbt)){ distbt=dist1; }
+				//if(isDefined(dist1) && dist1 > 64 && dist1 < closest){
+				//if (isDefined(distObj) && distbt >= dist1 && dist1 > 64 && distObj < closest){
+				//cl("btBomb: "+btBomb);
+				//cl("22i: "+i+" point: "+point);
+				//cl("22i: "+i+" dist1: "+dist1);
+				//cl("22i: "+i+" bombObj: "+bombObj);
+				
+				if(btBomb && dist4<128){
+					self.wptArr[self.wptArr.size] = btBombPos;
+					stop = true;
+					//self.movingToObj = true;
+					cl("11movingToObj");
+					break;
+				//} else if(isDefined(self.calculating) && self.calculating != "success"){ 
+				/*} else if(btpWpt){ 
+					//cl("11failed");
+					if(dist1 > 64 && dist1<closest && distz < 0){ 
+						closest = dist1; 
+						nr = i; 
+						cl(self.name+" nr: "+nr);
+					} */
+				}  
+				//else if (isDefined(bombObj) && bombObj > 0 && dist2 < closest){
+				else if (isDefined(bombObj) && bombObj > 0 && dist1 < closest && btpWpt && nr != i){
+					//self.calculating = "failed";  
+					//cl("11i: "+i+" bombObj: "+bombObj);
+					closest = dist1;
+					nr = i; 
+					//wait 1;
 				}
-				//wait 0.5;
+				
+				//wait 0.1;
 			}
 			
-			if(isDefined(node)){
-				cl("dist "+dist);
-				//cl(self.name+" to nearest node "+node.pos);
-				//Objective_Add(11, "active", node.pos);
-				from = node.pos;
-				dist = distance(from, to);
-				//cl("11from "+from);
-				wait 0.05;
+			//cl("closest: "+closest);
+			//cl("---------");
+			if(isDefined(nr) && isDefined(self.gridArr[nr])){
+				_objective_toggle(9,1,self.gridArr[nr],"map_artillery_selector");
+				self.wptArr[self.wptArr.size] = self.gridArr[nr];
+				if(isDefined(level.nodes)){
+					for(j=0;j<level.nodes.size;j++){
+						dist1 = distance(point, level.nodes[i].pos);
+						if(dist1 < 128){
+							self.gridArr[nr] = level.nodes[i].pos;
+							stop = true;
+							return;
+						}
+					}
+				}
+
+				if(point == self.gridArr[nr]){ return; }
+				point = self.gridArr[nr];
+				//if(dist1 > 128){ stop = true; }
+				//cl("point:"+point);
 			}
-			//wait 0.5;
 		}
-		from = undefined;
-		cl("ended");
 		wait 0.5;
 	}
 }
@@ -1000,24 +1065,26 @@ _grid(startPos){
 	//self endon( "death" );
 	self endon( "game_ended" );
 	if (getDvar("v01d_dev") != "nav"){ return; }
-	if (self.isbot){ return; }
+	if (!self.isbot){ return; }
 	
-	//self.nodes=[];
-	//self.nodes_quantity=0;
-
 	cl("33grid_loop");
-	//for(;;){
+	while(isAlive(self)){
 		//while(!self UseButtonPressed()){ wait 0.05; }
+		self.gridArr = [];
+		//self.wptArr = [];
 		myAngles = self GetPlayerAngles();
+		prevPos = self getEye();
+		//cl("prevPos:"+prevPos);
+		dist = distance(self getEye(),prevPos);
 		if(!isDefined(startPos)){ startPos = self getEye(); }
 		startPosForward = startPos + anglesToForward((0,myAngles[1],0))*120;
 		trace = bulletTrace(startPos,startPosForward,true,self);
 		//pos = trace["position"];
 		pos = startPos;
-		x_max=64;
-		y_max=64;
-		x_int=32;
-		y_int=32;
+		x_max=16;
+		y_max=16;
+		x_int=256;
+		y_int=256;
 		c=15;
 		//ent = trace["entity"];
 		if(isDefined(pos)){
@@ -1027,10 +1094,12 @@ _grid(startPos){
 					//trace_down = bulletTrace((pos[0]+(y*64)-(32*y_max), pos[1]+(x*64)-(32*x_max), pos[2]), (pos[0]+(y*64)-(32*y_max), pos[1]+(x*64)-(32*x_max), pos[2]-100), false, self);
 					//trace_down = bulletTrace((pos[0]-(64*10/2)+(x*64), pos[1]-(64*10/2)+(z*64), pos[2]), (pos[0]-(64*10/2)+(x*64)-64, pos[1]-(64*10/2)+(z*64), pos[2]-100), false,self);
 					pos2 = trace_down["position"];
+					pos2 = _calc_indents(pos2);
 					//self _add_node(pos2);
-					level.grid[level.grid_quantity] = spawnstruct();
-					level.grid[level.grid_quantity].pos = pos2;
-					level.grid_quantity++;
+					//cl("self.gridArr.size:"+self.gridArr.size);
+					//self.gridArr[self.gridArr.size] = spawnstruct();
+					self.gridArr[self.gridArr.size] = pos2;
+					//self.grid_quantity++;
 					if((x==1 && y==1) || (x==1 && y==y_max) || (x==x_max && y==1) || (x==x_max && y==y_max)){
 						//node = spawn( "script_origin", (pos2[0],pos2[1],pos2[2]),0,0,0);
 						//node.targetname = "markers_"+self.name;
@@ -1041,13 +1110,21 @@ _grid(startPos){
 					//line(fw1, fw2, (1, 1, 0.5), 1, 1, 30);
 					//print3d(self.origin, "START", (1.0, 0.8, 0.5), 1, 3, 10000);
 					//cl("33"+self.name+" spawned gridnode: "+pos2);
-					//wait 0.5;
+					//wait 1;
 				}
 			}
+			self _bot_grid_calc_path(startPos, level.objectivePos);
+			//while(isAlive(self) && dist < 64){ 
+				dist = distance(self getEye(),prevPos);
+				//cl("dist:"+dist);
+				wait 5; 
+				//self _bot_grid_calc_path(self getEye(), level.objectivePos);
+			//}
+			startPos = self getEye();
 		}
 		//while(self UseButtonPressed()){	wait 0.05; }
-		//wait 0.05;
-	//}
+		wait 1;
+	}
 }
 
 _node_info(){
@@ -1384,12 +1461,12 @@ _bot_take_cover(){
 						//self thread _bot_move_to_pos(self.moveToPos);
 						//self botMoveTo(self.moveToPos);
 						//self botLookAt( self.approachNode, self.pers["bots"]["skill"]["aim_time"] );
-						self maps\mp\bots\_bot_utility::ClearScriptGoal();
-						self maps\mp\bots\_bot_utility::SetScriptGoal(self.moveToPos,48);
+						//self maps\mp\bots\_bot_utility::ClearScriptGoal();
+						//self maps\mp\bots\_bot_utility::SetScriptGoal(self.moveToPos,48);
 						//self.bot.towards_goal=self.moveToPos;
 			
 						while(isDefined(self.moveToPos) && isAlive(self)){
-							dist = distance( self.origin, self.moveToPos );
+							dist = distance(self.origin, self.moveToPos);
 							wait 0.2;
 							//cl(self.name+":"+dist);
 							if(dist<64){ 
@@ -1454,18 +1531,18 @@ _bot_move_to_pos(pos){
 				//cl(self.name+":"+dist);
 				if(dist<32){ 
 					cl("33"+self.name+" reached node at"+node.pos);
-					//if(isDefined(self.nodeStance) && self.nodeStance != "any" ){ self botAction( "+go"+ self.nodeStance); }
+					if(isDefined(self.nodeStance) && self.nodeStance != "any" ){ self botAction( "+go"+ self.nodeStance); }
 					//else { self botAction( "+gocrouch"); }
 					//self maps\mp\bots\_bot_script::CampAtSpot(self.moveToPos, self.moveToPos + AnglesToForward(self.nodeAngles) * 2048);
 					//self setPlayerAngles(self.nodeAngles);
 					//cl(self.name+":"+self.nodeAngles);
 					//self.bot.stop_move=true;
 					node.pos = undefined;
-					//wait 5;
+					wait 5;
 					//self.bot.stop_move=false;
 				}
 				else if(dist<=150 && dist>100){ 
-					//self botAction( "+gocrouch" );
+					self botAction( "+gocrouch" );
 					//cl("^3"+name+" dist to "+nr+" is "+dist);
 				}
 				else if(dist>64){ 
@@ -1582,7 +1659,7 @@ _hud_draw_grid(){
 	hud_q=0;
 	
 	for(;;){
-		objs = level.grid;	
+		objs = self.gridArr;	
 		//cl("objs.size: "+objs.size);
 		if (isDefined(objs)){
 			closest = 2147483647;
