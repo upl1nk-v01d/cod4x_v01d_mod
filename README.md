@@ -4,7 +4,7 @@ the mod files for cod4x provided by v01d
 
 -------------------------------------------
 
-updated 2023.05.26 v01d mod.ff, iwd and other mod files at https://drive.google.com/drive/folders/186GyQw-vKV_bFqAfxdYtRPXcxtaSnoCb
+updated 2023.06.18 v01d mod.ff, iwd and other mod files at https://drive.google.com/drive/folders/186GyQw-vKV_bFqAfxdYtRPXcxtaSnoCb
 
 -------------------------------------------
 
@@ -40,6 +40,9 @@ v01d_knifed_sfx 1 // //knifed screaming sounds: 1=on, 0=off
 -------------------------------------------
 
 updates log:
+
+2023 06 18
+fixed flipped mm1 hud icon
 
 2023 05 26
 converted mm1 to projectile type weapon; 
