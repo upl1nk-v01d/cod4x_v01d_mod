@@ -37,9 +37,15 @@ v01d_suicide_sfx 1 // //suicide screaming sounds: 1=on, 0=off
 
 v01d_knifed_sfx 1 // //knifed screaming sounds: 1=on, 0=off
 
+v01d_full_ammo_clip_at_round_start 1 //give player full weapon ammo clip at round start: 1=on, 0=off
+
 -------------------------------------------
 
 updates log:
+
+2023 09 04
+added dvar v01d_full_ammo_clip_at_round_start
+tuned recoil params
 
 2023 06 18
 fixed flipped mm1 hud icon
