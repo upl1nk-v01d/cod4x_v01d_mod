@@ -291,6 +291,10 @@ _player_start_inventory(){
 			//self takeAllWeapons();
 			self giveWeapon(weapon);
 			self SetWeaponAmmoClip(weapon,0);
+			if(getDvarInt("v01d_full_ammo_clip_at_round_start") == 1){
+				clip = WeaponClipSize(weapon);
+				self SetWeaponAmmoClip(weapon,clip);
+			}
 			self SetWeaponAmmoStock(weapon,36);
 			self SetSpawnWeapon(weapon);
 			game["wasKilled"][self.name]=false;
@@ -303,6 +307,10 @@ _player_start_inventory(){
 		//self takeAllWeapons();
 		self giveWeapon(weapon);
 		self SetWeaponAmmoClip(weapon,0);
+		if(getDvarInt("v01d_full_ammo_clip_at_round_start") == 1){
+			clip = WeaponClipSize(weapon);
+			self SetWeaponAmmoClip(weapon,clip);
+		}
 		self SetWeaponAmmoStock(weapon,12);
 		self SetSpawnWeapon(weapon);
 		game["wasKilled"][self.name]=false;
@@ -315,6 +323,10 @@ _player_start_inventory(){
 		//self takeAllWeapons();
 		self giveWeapon(weapon);
 		self SetWeaponAmmoClip(weapon,0);
+		if(getDvarInt("v01d_full_ammo_clip_at_round_start") == 1){
+			clip = WeaponClipSize(weapon);
+			self SetWeaponAmmoClip(weapon,clip);
+		}
 		self SetWeaponAmmoStock(weapon,36);
 		self SetSpawnWeapon(weapon);
 		game["wasKilled"][self.name]=false;
@@ -357,6 +369,10 @@ _player_start_inventory_after_killed(){
 	
 		self giveWeapon(weapon);
 		self SetWeaponAmmoClip(weapon,0);
+		if(getDvarInt("v01d_full_ammo_clip_at_round_start") == 1){
+			clip = WeaponClipSize(weapon);
+			self SetWeaponAmmoClip(weapon,clip);
+		}
 		self SetWeaponAmmoStock(weapon,12);
 		self SetSpawnWeapon(weapon);
 		wait 0.2;
@@ -675,6 +691,11 @@ _buy(){
 									self SetWeaponAmmoStock(self.hasChosen[i],clip);
 									self SetWeaponAmmoClip(self.hasChosen[i],0);
 									self.money["acc"]-=int(self.hasChosen[i-1]);
+									if(getDvarInt("v01d_full_ammo_clip_at_round_start") == 1){
+										clip = WeaponClipSize(self.hasChosen[i]);
+										self SetWeaponAmmoClip(self.hasChosen[i],clip);
+									}
+
 									//cl("33"+self.name+" bought weapon "+self.hasChosen[i]);
 								}
 								self playSound("weap_pickup");

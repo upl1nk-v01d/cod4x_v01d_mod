@@ -46,7 +46,7 @@ init(){
 	level thread scripts\chopper_ext::init();
 	level thread scripts\money::init();
 	level thread scripts\menus::init();
-	level thread scripts\bots_nav::init();
+	//level thread scripts\bots_nav::init();
 	//level thread scripts\tactical::init();
 
 	if(getDvar("v01d_version") == ""){ setDvar("v01d_version", "v2.17"); }
@@ -61,6 +61,7 @@ init(){
 	if(getDvar("v01d_maps_randomizer") == ""){ setDvar("v01d_maps_randomizer",1); } //random map loading on match end: 1=on, 0=off
 	if(getDvar("v01d_suicide_sfx") == ""){ setDvar("v01d_suicide_sfx",1); } //suicide screaming sounds: 1=on, 0=off
 	if(getDvar("v01d_knifed_sfx") == ""){ setDvar("v01d_knifed_sfx",1); } //knifed screaming sounds: 1=on, 0=off
+	if(getDvar("v01d_full_ammo_clip_at_round_start") == ""){ setDvar("v01d_full_ammo_clip_at_round_start",1); } //give player full weapon ammo clip at round start: 1=on, 0=off
 		
 	setDvar("pl",""); //in terminal argument a = show all players, r = real players, b = bot players
 	setDvar("m",""); //in terminal argument i = show current map and team score, f = fast restart, r = brutal restart
@@ -69,15 +70,16 @@ init(){
 	setDvar("tl",0); //set dvar scr_sab_timelimit of round to args val
 	setDvar("nl",0); //set dvar scr_sab_numlives of player to args val
 	setDvar("ab",""); //add 1 bot to desired team
+	setDvar("kb",""); //add 1 bot to desired team
 	setDvar("tr",""); //transfer 1 bot to desired team (args: ax, al)
 	
 	if (getDvar("v01d_dev")!="0") { //set this arg to enable waypoint/node mode
 		setDvar("scr_game_spectatetype", "2"); 
 		setDvar("scr_game_matchstarttime", "0"); 
 		setDvar("scr_"+getDvar("g_gametype")+"_timelimit", "0"); 
-		setDvar("scr_"+getDvar("g_gametype")+"_roundlimit", "9"); 
-		setDvar("scr_"+getDvar("g_gametype")+"_scorelimit", "9"); 
-		setDvar("scr_"+getDvar("g_gametype")+"_numlives", "9"); 
+		setDvar("scr_"+getDvar("g_gametype")+"_roundlimit", "0"); 
+		setDvar("scr_"+getDvar("g_gametype")+"_scorelimit", "999"); 
+		setDvar("scr_"+getDvar("g_gametype")+"_numlives", "0"); 
 		//setDvar("scr_sab_numlives",3);
 	}
 
@@ -680,7 +682,7 @@ _dev_weapon_test(){
 	self.bodyModel=0;
 	self.weaponModel=0;
 
-	weapons=strTok("knife_mp",",");
+	weapons=strTok("barrett_acog_mp",",");
 	//weapons=strTok("barrett_acog_mp,ak47_gl_mp",",");
 	//weapons=strTok("ak74u_reflex_mp,ak74u_acog_mp,ak74u_silencer_mp,g36c_reflex_mp",",");
 	//weapons=strTok("m4_reflex_mp,m14_reflex_mp",",");
@@ -1006,6 +1008,9 @@ _precache_info(delay){
 
 _prematch(){
 	self endon ( "death" );
+	self endon ( "intermission" );
+	self endon ( "game_ended" );
+	
 	self waittill("spawned_player");
 	for(;;){
 		self freezeControls(true);
@@ -1083,7 +1088,7 @@ _init_bots_dvars(){
 }
 
 _add_some_bots(bots){
-	//wait 0.5;
+	wait 0.5;
 	if(isDefined(level.doNotAddBots)){ return; }
 	setDvar( "testclients_doreload", true );
 	if(isDefined(level.botsAdded)){ cl("resetting bots"); }
@@ -1346,6 +1351,8 @@ _bomb_file(mapname)
 
 _sab_bomb_visibility(){
 	level endon ( "disconnect" );
+	level endon ( "intermission" );
+	level endon ( "game_ended" );
 	
 	if(getDvar("g_gametype") != "sab"){ return; }
 	
@@ -1758,22 +1765,26 @@ _dvar_remove_bots(){
 					exec("kick " + botname);
 					cl("11kicking bot "+botname+" from axis team");
 					kicked=true;
+					break;
 				}	
 				else if(dvar=="al" && players[i].pers["team"]=="allies" && players[i].isbot && !isDefined(kicked)){
 					botname=StrRepl(players[i].name, "/", "");
 					exec("kick " + botname);
 					cl("11kicking bot "+botname+" from allies team");
 					kicked=true;
+					break;
 				}
-				else if(dvar == "r"){ 
+				else if(dvar == "r"  && players[i].isbot && !isDefined(kicked)){ 
 					if(axis<allies){ team = "axis"; }
 					else{ team = "allies"; }
+					if(players[i].pers["team"]==team){ botname=StrRepl(players[i].name, "/", ""); }
 					exec("kick " + botname);
 					kicked=true;
+					break;
 				}	
-				setDvar("kb","");
-				wait 0.1;
 			}
+			setDvar("kb","");
+			wait 0.1;
 		}
 		wait 0.05;
 	}
@@ -2178,6 +2189,8 @@ _movement_accel_decel(){
 	self endon( "intermission" );
 	self endon( "game_ended" );
 
+	if (self.isbot) { return; }
+
 	c=0.3;
 	
 	for(;;){
@@ -2197,6 +2210,8 @@ _moveSpeed(){
 	self endon ( "disconnect" );
 	self endon( "intermission" );
 	self endon( "game_ended" );
+	
+	if (self.isbot) { return; }
 
 	while(self.health<self.maxhealth){
 		while((isDefined(self.isFiring) || isDefined(self.isReloading)) && isDefined(self.isProning)){ wait 0.05; }
@@ -2289,6 +2304,8 @@ _reload_monitor()
 	self endon ( "disconnect" );
 	self endon( "intermission" );
 	self endon( "game_ended" );
+	
+	if(self.isbot){ return; }
 	
 	level.weapons_clip_strict = StrTok("none,artillery,binoculars,cell", "," );
 	level.weapons_partial_reload = StrTok("m1014,m40a3,remington700,winchester1200,striker", "," );
@@ -2496,7 +2513,7 @@ _recoil(){
 			else if(self getstance() == "prone"){ k*=0.2; }
 			
 			curView = self getPlayerAngles();
-			self setPlayerAngles((curView[0]-randomFloatRange(0.6, 0.9)*k, curView[1]-randomFloatRange(0.5, 0.8)*k, curView[2])); 
+			self setPlayerAngles((curView[0]-randomFloatRange(0.6, 0.9)*k, curView[1]-randomFloatRange(-0.5, 0.8)*k, curView[2])); 
 		}
 		wait 0.05;
 	}
@@ -2565,6 +2582,8 @@ _moving(){
 	self endon ( "disconnect" );
 	self endon( "intermission" );
 	self endon( "game_ended" );
+	
+	//if(self.isbot){ return; }
 	
 	self.aimWobling = 0.5;
 	
@@ -2687,6 +2706,8 @@ _damaged(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint
 
 _killed(eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, timeOffset, deathAnimDuration){
 	
+	//cl(self.name + ":" + sMeansOfDeath);
+	
 	self setClientDvar("m_pitch",0.022);
 	self setClientDvar("m_yaw",0.022);
 	self SetClientDvar("ui_ShowMenuOnly", "");
@@ -2724,7 +2745,7 @@ _killed(eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, t
 		else if (isSubStr(sMeansOfDeath,"_BULLET")){
 			self setVelocity((x/4,y/4,z/4));
 		}
-		else if (isSubStr(sMeansOfDeath,"_FALLING") || isSubStr(sMeansOfDeath,"_SUICIDE") || isSubStr(sMeansOfDeath,"_MELEE")){
+		else if (isSubStr(sMeansOfDeath,"_TRIGGER") || isSubStr(sMeansOfDeath,"_FALLING") || isSubStr(sMeansOfDeath,"_SUICIDE") || isSubStr(sMeansOfDeath,"_MELEE")){
 			self setVelocity((x/2,y/2,4));
 		} 
 		else if (sMeansOfDeath == "MOD_PROJECTILE_SPLASH" || sMeansOfDeath == "MOD_GRENADE_SPLASH" || sMeansOfDeath == "MOD_EXPLOSIVE"){
@@ -2763,7 +2784,7 @@ _killed(eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, t
 		
 	if (isDefined(level.bombOwner) && level.bombExploded==true && isDefined(eAttacker) && level.bombOwner.name == eAttacker.name && isSubStr(sMeansOfDeath, "MOD_EXPLOSIVE")) { sWeapon="c4_mp"; }
 
-	if (isDefined(sMeansOfDeath) && sMeansOfDeath == "MOD_FALLING" || sMeansOfDeath == "MOD_IMPACT" || sMeansOfDeath == "MOD_SUICIDE" || sMeansOfDeath == "MOD_WORLDSPAWN") {
+	if (isDefined(sMeansOfDeath) && sMeansOfDeath == "MOD_TRIGGER_HURT" || sMeansOfDeath == "MOD_FALLING" || sMeansOfDeath == "MOD_IMPACT" || sMeansOfDeath == "MOD_SUICIDE" || sMeansOfDeath == "MOD_WORLDSPAWN") {
 		if(getDvar("v01d_suicide_sfx") == "1"){
 			sc = "suicide";	
 			thread _screams_sfx(sc,0.2,1.2);
@@ -2790,7 +2811,7 @@ _killed(eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, t
 			}
 		}
 		else if (eAttacker == self){
-			if (sMeansOfDeath == "MOD_FALLING" || sMeansOfDeath == "MOD_IMPACT" || sMeansOfDeath == "MOD_SUICIDE" || sMeansOfDeath == "MOD_PROJECTILE_SPLASH" || sMeansOfDeath == "MOD_GRENADE_SPLASH") {
+			if (sMeansOfDeath == "MOD_TRIGGER_HURT" || sMeansOfDeath == "MOD_FALLING" || sMeansOfDeath == "MOD_IMPACT" || sMeansOfDeath == "MOD_SUICIDE" || sMeansOfDeath == "MOD_PROJECTILE_SPLASH" || sMeansOfDeath == "MOD_GRENADE_SPLASH") {
 				if(getDvar("v01d_suicide_sfx") == "1"){
 					sc = "suicide";	
 					thread _screams_sfx(sc,0.2,1.2);
@@ -3213,6 +3234,17 @@ _progress_bar(p,cp,r,txt){
 		self.useRate = r;
 		self.useText = txt;
 		self.proxBar = self maps\mp\gametypes\_gameobjects::personalUseBar(self);
+		self thread _progress_bar_watcher();
+	}
+}
+
+_progress_bar_watcher(){
+	_cp = -1;
+	for(;;){
+		cp = self.curProgress;
+		if(cp == _cp) { self.inUse = false; return; }
+		wait 0.1;
+		_cp = cp;
 	}
 }
 
@@ -3369,7 +3401,7 @@ _set_hud_wpt(hud, icon, sx, sy, a, px, py, pz, ent, dur, freq){
 }
 
 _hud_wpt_dim(hud,a,dur,ent){
-	self endon ( "death" );
+	//self endon ( "death" );
 	self endon ( "disconnect" );
 	self endon( "intermission" );
 	self endon( "game_ended" );
@@ -3382,14 +3414,14 @@ _hud_wpt_dim(hud,a,dur,ent){
 	if(!isDefined(dur) || dur < 0.1) { dur=0.5; } 
 	if(isDefined(self.hudwpt[hud])){
 		if(isDefined(self.hudwpt[hud].alpha)) { 
-			while (isDefined(self.hudwpt[hud].alpha) && self.hudwpt[hud].alpha>0){ self.hudwpt[hud].alpha-=0.02; wait 0.05; }
+			while(isAlive(self) && isDefined(self.hudwpt[hud].alpha) && self.hudwpt[hud].alpha>0){ self.hudwpt[hud].alpha-=0.02; wait 0.05; }
 		}
 	}
 }
 
 _hud_destroy(hud){
 	self endon("disconnect");
-    self endon("death");
+    //self endon("death");
 	if(isDefined(hud) && isDefined(self.hudwpt)){ self.hudwpt[hud] Destroy(); }
 	else { return; }
 }
@@ -4086,7 +4118,9 @@ _commander_snd(){
 
 _botScriptGoal(){
 	self endon("disconnect");
+	self endon("intermission");
 	self endon("game_ended");
+	self endon("death");
 	
 	if (!self.isbot){ return; }
 
@@ -4142,17 +4176,17 @@ _changeBotWeapon(){
 	
 	if(!self.isbot) { return; }
 
-	self takeAllWeapons(); 
 	wait 0.3;
+	self takeAllWeapons(); 
 	//self GiveWeapon("knife_mp");
 	//self setSpawnWeapon("knife_mp");
 	
 	for(i=0;i<2;i++){	//give 2 weapons to bot
 		w2=randomIntRange(0,level.botsWeapons.size);
-		self GiveWeapon( level.botsWeapons[w2] );
-		self switchToWeapon(level.botsWeapons[w2]);
+		self GiveWeapon(level.botsWeapons[w2]);
 		self giveMaxAmmo(level.botsWeapons[w2]);
-		wait 0.05;
+		wait 0.5;
+		if(i>1){ self switchToWeapon(level.botsWeapons[w2]); }
 	}
 }
 
