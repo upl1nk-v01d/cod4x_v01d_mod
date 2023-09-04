@@ -1,3 +1,10 @@
+2023 09 04
+added dvar v01d_full_ammo_clip_at_round_start
+tuned recoil params
+
+2023 06 18
+fixed flipped mm1 hud icon
+
 2023 05 26
 converted mm1 to projectile type weapon
 fixed em1 flyby and hit sound
