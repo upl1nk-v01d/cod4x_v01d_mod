@@ -4,7 +4,7 @@ the mod files for cod4x provided by v01d
 
 -------------------------------------------
 
-updated 2023.06.18 v01d mod.ff, iwd and other mod files at https://drive.google.com/drive/folders/186GyQw-vKV_bFqAfxdYtRPXcxtaSnoCb
+updated 2023.09.04 v01d mod.ff, iwd and other mod files at https://drive.google.com/drive/folders/186GyQw-vKV_bFqAfxdYtRPXcxtaSnoCb
 
 -------------------------------------------
 
