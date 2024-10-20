@@ -1,3 +1,29 @@
+2024 10 20
+implemented ballistic bullets
+
+2024 09 01
+added chopper crash radius damage
+
+2024 08 08
+added move feature when last stand
+
+2024 07 29
+removed match bonus hud element at round end
+removed perk hud elements
+added last stand suicide with message
+fixed defuse winning team score
+
+2024 07 28
+choppers are shooting each other
+chopper can friendly fire
+tuned bots aiming, including MM1 grenade launcher
+
+2024 07 07
+fixed MOTD hud navigation
+
+2024 07 06
+fixed weapon CZ805 reload sounds
+
 2023 09 04
 added dvar v01d_full_ammo_clip_at_round_start
 tuned recoil params
