@@ -188,7 +188,7 @@ handleBots()
 {
 	//level thread teamBots();
 	level thread diffBots();
-	level addBots();
+	//level addBots();
 
 	while ( !level.intermission )
 		wait 0.05;

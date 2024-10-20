@@ -17,7 +17,7 @@ added()
 
 	self set_diff();
 
-	self set_class( rankxp );
+	//self set_class( rankxp );
 }
 
 /*
