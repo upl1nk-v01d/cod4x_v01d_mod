@@ -4,7 +4,7 @@ the mod files for cod4x provided by v01d
 
 -------------------------------------------
 
-updated 2023.09.04 v01d mod.ff, iwd and other mod files at https://drive.google.com/drive/folders/186GyQw-vKV_bFqAfxdYtRPXcxtaSnoCb
+updated 2024.10.20 v01d mod.ff, iwd and other mod files at https://drive.google.com/drive/folders/186GyQw-vKV_bFqAfxdYtRPXcxtaSnoCb
 
 -------------------------------------------
 
@@ -42,6 +42,32 @@ v01d_full_ammo_clip_at_round_start 1 //give player full weapon ammo clip at roun
 -------------------------------------------
 
 updates log:
+
+2024 10 20
+implemented ballistic bullets
+
+2024 09 01
+added chopper crash radius damage
+
+2024 08 08
+added move feature when last stand
+
+2024 07 29
+removed match bonus hud element at round end
+removed perk hud elements
+added last stand suicide with message
+fixed defuse winning team score
+
+2024 07 28
+choppers are shooting each other
+chopper can friendly fire
+tuned bots aiming, including MM1 grenade launcher
+
+2024 07 07
+fixed MOTD hud navigation
+
+2024 07 06
+fixed weapon CZ805 reload sounds
 
 2023 09 04
 added dvar v01d_full_ammo_clip_at_round_start
