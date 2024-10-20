@@ -2,6 +2,8 @@
 #include maps\mp\_utility;
 #include maps\mp\gametypes\_hud_util;
 #include maps\mp\bots\_bot_utility;
+#include scripts\cl;
+
 
 /*
 	When a bot is added (once ever) to the game (before connected).
@@ -421,10 +423,16 @@ IsWeapSniper( weap )
 	if ( weap == "none" )
 		return false;
 
-	if ( maps\mp\gametypes\_missions::getWeaponClass( weap ) != "weapon_sniper" )
-		return false;
+	//if ( maps\mp\gametypes\_missions::getWeaponClass( weap ) != "weapon_sniper" )
+	//if(isDefined(scripts\main::_classCheck(weap,"sniper")
 
-	return true;
+	if (scripts\main::_classCheck(weap,level.classBoltSniper) || scripts\main::_classCheck(weap,level.classSniper))
+	{
+		cl(weap + " is sniper");
+		return true;
+	}
+		
+	return false;
 }
 
 /*
@@ -1295,10 +1303,11 @@ aim_loop()
 				nadeAimOffset = dist / 3000;
 			else if ( curweap != "none" &&  weaponClass( curweap ) == "grenade" )
 			{
-				if ( maps\mp\gametypes\_missions::getWeaponClass( curweap ) == "weapon_projectile" )
+				//if ( maps\mp\gametypes\_missions::getWeaponClass( curweap ) == "weapon_projectile" )
+				if (curweap[0] == "g" && curweap[1] == "l" && curweap[2] == "_")
 					nadeAimOffset = dist / 16000;
-				else
-					nadeAimOffset = dist / 3000;
+				//else
+				//	nadeAimOffset = dist / 3000;
 			}
 
 			if ( no_trace_time && ( !isDefined( self.bot.after_target ) || self.bot.after_target != target ) )
@@ -1431,10 +1440,11 @@ aim_loop()
 			nadeAimOffset = dist / 3000;
 		else if ( curweap != "none" &&  weaponClass( curweap ) == "grenade" )
 		{
-			if ( maps\mp\gametypes\_missions::getWeaponClass( curweap ) == "weapon_projectile" )
+			//if ( maps\mp\gametypes\_missions::getWeaponClass( curweap ) == "weapon_projectile" )
+			if (curweap[0] == "g" && curweap[1] == "l" && curweap[2] == "_")
 				nadeAimOffset = dist / 16000;
-			else
-				nadeAimOffset = dist / 3000;
+			//else
+			//	nadeAimOffset = dist / 3000;
 		}
 
 		aimpos = last_pos + ( 0, 0, self getEyeHeight() + nadeAimOffset );
@@ -1511,6 +1521,7 @@ aim()
 		if ( level.inPrematchPeriod || level.gameEnded || self.bot.isfrozen || self maps\mp\_flashgrenades::isFlashbanged() )
 			continue;
 
+		if (getDvar("v01d_dev") == "nav"){ return; }
 		self aim_loop();
 	}
 }
@@ -1737,7 +1748,7 @@ walk()
 	{
 		wait 0.05;
 
-		self botMoveTo( self.origin );
+		//self botMoveTo( self.origin );
 
 		if ( !getDvarInt( "bots_play_move" ) )
 			continue;
