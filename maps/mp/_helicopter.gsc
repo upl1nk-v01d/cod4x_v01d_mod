@@ -1,6 +1,7 @@
 #include maps\mp\_utility;
 #include maps\mp\gametypes\_hud_util;
 #include common_scripts\utility;
+#include scripts\cl;
 
 precachehelicopter(model,type)
 {
@@ -13,9 +14,11 @@ precachehelicopter(model,type)
 	level.vehicle_deathmodel[model] = model;
 	
 	//precachevehicle(type);
-	precacheitem( "cobra_FFAR_mp" );
-	precacheitem( "hind_FFAR_mp" );
-	precacheitem( "cobra_20mm_mp" );
+	precacheitem( "cobra_FFAR_mp" ); //common_mp and mod precache = 2x
+	precacheitem( "hind_FFAR_mp" ); //common_mp and mod precache = 2x
+	precacheitem( "cobra_20mm_mp" ); //common_mp and mod precache = 2x
+	
+	if(isDefined(level.precachedItemsNum)){ level.precachedItemsNum+=3*2; } //third precache
 	
 	/******************************************************/
 	/*					SETUP WEAPON TAGS				  */
@@ -128,6 +131,7 @@ init()
 //		return;
 
 	//print("!!! _helicopter.gsc !!!\n");
+	//cl("!!! _helicopter.gsc !!!");
 	
 	path_start = getentarray( "heli_start", "targetname" ); 		// start pointers, point to the actual start node on path
 	loop_start = getentarray( "heli_loop_start", "targetname" ); 	// start pointers for loop path in the map
@@ -273,7 +277,7 @@ heli_think( owner, startnode, heli_team, requiredDeathCount )
 	chopper thread heli_fly( startnode );	// fly heli to given node and continue on its path
 	chopper thread heli_damage_monitor();	// monitors damage
 	chopper thread heli_health();			// display helicopter's health through smoke/fire
-	chopper thread attack_targets();		// enable attack
+	//chopper thread attack_targets();		// enable attack
 	chopper thread heli_targeting();		// targeting logic
 	chopper thread heli_missile_regen();	// regenerates missile ammo
 }
@@ -562,6 +566,7 @@ heli_damage_monitor()
 		self waittill( "damage", damage, attacker, direction_vec, P, type );
 		// self notify( "damage taken" ); // not used anywhere yet
 		
+		/*
 		if( !isdefined( attacker ) || !isplayer( attacker ) )
 			continue;
 		
@@ -580,7 +585,8 @@ heli_damage_monitor()
 
 		if ( !isValidAttacker )
 			continue;
-
+		*/
+		
 		attacker thread maps\mp\gametypes\_damagefeedback::updateDamageFeedback( false );
 		self.attacker = attacker;
 
@@ -684,16 +690,56 @@ heli_evasive()
 	self thread heli_fly( loop_startnode );
 }
 
+heli_crash_site(){
+		a = self.angles;
+		sp = self.origin;
+		affd = sp + anglesToForward((a[0]+40, a[1], a[2]))*9999;
+		btfd = bulletTrace(sp, affd, true, self);
+		posfd = btfd["position"];
+		
+		return posfd;
+}
+
+heli_crash_land(){
+	while(isDefined(self)){
+		a = self.angles;
+		sp = self.origin;
+		aff = sp + anglesToForward((a[0], a[1], a[2]))*256;
+		affd = sp + anglesToForward((a[0]+40, a[1], a[2]))*256;
+		btf = bulletTrace(sp, aff, true, self);
+		btfd = bulletTrace(sp, affd, true, self);
+		posf = btf["position"];
+		posfd = btfd["position"];
+		distf=distance(sp,posf);
+		distfd=distance(sp,posfd);
+		
+		//cl("distf: "+distf);
+		//cl("distfd: "+distfd);
+	
+		if(distf<99 || distfd<99){
+			self thread heli_explode();
+		}
+		wait 0.05;
+	}
+}
+
 // attach helicopter on crash path
 heli_crash()
 {
 	
-	if(randomInt(5)>2){ self notify( "death" ); }
-	else{ self notify( "crashing" ); }
-	//self notify( "crashing" );
+	self notify( "crashing" );
+	if(randomIntRange(0,5)>2){ 
+		wait 0.3; 
+		self thread heli_explode(); 
+		self notify( "death" );
+		return; 
+	}
+	//else{ self notify( "crashing" ); }
 	
 	// fly to crash path
-	self thread heli_fly( level.heli_crash_paths[0] );
+	//self thread heli_fly( level.heli_crash_paths[0] );
+	self thread heli_crash_fly(heli_crash_site());
+	self thread heli_crash_land();
 	
 	// helicopter losing control and spins
 	self thread heli_spin( 180 );
@@ -714,10 +760,25 @@ heli_crash()
 	self thread heli_explode();
 }
 
+heli_crash_fly(pos){
+	self endon( "death" );
+	
+	// only one thread instance allowed
+	self notify( "flying");
+	self endon( "flying" );
+	
+	self.reached_dest = false;
+	heli_reset();
+	
+	//self setgoalyaw(self.angles[1]+randomFloatRange(-100,100));
+	self setvehgoalpos((pos), 0);
+
+}
+
 // self spin at one rev per 2 sec
 heli_spin( speed )
 {
-	self endon( "death" );
+	//self endon( "death" );
 	
 	// tail explosion that caused the spinning
 	playfxontag( level.chopper_fx["explode"]["medium"], self, "tail_rotor_jnt" );
@@ -732,10 +793,27 @@ heli_spin( speed )
 	
 	// spins until death
 	self setyawspeed( speed, speed, speed );
-	while ( isdefined( self ) )
-	{
-		self settargetyaw( self.angles[1]+(speed*0.9) );
-		wait ( 1 );
+	
+	if(randomIntRange(0,5)>2){
+		a = self.angles;
+		sp = self.origin;
+		aff = sp + anglesToForward((a[0], a[1], a[2]))*256;
+		btf = bulletTrace(sp, aff, true, self);
+		posf = btf["position"];
+		
+		/*front = Spawn("script_origin",self getOrigin());
+		front linkTo(self, "tail_rotor_jnt", (0,0,0), (0,0,0));
+		self SetLookAtEnt(front);
+		while (isdefined(self)){
+			wait 0.1;
+		}
+		front delete();*/
+	} else {
+		while ( isdefined( self ) )
+		{
+			self settargetyaw( self.angles[1]+(speed*0.9) );
+			wait ( 1 );
+		}
 	}
 }
 
@@ -764,6 +842,7 @@ trail_fx( trail_fx, trail_tag, stop_notify )
 		
 	for ( ;; )
 	{
+		if(!isDefined(self)){ return; }
 		playfxontag( trail_fx, self, trail_tag );
 		wait( 0.05 );
 	}
@@ -777,8 +856,16 @@ heli_explode()
 	forward = ( self.origin + ( 0, 0, 100 ) ) - self.origin;
 	playfx ( level.chopper_fx["explode"]["death"], self.origin, forward );
 	
+	RadiusDamage(self.origin, 500, 90, 1, self.owner);
+	
 	// play heli explosion sound
 	self playSound( level.heli_sound[self.team]["crash"] );
+	
+	if (FS_TestFile("/scripts/main.gsc")){
+		thread scripts\main::_playSoundInSpace("close_expl",self.origin);
+		thread scripts\main::_playSoundInSpace("clboom",self.origin);
+		thread scripts\main::_playSoundInSpace("distboom",self.origin);
+	}
 	
 	level.chopper = undefined;
 	self delete();
