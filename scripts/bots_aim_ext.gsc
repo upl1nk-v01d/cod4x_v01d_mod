@@ -90,11 +90,21 @@ _start_aim_ext()
     	self thread _bot_aimspots();
     	self thread _bot_dp_loop();
     	self thread _bot_react_to_firesound();
+    	self thread _killed();
 		wait 0.05;
 	}
 }
 
-_aimspeed_mod(k)
+_killed(){
+	self waittill("death", attacker, sMeansOfDeath);
+	if(self.isbot){
+		//cl(self.name+" was killed");
+		if(!isDefined(attacker)){ return; }
+		attacker thread _aim();
+	}
+}
+
+_aim(k)
 {	
 	self endon ( "death" );
 	self endon ( "disconnect" );
@@ -103,22 +113,25 @@ _aimspeed_mod(k)
 	
 	if (getDvar("bots_aim_ext")=="1" && getDvar("bots_play_move") == "1") {
 			
-		if (!self.isbot){return;}
+		if (!isDefined(self.isbot)){ return; }
+		if (!self.isbot){ return; }
 		if (!isDefined(self.pers["bots"]["skill"]["aim_time"] )) { return; }
+		if (!isDefined(k)){ k=1; }
 		
 		aimspeed=self.pers["bots"]["skill"]["old_aim_time"];
+		//aimspeed = 2;
 		
 		if (isDefined(self) && isAlive(self)){ self.sw=1; }		
 	
 		while (self.sw == 1)  { 
-			if(aimspeed < self.pers["bots"]["skill"]["aim_time"]) { self.sw = 0; }
-			if(aimspeed < 0.2) { aimspeed=0.2; }
+			//if(aimspeed < self.pers["bots"]["skill"]["aim_time"]) { self.sw = 0; }
+			if(aimspeed < 0.2) { aimspeed=0.2; self.sw = 0; break; }
 			aimspeed *= k;
 			if(aimspeed >= 0.2) { self.pers["bots"]["skill"]["aim_time"] = aimspeed; }
 			wait 0.05;
 		} 
 		while (self.sw == 0) {
-			if(aimspeed > 1) { self.sw = 1; }
+			if(aimspeed > 1) { aimspeed = 1; self.sw = 1; break; }
 			aimspeed *= 1+(1-k); 
 			if(aimspeed <= 1) { self.pers["bots"]["skill"]["aim_time"] = aimspeed; }
 			wait 0.05;
@@ -175,8 +188,8 @@ _upd_aim(){
 	 			if(dp==0){ dp += 0.001; }
 	 			kills=self.pers["kills"];
 	 			if(isDefined(kills) && kills > 0){
-	 				self.pers["bots"]["skill"]["reaction_time"] = self.pers["bots"]["skill"]["reaction_time"] - (10 / kills); 
-	 				self.pers["bots"]["skill"]["init_react_time"] = self.pers["bots"]["skill"]["init_react_time"] - (10 / kills); 
+	 				self.pers["bots"]["skill"]["reaction_time"] = self.pers["bots"]["skill"]["reaction_time"] - (5 / kills); 
+	 				self.pers["bots"]["skill"]["init_react_time"] = self.pers["bots"]["skill"]["init_react_time"] - (5 / kills); 
 	 				self.pers["bots"]["skill"]["fov"] = self.pers["bots"]["skill"]["fov"] - (1 / kills); 
 	 				//cl(self.name+" has "+kills+" kills");
 	 				//cl(self.name+" has "+self.pers["bots"]["skill"]["fov"]);
@@ -189,10 +202,12 @@ _upd_aim(){
 				self.bot.after_target_old=self.bot.after_target;
 				//while (self.swc == 1){ 
 				aimspeed = 5;
+				
 				while (isDefined(self.bot.after_target) && self.bot.after_target==self.bot.after_target_old){ 
 					//if(self.bot.after_target_old==self.bot.after_target_old){ aimspeed=2; }
 					if(aimspeed>0.2){ aimspeed*=0.2; }
 	 				dp = self _bot_dp(self.bot.after_target.origin, self getEye(), self GetPlayerAngles());
+	 				dp = dp * randomFloatRange(0.99,1.01);
 					//if(isDefined(dp) && dp<0.2){ aimspeed *= 0.7; } else { aimspeed *= 0.7; }
 					//aimspeed -= k;
 					//aimspeed = aimspeed * (dp-0.5);
@@ -235,10 +250,13 @@ _upd_wpts(){
 					//k=0.3-(roundwins*0.05);
 					k=0.7;
 					if(k<0.1){ k=0.1; }
-					self _aimspeed_mod(k);
+					self _aim(k);
 					self.bot.next_wp = self.bot._next_wp;
 					//while (isDefined(self.bot.next_wp) && self.bot.next_wp==self.bot._next_wp){ 
 					aimspeed=5;
+					//pos = self _bot_aim_bt();
+					//aimspot = (randomFloatRange(-33,33)*k,randomFloatRange(-55,55)*k,randomFloatRange(-33,33)*k);
+					//self.bot.script_aimpos = pos + aimspot;
 					while (isDefined(self.bot.next_wp) && self.bot.next_wp==self.bot._next_wp){ 
 						aimspeed*=0.3;
 						if(aimspeed>0.2){
@@ -253,6 +271,15 @@ _upd_wpts(){
 	}
 }
 
+_bot_aim_bt(){
+	a = self.angles;
+	sp = self.origin;
+	affd = sp + anglesToForward((a[0], a[1], a[2]))*256;
+	btfd = bulletTrace(sp, affd, true, self);
+	posfd = btfd["position"];
+	return posfd;
+}
+
 _bot_aimspots(){
 	self endon ( "death" );
 	self endon ( "disconnect" );
@@ -261,38 +288,57 @@ _bot_aimspots(){
 	
 	//setDvar("bots_fire_ext","0");
 	
-	if (!self.isbot){return;}
+	if (!self.isbot){ return; }
 
-	c=12;
+	//c=12;
 	for(;;){
-		if (getDvar("bots_aim_ext")=="1" && getDvar("bots_play_move") == "1") {
+		//if (getDvar("bots_aim_ext")=="1" && getDvar("bots_play_move") == "1") {
 			//if(c<=12) { c++; }
 			//else if (c>12) { 
-				if (isDefined(self.bot.target) && isDefined(self.bot.target.entity)) { 
+				
+				if(isDefined(self.bot.script_aimpos)){ 
+					aimspot = (randomFloatRange(-33,33),randomFloatRange(-55,55),randomFloatRange(-33,33));
+					//pos = self _bot_aim_bt()+aimspot;
+					self.bot.script_aimpos = self.bot.script_aimpos + aimspot;
+				}
+				
+				//self.bot.after_target_pos = pos;
+				if (isDefined(self.bot.target) && isDefined(self.bot.target.entity)){
+					//self.bot.stop_move=true;
 					//if(isDefined(self.aimspots)){ self.aimspots Delete(); }
-					org=self.bot.target.entity.origin;
+					pos = self.bot.target.entity.origin;
+					if(!isDefined(pos)){ pos = self _bot_aim_bt(); }
 					//self.aimspots = spawn("script_origin", (a[0]*r,a[1]*r,a[2]*r));
-					//self _aimspeed_mod(0.3);
 					//self.pers["bots"]["skill"]["aim_time"] = 5;
-					if(isDefined(org)){ 
+					//if(isDefined(pos)){ 
 						//dist=distance(org,self.origin);
 						//r=randomFloatRange(0,15)+(dist*0.2);
-						lives = self.pers["lives"];
-						dvar=getDvarInt("scr_"+getDvar("g_gametype")+"_numlives");
-						if(dvar<1){ k=1; }
-						else{ k=lives/dvar; }
-						r=randomFloatRange(-30,30)*k;
-						aimspot = (r,r,r);
-						//t = spawn( "script_origin", aimspot);
-						self.bot.target.offset=aimspot;
-						self.bot.target.origin=org*0.1;
-						aimspeed=2;
-						self.pers["bots"]["skill"]["aim_time"] = aimspeed;
-						while (aimspeed>0.2){ 
-							if(aimspeed>0.2){ aimspeed*=0.2; }
-							if(aimspeed>=0.2){ self.pers["bots"]["skill"]["aim_time"] = aimspeed; }
-							wait 0.05;
+						//lives = self.pers["lives"];
+						//dvar=getDvarInt("scr_"+getDvar("g_gametype")+"_numlives");
+						//if(dvar<1){ k=1; }
+						//else{ k=lives/dvar; }
+						//r=randomFloatRange(-130,130)*k;
+						k=1;
+						dist = distance(pos, self getEye());
+						if(isDefined(dist)){ k=0.001*dist; }
+						
+						stance=self getStance();
+						if (stance == "crouch"){ k=k*0.7; } 
+						if (stance == "prone"){ k=k*0.3; } 
+						aimspot = (randomFloatRange(-33,33)*k,randomFloatRange(-55,55)*k,randomFloatRange(-33,33)*k);
+						//aimspot = aimspot + (0,0,100);
+						if(self GetCurrentWeapon() == "barrett_acog_mp"){ //mm1 
+							aimspot = aimspot + (0,0,-60); 
 						}
+						//t = spawn( "script_origin", aimspot);
+						//self.bot.target.entity.origin = pos + aimspot;
+						self.bot.target.offset=aimspot;
+						self.bot.target.origin=pos+aimspot;
+						self thread _aim(0.5);
+						//self.bot.after_target.offset=aimspot;
+						//self botLookAt(pos,5);
+						
+						//cl("11"+self.name+": "+self GetCurrentWeapon());
 						//self.bot.script_target=self.aimspots;
 						//self.bot.target=self.aimspots;
 						//self.bot.target.entity_old=self.bot.target.entity;
@@ -303,13 +349,13 @@ _bot_aimspots(){
 						//self botLookAt(aimspot,0.9);
 						//cl("11"+self.name+":"+self.aimspots);
 						//self.bot.script_target=t;
-						wait 0.7;
+						//wait 0.7;
 						//t delete();
-					}
+					//}
 					//c=12+randomIntRange(-5,5);
 				}
-		}
-		wait 0.1+randomFloatRange(0,0.5);
+		//}
+		wait 0.1 + randomFloatRange(0.3,0.8);
 	}
 }
 
@@ -342,6 +388,7 @@ _bot_react_to_firesound(){
 	self endon( "game_ended" );
 	
 	if(!self.isbot){ return; }
+	
 	for(;;){
 		players = getentarray( "player", "classname" );
 		closest=20000; nr=undefined;

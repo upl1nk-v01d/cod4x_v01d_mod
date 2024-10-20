@@ -1,7 +1,7 @@
 //
 cl(txt){
 	//if (!getdvarint("developer")>0) { return; }
-	if(isDefined(txt)){ 
+	if(isDefined(txt) && txt.size > 0){ 
 		_txt="";
 		if(txt[0]!=txt[1]){
 			print("^3-- "+txt+" -- \n"); 

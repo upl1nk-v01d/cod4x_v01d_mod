@@ -420,7 +420,6 @@ createRectangle(align,relative,x,y,width,height,color,sort,alpha,shader,ha,va)
 
 _get_motd_txt(prevDay){
 	if (isDefined(game["MOTD"]["dateTimes"]) && game["MOTD"]["dateTimes"].size<1){
-		cl("game[MOTD][dateTimes].size: "+game["MOTD"]["dateTimes"].size);
 		if(!isDefined(prevDay)){ prevDay=0; }
 		realTime = getRealTime()-(86400*prevDay);
 		realDate = TimeToString(realTime, 0, "%F");
@@ -433,7 +432,7 @@ _get_motd_txt(prevDay){
 		chars=[];
 		dateTimes=[];
 		reports=[];
-		prevDatesLimit=180;
+		prevDatesLimit=30;
 		//cl("^3realDate: " + realDate);
 		
 		//lines[0]="^2"+realDate+"\n";
@@ -460,37 +459,47 @@ _get_motd_txt(prevDay){
 		prevDatesLimitTime=getRealTime()-(86400*prevDatesLimit);
 		if(isDefined(raw) && !isDefined(stopAll)){
 			for(i=0;i<raw.size;i++){
-				for(d=0;d<prevDatesLimit;d++){
-					time=getRealTime()-(86400*d);
-					date=strRepl(TimeToString(time, 0, "%F"),"-"," ");
+				//for(d=0;d<prevDatesLimit;d++){
+					//time=getRealTime()-(86400*d);
+					//date=strRepl(TimeToString(time, 0, "%F"),"-"," ");
 					stop=undefined;
-					//cl("date: "+date);
+					//cl("11date: "+date);
 					
-					if(isDefined(raw[i]) && raw[i]==date && !isDefined(stopAll)){
+					//if(isDefined(raw[i]) && raw[i]==date && !isDefined(stopAll)){
+					if(isDefined(raw[i]) && !isDefined(stopAll)){
 						dateTimes[c]=raw[i];
 						//cl("11dateTimes["+c+"]: " + dateTimes[c]);
 						game["MOTD"]["dateTimes"][c]=dateTimes[c];
-						while(isDefined(raw[i])){ 
+						while(isDefined(raw[i]) && raw[i] != ""){ 
 							i++;
-							for(j=0;j<prevDatesLimit-c;j++){
+							/* for(j=0;j<prevDatesLimit-c;j++){
 								time=getRealTime()-(86400*j);
 								date=strRepl(TimeToString(time, 0, "%F"),"-"," ");
 								if(time<=prevDatesLimit){ stopAll=true; }
 								if(isDefined(raw[i]) && raw[i]==date){ stop=true; break; }
-							}
+							} */
 							if(isDefined(stop)){ break; }
 							if(isDefined(raw[i]) && !isDefined(stopAll)){ 
 								reports[c]=raw[i]; 
 								//cl("22reports["+c+"]: " + reports[c]);
-								if(isDefined(game["MOTD"]["reports"][c])){ game["MOTD"]["reports"][c]+="\n"+reports[c]; }
-								else { game["MOTD"]["reports"][c]="\n\n"+reports[c]; }
+								if(isDefined(game["MOTD"]["reports"][c])){ 
+									game["MOTD"]["reports"][c]+="\n"+reports[c]; 
+								}
+								else { 
+									game["MOTD"]["reports"][c]="\n\n"+reports[c]; 
+								}
 							}
 						}
-						c++;
 					}
-				}
+				//}
+				c++;
 			}
 		}
+		wait 1;
+		//cl("22"+game["MOTD"]["dateTimes"][0]);
+		//cl("22"+game["MOTD"]["reports"][0]);
+		//exec("quit");
+		
 	}
 }
 
@@ -867,9 +876,11 @@ _welcome_msg(){
 		//motd=game["MOTD"];
 		//self.hudMOTD[0]=motd;
 		
-		self.hudMOTDdateTimes[0]="^1"+game["MOTD"]["dateTimes"][self.readDay];
-		self.hudMOTDreports[0]="^7"+game["MOTD"]["reports"][self.readDay];
-		self.hudMOTDfooter[0]="\n\n\n\n\n\n\n\n\n\n^2Press left or RIGHT button to navigate\n";
+		if(isDefined(game["MOTD"]["dateTimes"][self.readDay])){
+			self.hudMOTDdateTimes[0]="^1"+game["MOTD"]["dateTimes"][self.readDay];
+			self.hudMOTDreports[0]="^7"+game["MOTD"]["reports"][self.readDay];
+		}	
+		self.hudMOTDfooter[0]="\n\n\n\n\n\n\n\n\n\n^2Press LEFT or RIGHT button to navigate\n";
 		self.hudMOTDfooter[0]+="^1Press JUMP button to destroy this message\n";
 		
 		if(isDefined(self.hudMOTDdateTimes) && isDefined(self.hudMOTDreports)){
@@ -1167,6 +1178,7 @@ _buy_menu_show(arr,prev,next,div){
 					self notify("isBuying");
 					//self thread _check_ammo_buy_menu();
 					if(next==true){ self.buyMenuShow=undefined; }
+					
 					//self.buyMenuShow=undefined;
 					//self.hasChosen=arr[(selector-1)*div];
 					//cl("^3self.hasChosen:"+self.hasChosen);
@@ -1401,7 +1413,7 @@ _buy_menu_main(){
 		}
 		while(isDefined(self.buyMenuShow) && isDefined(self.hasChosen) && isAlive(self)){ 
 			if(distance(self.spawnStartOrigin,self.origin)>=16){ 
-				self.buyMenuShow=undefined; 
+				self.buyMenuShow=undefined;
 			}
 			//cl("^3self.spawnStartOrigin");
 			wait 0.05; 

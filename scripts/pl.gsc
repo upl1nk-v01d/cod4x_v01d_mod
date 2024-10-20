@@ -1,3 +1,4 @@
+//
 pl(txt){
 	color = "";
 	if (isDefined(txt)){

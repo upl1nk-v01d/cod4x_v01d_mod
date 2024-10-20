@@ -31,6 +31,8 @@ _start_fire_ext()
 	self waittill("spawned_player");  
 
     self thread _bot_fire();
+    self thread _bot_stop_when_prone();
+    
 	wait 0.05;
 }
 
@@ -49,8 +51,8 @@ _bot_fire(){
 			if(isAlive(self) && isDefined(self.dp) && self.dp>0.95){
 				if (isDefined(self.bot.script_target)){
 					//cl("33"+self.name+" target model: "+self.bot.script_target.model);
-					//if (self.bot.script_target.model == "c4_mp" || self.bot.script_target.model == "claymore_mp") { 
-					if (self.bot.script_target.model == "c4_mp") { 
+					if (self.bot.script_target.model == "c4_mp" || self.bot.script_target.model == "claymore_mp") { 
+					//if (self.bot.script_target.model == "c4_mp") { 
 						self.bot.script_target=undefined;
 					}
 					if (self.bot.script_target.model == "vehicle_mi24p_hind_desert" || self.bot.script_target.model == "vehicle_cobra_helicopter_fly") { 
@@ -59,14 +61,17 @@ _bot_fire(){
 					}
 				}				
 				else if (isDefined(self.bot.after_target)) { 
-					//cl("^3"+self.bot.after_target.model);
+					//cl("33"+self.bot.after_target.model);
 					//isSubStr
 					//vehicle_mi24p_hind_desert
 					//vehicle_cobra_helicopter_fly
 					stance=self getStance();
 					dist=distance(self.bot.after_target.origin,self.origin);
-					if (stance == "stand" || stance == "crouch"){ self.bot.stop_move=false; }
-					else { self.bot.stop_move=true; }
+					//self.bot.isfrozen=true;
+					//self.bot.stop_move=true;
+					//self notify( "kill_goal" );
+					//if (stance == "stand" || stance == "crouch"){ self.bot.stop_move=false; }
+					//else { self.bot.stop_move=true; }
 					if (isDefined(level.classBoltSniper)) { 
 						for (i=0;i<level.classBoltSniper.size;i++){
 							if (isSubStr( self GetCurrentWeapon(), level.classBoltSniper[i])){ 
@@ -83,6 +88,7 @@ _bot_fire(){
 						//self botAction("+go"+stance);
 						//self botAction( "-gostand" );
 						self.bot.stop_move=true;
+						self botMoveTo(self.origin);
 						//cl("33"+self.name+" stance:"+stance);
 					} else {
 						self setMoveSpeedScale(1);
@@ -104,6 +110,14 @@ _bot_fire(){
 	}
 }
 
+_bot_stop_when_prone(){
+	while(isAlive(self)){
+		stance=self getStance();
+		if (stance == "prone"){ self botMoveTo(self.origin); }
+		wait 0.05;
+	}
+}
+
 _bot_press_fire(delay,target)
 {
 	self endon("death");
@@ -113,6 +127,8 @@ _bot_press_fire(delay,target)
 	
 	if(!isDefined(delay)) { delay = 0.3; }
 	
+	point = target.origin;
+
 	wait delay;
 
 	if(isDefined(target)){
@@ -129,5 +145,15 @@ _bot_press_fire(delay,target)
 		if(duration) { wait duration/2; }
 		target = undefined;
 		//self.bot.stop_move=false;
+	}
+	
+	wait delay;
+	target = self.bot.after_target;
+	if(!isDefined(target)){
+		dist=distance(point,self.origin);
+		duration=randomFloatRange(0.05,0.3)+(1/(dist*2));
+		self botAction("+fire");
+		if(duration) { wait duration; }
+		self botAction("-fire");
 	}
 }
