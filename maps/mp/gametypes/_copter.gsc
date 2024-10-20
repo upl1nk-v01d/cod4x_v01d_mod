@@ -760,8 +760,8 @@ copterDamage(damagetrig)
 		damagetrig waittill("damage", amount, attacker);
 		
 		// disallow friendly fire
-		if (isdefined(attacker) && isplayer(attacker) && isdefined(attacker.pers["team"]) && attacker.pers["team"] == self.team)
-			continue;
+		//if (isdefined(attacker) && isplayer(attacker) && isdefined(attacker.pers["team"]) && attacker.pers["team"] == self.team)
+		//	continue;
 		
 		self.health -= amount;
 		if (self.health <= 0) {

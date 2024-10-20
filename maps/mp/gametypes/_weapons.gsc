@@ -73,7 +73,7 @@ init()
 	level.botsWeapons=[];	
 	if(!isDefined(level.precachedItemsNum)){ level.precachedItemsNum=0; } //first precache
 	if(isDefined(level.skipPrecacheItems)){
-		level.skipPrecacheItems=StrTok("defaultweapon_mp,m16_mp,m16_acog_mp,m16_silencer_mp,m16_reflex_mp,mp5_acog_mp,mp5_reflex_mp,skorpion_silencer_mp,uzi_reflex_mp,uzi_silencer_mp,uzi_acog_mp,ak74u_silencer_mp,ak74u_reflex_mp,ak74u_acog_mp,m14_reflex_mp,p90_acog_mp,p90_reflex_mp,aw50_mp,aw50_acog_mp,g3_acog_mp,g3_silencer_mp,g36c_reflex_mp,m4_reflex_mp,m1014_grip_mp,rpd_acog_mp,rpd_grip_mp,rpd_reflex_mp,saw_acog_mp,saw_grip_mp,saw_reflex_mp,m60e4_acog_mp,m60e4_grip_mp,m60e4_reflex_mp", "," ); // those weapons will be not available in-game
+		level.skipPrecacheItems=StrTok("defaultweapon_mp,m16_mp,m16_acog_mp,m16_silencer_mp,m16_reflex_mp,mp5_acog_mp,mp5_reflex_mp,skorpion_silencer_mp,uzi_reflex_mp,uzi_silencer_mp,uzi_acog_mp,p90_acog_mp,p90_reflex_mp,aw50_mp,aw50_acog_mp,g3_acog_mp,g3_silencer_mp,m1014_grip_mp,rpd_acog_mp,rpd_grip_mp,rpd_reflex_mp,saw_acog_mp,saw_grip_mp,saw_reflex_mp,m60e4_reflex_mp", "," ); // those weapons will be not available in-game
 		//level.skipPrecacheItems=StrTok("m16_mp,m16_reflex_mp,m16_silencer_mp,m16_acog_mp,m16_gl_mp,aw50_mp,aw50_acog_mp,barrett_mp,barrett_acog_mp,skorpion_silencer_mp,skorpion_acog_mp,skorpion_reflex_mp,uzi_reflex_mp,uzi_silencer_mp,uzi_acog_mp,ak74u_silencer_mp,ak74u_reflex_mp,ak74u_acog_mp,m14_reflex_mp,p90_reflex_mp,ak47_reflex_mp,g3_reflex_mp,g36c_reflex_mp,m4_reflex_mp,m1014_grip_mp,m1014_reflex_mp,winchester1200_grip_mp,winchester1200_reflex_mp,rpd_acog_mp,rpd_grip_mp,rpd_reflex_mp,saw_acog_mp,saw_grip_mp,saw_reflex_mp,m60e4_acog_mp,m60e4_grip_mp,m60e4_reflex_mp", "," ); // those weapons will be not available in-game
 	}
 	// based on weaponList array, precache weapons in list
@@ -435,6 +435,7 @@ playerPickupItem(item){
 	self endon("death");
 
 	if(!isDefined(item.ownersInventory)){ return; }
+	if(isDefined(self.gettingItem)){ return; }
 	
 	pickupItemTime=1;
 	if(getDvarFloat("v01d_item_pickup_time") > 0){ pickupItemTime=getDvarFloat("v01d_item_pickup_time"); }
@@ -449,10 +450,12 @@ playerPickupItem(item){
 		ammo=item.ownersInventory.clipAmmo;
 		//cl(self.name+" is searching an item "+weapon);
 		dist=undefined;
+		//self takeWeapon("briefcase_bomb_mp");
+		//self takeWeapon("briefcase_bomb_defuse_mp");
 		if(isDefined(item.origin)){
 			dist = distance(self.origin, item.origin);
 		}
-		if(isDefined(dist) && isDefined(weapon) && self UseButtonPressed()){
+		if(isDefined(dist) && isDefined(weapon) && self UseButtonPressed() && !isSubStr(weapon,"briefcase_bomb")){
 			if(dist<maxItemPickupDist && item.waitTimerUnits<item.deleteTimerUnits && !isDefined(self.gettingItem)){ 
 				self thread scripts\main::_progress_bar(_itemPickupTimerUnits,0,1,"");
 				self.gettingItem=true;
@@ -482,7 +485,9 @@ playerPickupItem(item){
 				self playSound("weap_pickup");
 				self.inUse = false;
 				self.gettingItem=undefined;
+				item.waitTimerUnits=undefined;
 				item delete();
+				self notify("picked_weapon_from_ground");
 				wait 0.5;
 				//cl(self.name+" picked up an item");
 				break;
@@ -497,6 +502,7 @@ playerPickupItem(item){
 			}
 		} else {
 			self.gettingItem=undefined;
+			self.inUse = false;
 			break;
 		}
 		wait 0.1;
@@ -523,12 +529,13 @@ watchDroppedItem(){
 			return;
 		}
 		else{ self.waitTimerUnits++; }
-		
-		players = getentarray( "player", "classname" );
-		for(i=0;i<players.size;i++){
-			dist = distance(players[i].origin, self.origin);
-			if(dist<maxItemPickupDist && !isDefined(players[i].gettingItem) && !isDefined(players[i].gettingItem)){
-				players[i] thread playerPickupItem(self);
+		if(isDefined(self.origin)){
+			players = getentarray( "player", "classname" );
+			for(i=0;i<players.size;i++){
+				dist = distance(players[i].origin, self.origin);
+				if(dist<maxItemPickupDist && !isDefined(players[i].gettingItem)){
+					players[i] thread playerPickupItem(self);
+				}
 			}
 		}
 		wait 0.1;
@@ -542,7 +549,7 @@ itemRemoveAmmoFromAltModes()
 	curweapname = weaponAltWeaponName( origweapname );
 	
 	altindex = 1;
-	while ( curweapname != "none" && curweapname != origweapname )
+	while ( curweapname != "none" && curweapname != origweapname && altindex < 3 )
 	{
 		self itemWeaponSetAmmo( 0, 0, altindex );
 		curweapname = weaponAltWeaponName( curweapname );

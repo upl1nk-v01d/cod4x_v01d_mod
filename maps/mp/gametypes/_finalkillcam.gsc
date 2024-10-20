@@ -382,9 +382,11 @@ endGame( winner, endReasonText )
 				if ( level.teamBased ){
 					player thread maps\mp\gametypes\_hud_message::teamOutcomeNotify( winner, true, endReasonText );
 					//player thread scripts\menus::_show_hint_msg(endReasonText,1.7,2,320,70,0,0,"left","middle",0,0,"objective",1.6,2.6,(1,0.5,0.5),1,(0.2,0.3,0.7),1,1,true,true);
+					//player thread scripts\menus::_show_hint_msg(endReasonText,0,3,320,50,0,0,"left","middle",0,0,"objective",3.6,3.6,(1,1,1),1,(1,0.3,0.2),1,1,true);
 				}
 				else{
 					player thread maps\mp\gametypes\_hud_message::outcomeNotify( winner, endReasonText );
+					//player thread scripts\menus::_show_hint_msg(endReasonText,0,3,320,50,0,0,"left","middle",0,0,"objective",3.6,3.6,(1,1,1),1,(1,0.3,0.2),1,1,true);
 				}
 				player setClientDvars( /*"ui_hud_hardcore", 0,*/
 									   "cg_drawSpectatorMessages", 0,

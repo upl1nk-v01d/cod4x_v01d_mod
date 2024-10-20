@@ -871,7 +871,8 @@ playSoundinSpace (alias, origin, master)
 		org playsoundasmaster (alias);
 	else
 		org playsound (alias);
-	wait ( 10.0 );
+	wait ( 0.05 );
+	if(isDefined(org)){ return; }
 	org delete();
 }
 
@@ -1289,10 +1290,10 @@ useTeamUAV( team, otherteam )
 	setTeamRadarWrapper( otherteam, true );
 	
 	wait level.radarViewTime;
-	
 
-	if(self.pers["team"] == "axis"){ self playLocalSound(game["voice"]["axis"] + game["dialog"]["uav_online"]); }
-	else if(self.pers["team"] == "allies"){ self playLocalSound(game["voice"]["allies"] + game["dialog"]["uav_online"]); }
+	self maps\mp\gametypes\_globallogic::leaderDialogOnPlayer( "uav_online" );
+	//if(self.pers["team"] == "axis"){ self playLocalSound(game["voice"]["axis"] + game["dialog"]["uav_online"]); }
+	//else if(self.pers["team"] == "allies"){ self playLocalSound(game["voice"]["allies"] + game["dialog"]["uav_online"]); }
 	
 	setTeamRadarWrapper( otherteam, false );
 	

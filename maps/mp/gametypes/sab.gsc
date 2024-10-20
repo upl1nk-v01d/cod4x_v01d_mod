@@ -297,7 +297,7 @@ onDeadEvent( team )
 			
 		level._teamEliminated = true;
 		[[level._setTeamScore]]( level.bombPlantedBy, [[level._getTeamScore]]( level.bombPlantedBy ) + 1 );
-		print("--bombPlantedBy--\n");
+		//print("--bombPlantedBy--\n");
 		//thread maps\mp\gametypes\_globallogic::endGame( level.bombPlantedBy, game["strings"][level.otherTeam[level.bombPlantedBy]+"_eliminated"] );
 		thread maps\mp\gametypes\_finalkillcam::endGame( level.bombPlantedBy, game["strings"][level.otherTeam[level.bombPlantedBy]+"_eliminated"] );
 	}
@@ -305,7 +305,7 @@ onDeadEvent( team )
 	{
 		level._teamEliminated = true;
 		[[level._setTeamScore]]( level.otherTeam[team], [[level._getTeamScore]]( level.otherTeam[team] ) + 1 );
-		print("--otherTeam--\n");
+		//print("--otherTeam--\n");
 		//thread maps\mp\gametypes\_globallogic::endGame( level.otherTeam[team], game["strings"][team+"_eliminated"] );
 		thread maps\mp\gametypes\_finalkillcam::endGame( level.otherTeam[team], game["strings"][team+"_eliminated"] );
 	}
@@ -355,6 +355,7 @@ onSpawnPlayer()
 							"cg_deadChatWithTeam", 0,
 							"cg_deadHearTeamLiving", 0,
 							"cg_deadHearAllLiving", 0,
+						
 							"cg_everyoneHearsEveryone", 0,
 							"ui_uav_client", 1 );
 	}
@@ -487,7 +488,7 @@ onPickup( player )
 	
 	self.autoResetTime = 60.0;
 	
-	level.useStartSpawns = false;
+	//level.useStartSpawns = false;
 	
 	team = player.pers["team"];
 	
@@ -644,10 +645,11 @@ onUse( player )
 
 		level thread bombDefused( self );
 		
-		if ( level.inOverTime && isDefined( level.plantingTeamDead ) )
+		//if ( level.inOverTime && isDefined( level.plantingTeamDead ) )
+		if ( isDefined( level.plantingTeamDead ) )
 		{
-			thread maps\mp\gametypes\_globallogic::endGame( player.pers["team"], game["strings"][level.bombPlantedBy+"_eliminated"] );
 			[[level._setTeamScore]]( player.pers["team"], [[level._getTeamScore]]( player.pers["team"] ) + 1 );
+			thread maps\mp\gametypes\_globallogic::endGame( player.pers["team"], game["strings"][level.bombPlantedBy+"_eliminated"] );
 			return;
 		}
 		
@@ -711,8 +713,8 @@ bombPlanted( destroyedObj, team )
 	explosionOrigin = level.sabBomb.visuals[0].origin;
 	level.bombExploded = true;	
 	
-	if ( isdefined( level.bombowner ) )
-		destroyedObj.visuals[0] radiusDamage( explosionOrigin, 512, 400, 50, level.bombowner );
+	if ( isdefined( level.bombOwner ) )
+		destroyedObj.visuals[0] radiusDamage( explosionOrigin, 512, 400, 50, level.bombOwner );
 	else
 	destroyedObj.visuals[0] radiusDamage( explosionOrigin, 512, 400, 50 );
 	
@@ -721,6 +723,9 @@ bombPlanted( destroyedObj, team )
 	triggerFx( explosionEffect );
 	
 	thread playSoundinSpace( "exp_suitcase_bomb_main", explosionOrigin );
+	
+	earthquake( 0.5, 0.75, explosionOrigin, 1000 );
+	earthquake( 0.1, 3.7, explosionOrigin, 6500 );
 	
 	if ( isDefined( destroyedObj.exploderIndex ) )
 		exploder( destroyedObj.exploderIndex );

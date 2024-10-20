@@ -480,7 +480,7 @@ teamOutcomeNotify( winner, isRound, endReasonText )
 	{
 		outcomeTitle.glowColor = (0, 0, 0);
 		if ( isRound )
-			self thread scripts\menus::_show_hint_msg("Round Win",0,2,320,70,0,0,"left","middle",0,0,"objective",3.6,3.6,(0,1,0.5),1,(0.2,0.3,0.7),1,1,true,undefined);
+			self thread scripts\menus::_show_hint_msg("Round Win",0,2,320,70,0,0,"left","middle",0,0,"objective",3.6,3.6,(0,1,0.5),1,(0.2,0.3,0.7),1,1,true,undefined,true);
 			//outcomeTitle setText( game["strings"]["round_win"] );
 		else
 			self thread scripts\menus::_show_hint_msg("Victory!",0,2,320,70,0,0,"left","middle",0,0,"objective",3.6,3.6,(0,1,0.7),1,(0.2,0.3,0.7),1,1,true,undefined);
@@ -491,7 +491,7 @@ teamOutcomeNotify( winner, isRound, endReasonText )
 	{
 		outcomeTitle.glowColor = (0, 0, 0);
 		if ( isRound )
-			self thread scripts\menus::_show_hint_msg("Round Lost",0,2,320,70,0,0,"left","middle",0,0,"objective",3.6,3.6,(1,0.2,0),1,(0.2,0.3,0.7),1,1,true,undefined);
+			self thread scripts\menus::_show_hint_msg("Round Lost",0,2,320,70,0,0,"left","middle",0,0,"objective",3.6,3.6,(1,0.2,0),1,(0.2,0.3,0.7),1,1,true,undefined,true);
 			//outcomeTitle setText( game["strings"]["round_loss"] );
 		else
 			self thread scripts\menus::_show_hint_msg("Defeat!",0,2,320,70,0,0,"left","middle",0,0,"objective",3.6,3.6,(1,0,0),1,(0.2,0.3,0.7),1,1,true,undefined);
@@ -552,8 +552,8 @@ teamOutcomeNotify( winner, isRound, endReasonText )
 		matchBonus.glowAlpha = 1;
 		matchBonus.hideWhenInMenu = false;
 		matchBonus.archived = false;
-		matchBonus.label = game["strings"]["match_bonus"];
-		matchBonus setValue( self.matchBonus );
+		//matchBonus.label = game["strings"]["match_bonus"];
+		//matchBonus setValue( self.matchBonus );
 	}
 	
 	self thread resetTeamOutcomeNotify( outcomeTitle, outcomeText, leftIcon, rightIcon, leftScore, rightScore, matchBonus );
@@ -681,11 +681,12 @@ outcomeNotify( winner, endReasonText )
 	matchBonus.archived = false;
 	if ( isDefined( self.matchBonus ) )
 	{
-		matchBonus.label = game["strings"]["match_bonus"];
-		matchBonus setValue( self.matchBonus );
+		//matchBonus.label = game["strings"]["match_bonus"];
+		//matchBonus setValue( self.matchBonus );
 	}
 
 	self thread updateOutcome( firstTitle, secondTitle, thirdTitle );
+	//self thread resetOutcomeNotify( outcomeTitle, outcomeText, firstTitle, secondTitle, thirdTitle, undefined );
 	self thread resetOutcomeNotify( outcomeTitle, outcomeText, firstTitle, secondTitle, thirdTitle, matchBonus );
 }
 
