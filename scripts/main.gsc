@@ -734,7 +734,7 @@ _dev_weapon_test(){
 	self.bodyModel=0;
 	self.weaponModel=0;
 			
-	weapons=strTok("m40a3_mp",",");
+	weapons=strTok("ak47_acog_mp,ak47_silencer_mp",",");
 	
 	//weaponModel = self GetCurrentWeapon();
 	//self HidePart("tag_acog", "viewmodel_p90_mp"); 
@@ -2265,8 +2265,8 @@ _player_spawn_loop(){
 		//self thread _suicide();
 		self thread _flash("bright",1,0.1,0,0.5); //type,amp,dur,t1,t2
 		//self thread _ballistic();
-		self thread _proj_m40a3_weap();
-		self thread _proj_tac330_weap();
+		//self thread _proj_m40a3_weap();
+		//self thread _proj_tac330_weap();
 
 		
 		//self thread _dev_coords();
@@ -2856,8 +2856,9 @@ _sliding(){
 _damaged(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, timeOffset){
 	k=1; seconds=10;
 	
-	cl("33" + eAttacker.name + " with " + sWeapon + ", MOD: " + sMeansOfDeath);
- 
+	//cl("33" + eAttacker.name + " with " + sWeapon + ", MOD: " + sMeansOfDeath + ", " + WeaponType(sWeapon));
+	//cl("33" + eAttacker.name + " with " + WeaponType(sWeapon)); 
+	
 	if (isPlayer(self) && isAlive(self) && isDefined(iDamage) && iDamage>0){
 		self thread _bot_prone_when_danger(300);
 		self endLocationSelection();
@@ -2888,15 +2889,17 @@ _damaged(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint
 		z = 100;
 		
 		if(isDefined(x) && isDefined(y)){
+			//if (isDefined(self.velocity) && isDefined(self.prevOrigin)){ 
 			if (isDefined(self.velocity) && isDefined(self.prevOrigin)){ 
 				if(sMeansOfDeath == "MOD_GRENADE")
 				{
-					//self setVelocity((x/4,y/4,z/8));
-					cl("11"+sWeapon+" by "+eAttacker.name + ", MOD: " + sMeansOfDeath);
+					self setVelocity((x/4,y/4,z/8));
+					//cl("11"+sWeapon+" by "+eAttacker.name + ", MOD: " + sMeansOfDeath);
+					//cl("11"+WeaponType(sWeapon)+" by "+eAttacker.name);
 				}
 				else if (isSubStr(sWeapon,"grenade") && sMeansOfDeath != "MOD_PROJECTILE_SPLASH" && sMeansOfDeath != "MOD_GRENADE_SPLASH" && sMeansOfDeath != "MOD_EXPLOSIVE")
 				{
-					//self setVelocity((x/4,y/4,z/8));
+					self setVelocity((x/4,y/4,z/8));
 					iDamage=1;
 					//cl("11"+sWeapon+" by "+eAttacker.name);
 				}
@@ -2905,18 +2908,18 @@ _damaged(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint
 				//	iDamage=1;
 				//}				
 				else if (sMeansOfDeath == "MOD_PROJECTILE_SPLASH" || sMeansOfDeath == "MOD_GRENADE_SPLASH" || sMeansOfDeath == "MOD_EXPLOSIVE"){
-					//self setVelocity((x/2,y/2,z/2));
+					self setVelocity((x/2,y/2,z/2));
 				}
 
 				else if (isSubStr(sMeansOfDeath,"_BULLET")){
-					//self setVelocity((x/2,y/2,z/2));
+					self setVelocity((x/2,y/2,z/2));
 					if(sWeapon == "cobra_20mm_mp"){
 						iDamage=30;
 					}
 				}
-				//else { self setVelocity((x/3,y/3,z/9)); }
+				else { self setVelocity((x/2,y/2,z/8)); }
 			} else {
-				//self setVelocity((x/2,y/2,z/4));
+				self setVelocity((x/2,y/2,z/8));
 			}
 		}
 		
@@ -2985,14 +2988,14 @@ _killed(eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, t
 		
 		if(sMeansOfDeath == "MOD_GRENADE")
 		{
-			//self setVelocity((x/4,y/4,z/8));
+			self setVelocity((x/4,y/4,z/8));
 			//cl("^2"+eAttacker.name+" killed ^3"+self.name+" with MOD: ^1"+sMeansOfDeath);
 		}
 		else if (sMeansOfDeath == "MOD_PROJECTILE" || sMeansOfDeath == "MOD_GRENADE" || sMeansOfDeath == "MOD_IMPACT"){
 			//self setVelocity((x/4,y/4,z/4));
 		}
 		else if (isSubStr(sMeansOfDeath,"_BULLET")){
-			//self setVelocity((x/4,y/4,z/4));
+			self setVelocity((x/4,y/4,z/4));
 		}
 		else if (isSubStr(sMeansOfDeath,"_TRIGGER") || isSubStr(sMeansOfDeath,"_FALLING") || isSubStr(sMeansOfDeath,"_SUICIDE") || isSubStr(sMeansOfDeath,"_MELEE")){
 			//self setVelocity((x/2,y/2,4));
@@ -3000,7 +3003,7 @@ _killed(eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, t
 		else if (sMeansOfDeath == "MOD_PROJECTILE_SPLASH" || sMeansOfDeath == "MOD_GRENADE_SPLASH" || sMeansOfDeath == "MOD_EXPLOSIVE"){
 			if (dist<500){ z = 500-dist; }
 			if(self GetStance() == "prone"){ z/=4; }
-			//self setVelocity((x,y,z/2));
+			self setVelocity((x,y,z/2));
 		}
 
 		if (eInflictor.model == "projectile_hellfire_missile") {
