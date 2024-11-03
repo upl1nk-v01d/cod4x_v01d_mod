@@ -431,7 +431,7 @@ IsWeapSniper( weap )
 		|| scripts\main::_classCheck(weap,level.classSniper)
 	)
 	{
-		cl(weap + " is sniper");
+		//cl(weap + " is sniper");
 		return true;
 	}
 		
