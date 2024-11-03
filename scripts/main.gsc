@@ -202,6 +202,8 @@ init(){
 	//level thread _bomb_objective_blink();
 	//level thread _dev_get_ents();
 	level thread _remove_trashed_ents();
+	
+	//level thread _dev_weapons();
 				
 	for(;;)
     {
@@ -734,7 +736,8 @@ _dev_weapon_test(){
 	self.bodyModel=0;
 	self.weaponModel=0;
 			
-	weapons=strTok("ak47_acog_mp,ak47_silencer_mp",",");
+	weapons=strTok("m4_mp,m16_gl_mp",",");
+	//weapons = level._weapons;
 	
 	//weaponModel = self GetCurrentWeapon();
 	//self HidePart("tag_acog", "viewmodel_p90_mp"); 
@@ -1266,6 +1269,15 @@ _sleepers(){
 	return level._sleepers;
 }
 
+_dev_weapons()
+{
+	wait 5;
+	for (i=0;i<level.botsWeapons.size;i++)
+	{
+		cl("33" + WeaponType(level.botsWeapons[i]) + " | " + level.botsWeapons[i]);
+	}
+}
+
 /* \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 
 -----------------------server map management----------------------------
@@ -1313,7 +1325,7 @@ _remove_trashed_ents(){
 					|| ent.classname == "mp_ctf_spawn_allies"
 				)
 				{
-					cl("33removing ent "+c+": "+ent.classname);
+					//cl("33removing ent "+c+": "+ent.classname);
 					ent delete();
 				}
 				
