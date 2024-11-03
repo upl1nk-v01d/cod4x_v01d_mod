@@ -426,7 +426,10 @@ IsWeapSniper( weap )
 	//if ( maps\mp\gametypes\_missions::getWeaponClass( weap ) != "weapon_sniper" )
 	//if(isDefined(scripts\main::_classCheck(weap,"sniper")
 
-	if (scripts\main::_classCheck(weap,level.classBoltSniper) || scripts\main::_classCheck(weap,level.classSniper))
+	if (
+		scripts\main::_classCheck(weap,level.classBoltSniper) 
+		|| scripts\main::_classCheck(weap,level.classSniper)
+	)
 	{
 		cl(weap + " is sniper");
 		return true;
@@ -1596,7 +1599,8 @@ canAds( dist, curweap )
 
 	weapclass = ( weaponClass( curweap ) );
 
-	if ( weapclass == "spread" || weapclass == "grenade" )
+	//if ( weapclass == "spread" || weapclass == "grenade" )
+	if ( weapclass == "spread" )
 		return false;
 
 	return true;
