@@ -9,9 +9,14 @@ updated 2024.10.27 v01d mod.ff, iwd and other mod files at https://drive.google.
 -------------------------------------------
 
 important notes:
-
 please add additional args to your cod4x server and client executable:
 +set r_xassetnum xmodel=2300 material=4096 weapon=256 loaded_sound=2400
+
+linux server launch command example:
+./cod4x18_dedrun +set r_xassetnum xmodel=2300 material=4096 image=4000 loaded_sound=2400 weapon=256 +set net_port 28961 +set fs_game mods/v01d +exec server.cfg +exec sv_maps.cfg +exec sv_bots.cfg +exec sv_custom.cfg +set g_gametype sab +map mp_rotate
+
+client launch command example:
+./iw3mp.exe +set r_xassetnum xmodel=2300 material=4096 image=4000 loaded_sound=2400 weapon=256 +set net_port 28961 +set fs_game mods/v01d +exec server.cfg +exec sv_maps.cfg +exec sv_bots.cfg +exec sv_custom.cfg +set g_gametype sab +map mp_rotate
 
 -------------------------------------------
 
