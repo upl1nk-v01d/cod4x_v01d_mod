@@ -4,7 +4,7 @@ the mod files for cod4x provided by v01d
 
 -------------------------------------------
 
-updated 2024.10.27 v01d mod.ff, iwd and other mod files at https://drive.google.com/drive/folders/186GyQw-vKV_bFqAfxdYtRPXcxtaSnoCb
+updated 2024.11.06 v01d mod.ff, iwd and other mod files at https://drive.google.com/drive/folders/186GyQw-vKV_bFqAfxdYtRPXcxtaSnoCb
 
 installation:<br>
 1) in Google Drive you can right click on folder 'cod4x_v01d_mod_files' and click 'Download' to download files as ZIP file.<br>
