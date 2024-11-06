@@ -6,17 +6,24 @@ the mod files for cod4x provided by v01d
 
 updated 2024.10.27 v01d mod.ff, iwd and other mod files at https://drive.google.com/drive/folders/186GyQw-vKV_bFqAfxdYtRPXcxtaSnoCb
 
--------------------------------------------
+installation:<br>
+1) in Google Drive you can right click on folder 'cod4x_v01d_mod_files' and click 'Download' to download files as ZIP file.<br>
+2) open your 'Call Of Duty 4' game folder and create new folder 'mods'.<br>
+3) extract your downloaded ZIP file in your 'Call Of Duty 4' mods folder.<br>
+4) rename folder 'cod4x_v01d_mod_files' to 'v01d'.<br>
+5) add launch command on your desktop shortcut or in your batch file.<br>
 
-important notes:<br>
-please add additional args to your cod4x server and client executable:
-+set r_xassetnum xmodel=2300 material=4096 weapon=256 loaded_sound=2400
+-------------------------------------------
 
 linux server launch command example:<br>
 ./cod4x18_dedrun +set r_xassetnum xmodel=2300 material=4096 image=4000 loaded_sound=2400 weapon=256 +set net_port 28961 +set fs_game mods/v01d +exec server.cfg +exec sv_maps.cfg +exec sv_bots.cfg +exec sv_custom.cfg +set g_gametype sab +map mp_rotate
 
 client launch command example:<br>
 ./iw3mp.exe +set r_xassetnum xmodel=2300 material=4096 image=4000 loaded_sound=2400 weapon=256 +set net_port 28961 +set fs_game mods/v01d +exec server.cfg +exec sv_maps.cfg +exec sv_bots.cfg +exec sv_custom.cfg +set g_gametype sab +map mp_rotate
+
+important notes:<br>
+please add additional args to your cod4x server and client executable:
++set r_xassetnum xmodel=2300 material=4096 weapon=256 loaded_sound=2400
 
 -------------------------------------------
 
