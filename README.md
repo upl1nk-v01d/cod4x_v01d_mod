@@ -25,6 +25,9 @@ important notes:<br>
 please add additional args to your cod4x server and client executable:
 +set r_xassetnum xmodel=2300 material=4096 weapon=256 loaded_sound=2400
 
+to be able to play with bots, the server must be run independently. 
+more info in link: https://github.com/callofduty4x/CoD4x_Server
+
 -------------------------------------------
 
 dvars:
