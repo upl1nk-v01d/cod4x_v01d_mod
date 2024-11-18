@@ -4,10 +4,10 @@ the mod files for cod4x provided by v01d
 
 -------------------------------------------
 
-updated 2024.11.06 v01d mod.ff, iwd and other mod files at https://drive.google.com/drive/folders/186GyQw-vKV_bFqAfxdYtRPXcxtaSnoCb
+updated 2024.11.18 v01d mod.ff, iwd and other mod files zipped at https://drive.google.com/drive/folders/186GyQw-vKV_bFqAfxdYtRPXcxtaSnoCb
 
 installation:<br>
-1) in Google Drive you can right click on folder 'cod4x_v01d_mod_files' and click 'Download' to download files as ZIP file.<br>
+1) in Google Drive you can right click on folder 'cod4x_v01d_mod_files' and click 'Download' to download zip file.<br>
 2) open your 'Call Of Duty 4' game folder and create new folder 'mods'.<br>
 3) extract your downloaded ZIP file in your 'Call Of Duty 4' mods folder.<br>
 4) rename folder 'cod4x_v01d_mod_files' to 'v01d'.<br>
@@ -31,6 +31,8 @@ more info in link: https://github.com/callofduty4x/CoD4x_Server
 -------------------------------------------
 
 dvars:
+
+v01d_bullet_tracers 1 //shows traces after firing weapon: 1=on, 0=off
 
 v01d_bots_inbalance_feature 1 //round loosing team gets one bot: 1=on, 0=off
 
