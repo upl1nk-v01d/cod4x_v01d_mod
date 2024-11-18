@@ -60,6 +60,9 @@ v01d_full_ammo_clip_at_round_start 1 //give player full weapon ammo clip at roun
 
 updates log:
 
+2024 11 18
+bullet tracers can be turned on or off
+
 2024 10 20
 implemented ballistic bullets
 
