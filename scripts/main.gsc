@@ -39,7 +39,7 @@ init(){
 	
 	//precacheModel("projectile_tag");
 	//precacheItem( "proj_p90_mp" );
-	//level.smoke_geotrail_barret = loadfx("smoke/smoke_geotrail_barret");
+	level.smoke_geotrail_barret = loadfx("smoke/smoke_geotrail_barret");
 	
 	if(getDvar("v01d_version") == ""){ setDvar("v01d_version", "v2.21"); }
 	if(getDvar("v01d_dev") == ""){ setDvar("v01d_dev","0"); } //enabe v01d mod dev mode args: "nav", "weap"
@@ -68,6 +68,7 @@ init(){
 	if(getDvar("v01d_suicide_sfx") == ""){ setDvar("v01d_suicide_sfx",1); } //suicide screaming sounds: 1=on, 0=off
 	if(getDvar("v01d_knifed_sfx") == ""){ setDvar("v01d_knifed_sfx",1); } //knifed screaming sounds: 1=on, 0=off
 	if(getDvar("v01d_full_ammo_clip_at_round_start") == ""){ setDvar("v01d_full_ammo_clip_at_round_start",1); } //give player full weapon ammo clip at round start: 1=on, 0=off
+	if(getDvar("v01d_bullet_tracers") == ""){ setDvar("v01d_bullet_tracers", 1); } //shows traces after firing weapon: 1=on, 0=off
 		
 	setDvar("pl",""); //in terminal argument a = show all players, r = real players, b = bot players
 	setDvar("m",""); //in terminal argument i = show current map and team score, f = fast restart, r = brutal restart
@@ -736,8 +737,10 @@ _dev_weapon_test(){
 	self.bodyModel=0;
 	self.weaponModel=0;
 			
-	weapons=strTok("m4_mp,m16_gl_mp",",");
-	//weapons = level._weapons;
+	weapons=strTok("mp5_silencer_mp",",");
+	//weapons = level.botsWeapons;
+	
+	//self thread _player_fired_weapon();
 	
 	//weaponModel = self GetCurrentWeapon();
 	//self HidePart("tag_acog", "viewmodel_p90_mp"); 
@@ -755,43 +758,88 @@ _dev_weapon_test(){
 	level thread _add_some_bots(1);
 	
 	for(;;){
-		if(!isDefined(self.bodyModel)){ self.bodyModel=0; }
-		if(!isDefined(self.weaponModel)){ self.weaponModel=0; }
+		if(!isDefined(level.bodyModel)){ level.bodyModel=0; }
+		if(!isDefined(level.weaponModel)){ level.weaponModel=0; }
 		if(self LeanLeftButtonPressed()){ llb=true; start=true; }
-		//if(self LeanRightButtonPressed()){ lrb=true; start=true; }
+		if(self LeanRightButtonPressed()){ lrb=true; start=true; }
 		if(self HoldBreathButtonPressed()){ hbb=true; start=true; }
 		players = getentarray( "player", "classname" );
 		if(isDefined(start)){
-			if(isDefined(lrb)){
+			/*if(isDefined(lrb)){
 				if(self.thirdPerson==false){ self setClientDvars("cg_thirdperson", 1); self.thirdPerson=true; }
 				else{ self setClientDvars("cg_thirdperson", 0); self.thirdPerson=false; }
 				
 				hbb=undefined;
-			}
-			for(i=0;i<players.size;i++){
-				if (isAlive(self) && !isDefined(self.buyMenuShow)){
-					if(players[i].isbot){ players[i].bot.stop_move=true; }
-					weapon = players[i] GetCurrentWeapon();
-		 			if (isDefined(weapons) && weapon != weapons[self.weaponModel]){
-						if(isDefined(llb)){ 
-							players[i] maps\mp\gametypes\_weapons::detach_all_weapons();
-							players[i] giveWeapon(weapons[self.weaponModel]);
-							players[i] giveMaxAmmo(weapons[self.weaponModel]);
-							players[i] switchToWeapon(weapons[self.weaponModel]);
-							cl(players[i].name+" weapon "+weapons[self.weaponModel]);
-						}
-						if(isDefined(lrb)){ 
-							players[i] setModel(models[self.bodyModel]);
-							cl(players[i].name+" model "+models[self.bodyModel]);
+			}*/
+			
+			if (isDefined(weapons))
+			{
+				if(isDefined(llb) || isDefined(lrb))
+				{
+					for(i=0;i<players.size;i++)
+					{
+						if (isAlive(self) && !isDefined(self.buyMenuShow))
+						{
+							if(players[i].isbot)
+							{ 
+								players[i].bot.stop_move=true; 
+							}
+	
+							if(isDefined(llb))
+							{ 
+								players[i] maps\mp\gametypes\_weapons::detach_all_weapons();
+								players[i] giveWeapon(weapons[level.weaponModel]);
+								players[i] giveMaxAmmo(weapons[level.weaponModel]);
+								players[i] switchToWeapon(weapons[level.weaponModel]);
+								
+								if(!self.isbot)
+								{
+									pl(players[i].name+" weapon "+weapons[level.weaponModel]);
+									cl(players[i].name+" weapon "+weapons[level.weaponModel]);
+								}
+							}
+							
+							if(isDefined(lrb))
+							{ 
+								players[i] maps\mp\gametypes\_weapons::detach_all_weapons();
+								players[i] giveWeapon(weapons[level.weaponModel]);
+								players[i] giveMaxAmmo(weapons[level.weaponModel]);
+								players[i] switchToWeapon(weapons[level.weaponModel]);
+								
+								if(!self.isbot)
+								{
+									pl(players[i].name+" weapon "+weapons[level.weaponModel]);
+									cl(players[i].name+" weapon "+weapons[level.weaponModel]);
+								}
+							}
+							
+							/*if(isDefined(lrb)){ 
+								players[i] setModel(models[self.bodyModel]);
+								cl(players[i].name+" model "+models[self.bodyModel]);
+								self.bodyModel++;
+							}*/
 						}
 					}
 				}
+				
+				if(isDefined(llb))
+				{ 
+					level.weaponModel--;
+				}
+				
+				if(isDefined(lrb))
+				{ 
+					level.weaponModel++;
+				}
 			}
+			
 			start=undefined; llb=undefined; lrb=undefined;
-			self.bodyModel++;
-			self.weaponModel++;
-			if(self.bodyModel>=models.size){ self.bodyModel=0; }
-			if(self.weaponModel>=weapons.size){ self.weaponModel=0; }
+			
+			if(level.bodyModel>=models.size){ level.bodyModel=0; }
+			else if(level.bodyModel<0){ level.bodyModel=models.size; }
+			
+			if(level.weaponModel>=weapons.size){ level.weaponModel=0; }
+			else if(level.weaponModel<0){ level.weaponModel=weapons.size; }
 			wait 0.5;
 		}
 		wait 0.05;
@@ -2647,9 +2695,36 @@ _player_fired_weapon(){
 	for(;;){
 		self waittill("weapon_fired");
 		self.isFiring=true;
-		self thread _delay_after_firing();
+		//self thread _delay_after_firing();
 		weapon = self GetCurrentWeapon();
-		self.hasMadeFiringSound=true;
+		//self.hasMadeFiringSound=true;
+		
+		if(getDvar("v01d_bullet_tracers") == "1")
+		{ 
+			thread _bullet_tracers();
+		}
+	}
+}
+
+_bullet_tracers()
+{
+	self endon ( "disconnect" );
+	self endon( "intermission" );
+	//self endon ( "death" );
+	
+	wait 0.05;
+	ent = undefined;
+	projectiles = getentarray( "grenade", "classname" );
+	
+	if(isDefined(projectiles) && projectiles.size > 0)
+	{
+		for(i = 0; i < projectiles.size; i++)
+		{
+			if(isDefined(projectiles[i]) && projectiles[i].model == "projectile_tag")
+			{
+				fx = PlayFXOnTag(level.smoke_geotrail_barret, projectiles[i], "tag_origin");
+			}
+		}
 	}
 }
 
@@ -2869,6 +2944,7 @@ _damaged(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint
 	k=1; seconds=10;
 	
 	//cl("33" + eAttacker.name + " with " + sWeapon + ", MOD: " + sMeansOfDeath + ", " + WeaponType(sWeapon));
+	//pl(eAttacker.name + " with " + sWeapon + ", MOD: " + sMeansOfDeath + ", " + WeaponType(sWeapon));
 	//cl("33" + eAttacker.name + " with " + WeaponType(sWeapon)); 
 	
 	if (isPlayer(self) && isAlive(self) && isDefined(iDamage) && iDamage>0){
@@ -4186,7 +4262,7 @@ _give_knife(delay){
 			if(ammo < 1 && cw != "knife_mp"){ 
 				self DisableWeapons();
 				giveKnife=true;
-				wait 0.5;
+				wait 0.1;
 			}
 			if(giveKnife == true || cw == "none"){
 				self EnableWeapons();
