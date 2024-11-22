@@ -2,7 +2,7 @@
 #include maps\mp\_load;
 #include maps\mp\_utility;
 #include maps\mp\gametypes\_hud_util;
-#include scripts\ballistic;
+//#include scripts\ballistic;
 #include scripts\cl;
 #include scripts\pl;
 
@@ -2324,7 +2324,6 @@ _player_spawn_loop(){
 		self thread _bomb_defused();
 		//self thread _suicide();
 		self thread _flash("bright",1,0.1,0,0.5); //type,amp,dur,t1,t2
-		//self thread _ballistic();
 		//self thread _proj_m40a3_weap();
 		//self thread _proj_tac330_weap();
 
@@ -2725,41 +2724,6 @@ _bullet_tracers()
 				fx = PlayFXOnTag(level.smoke_geotrail_barret, projectiles[i], "tag_origin");
 			}
 		}
-	}
-}
-
-_ballistic(){
-	self endon ( "death" );
-	self endon ( "disconnect" );
-	self endon( "intermission" );
-	level endon( "game_ended" );
-	
-	if(self.isbot){ return; }
-		
-	for(;;){
-		if(isAlive(self)){
-			weapon = self GetCurrentWeapon();
-			ammocount_old = self getAmmoCount(weapon);
-			ammocount = ammocount_old;
-			
-			wait 0.05; 
-			ammocount = self getAmmoCount(weapon);
-
-			if(ammocount == ammocount_old) 
-			{ 
-				continue; 
-			}
-			else 
-			{ 
-				a = self GetPlayerAngles();
-				sp = self getEye();
-				aff = sp + anglesToForward(a) * 999;
-				thread _ballistic_start(self getEye(), aff, a);
-				ammocount_old = ammocount;
-			}
-		}
-		
-		wait 0.05;
 	}
 }
 
