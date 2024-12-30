@@ -41,7 +41,7 @@ init(){
 	//precacheItem( "proj_p90_mp" );
 	level.smoke_geotrail_barret = loadfx("smoke/smoke_geotrail_barret");
 	
-	if(getDvar("v01d_version") == ""){ setDvar("v01d_version", "v2.21"); }
+	if(getDvar("v01d_version") == ""){ setDvar("v01d_version", "v2.22"); }
 	if(getDvar("v01d_dev") == ""){ setDvar("v01d_dev","0"); } //enabe v01d mod dev mode args: "nav", "weap"
 
 	level thread maps\mp\bots\_bot::init();
@@ -79,6 +79,8 @@ init(){
 	setDvar("ab",""); //add 1 bot to desired team
 	setDvar("kb",""); //add 1 bot to desired team
 	setDvar("tr",""); //transfer 1 bot to desired team (args: ax, al)
+	
+	setdvar( "scr_showperksonspawn", "0" );
 	
 	if (getDvar("v01d_dev")!="0") { //set this arg to enable waypoint/node mode
 		setDvar("scr_game_spectatetype", "2"); 
@@ -736,9 +738,16 @@ _dev_weapon_test(){
 	level.doNotAddBots=true;
 	self.bodyModel=0;
 	self.weaponModel=0;
+	
+	/*
+	
+	m21_acog_mp
+	m21_mp
+	
+	*/
 			
-	weapons=strTok("mp5_silencer_mp",",");
-	//weapons = level.botsWeapons;
+	//weapons=strTok("beretta_mp",",");
+	weapons = level.botsWeapons;
 	
 	//self thread _player_fired_weapon();
 	
@@ -2166,8 +2175,8 @@ _welcome(tm,ctm)
 	self thread _ds();
 	self thread _ps();
 	
-	if (game["_t_m_"] >= 14) { game["_t_m_"]=1; }
-	if (game["_ct_m_"] >= 5) { game["_ct_m_"]=1; }
+	if (game["_t_m_"] > 14) { game["_t_m_"]=1; }
+	if (game["_ct_m_"] > 5) { game["_ct_m_"]=1; }
 
     
     wait 1;
@@ -2198,12 +2207,17 @@ _info(){
 }
 
 _fs(){
-	self endon ( "disconnect" );
-	self endon( "intermission" );
-	level endon( "game_ended" );
+	self endon("disconnect");
+	self endon("intermission");
+	self endon("joined_spectators");
+	self endon("spawned_player");
+	self endon("playerChoseTeam");
+	level endon("game_ended");
+	
+	self notify("player_spawned");
+
 	
 	if (self.isbot) { return; }
-	
 	else {
 		self waittill("hasReadWelcomeMsg");
 		if (isDefined(game["hasReadMOTD"][self.name])){
@@ -2313,6 +2327,7 @@ _player_spawn_loop(){
 		self thread _explosives_pickup();
 		self thread _bot_explosives_pickup();
 		self thread _weapon_cock_sound();
+		//self thread _empty_weapon_cock_sound();
 		self thread _player_mouse();
 		self thread _hp_weapons_list();
 		self thread _player_fired_weapon();
@@ -2696,12 +2711,50 @@ _player_fired_weapon(){
 		self.isFiring=true;
 		//self thread _delay_after_firing();
 		weapon = self GetCurrentWeapon();
-		//self.hasMadeFiringSound=true;
+					
+		if(isSubStr(weapon,"sil") || isSubStr(weapon,"grenade") || isSubStr(weapon,"claymore") || isSubStr(weapon,"knife")){ continue; }
+
+		self.hasMadeFiringSound=true;
 		
 		if(getDvar("v01d_bullet_tracers") == "1")
 		{ 
 			thread _bullet_tracers();
 		}
+	}
+}
+
+_bullet_whizbys()
+{
+	self endon ( "death" );
+	
+	if(isDefined(self.isMonitored)){ return; }
+	self.isMonitored = true;
+	self.playingSoundWhizby = [];
+	
+	while(isDefined(self) && isDefined(self.origin))
+	{
+		players = getentarray( "player", "classname" );
+		
+		for( i = 0 ; i < players.size ; i++ )
+		{
+			if(players[i].isbot){ continue; }
+			
+			dist = distance(players[i] getEye(), self.origin);
+			
+			if(!isDefined(self.playingSoundWhizby[players[i].name]))
+			{
+				self.playingSoundWhizby[players[i].name] = "";
+			}
+						
+			if(isDefined(dist) && dist < 800 && self.playingSoundWhizby[players[i].name] != "playingWhizbySound")
+			{
+				self playSoundToPlayer("whizby",players[i]);
+				self.playingSoundWhizby[players[i].name] = "playingWhizbySound";
+				//cl("33" + " whiz sound to " + players[i].name);
+			}
+		}
+		
+		wait 0.05;
 	}
 }
 
@@ -2721,6 +2774,7 @@ _bullet_tracers()
 		{
 			if(isDefined(projectiles[i]) && projectiles[i].model == "projectile_tag")
 			{
+				projectiles[i] thread _bullet_whizbys();
 				fx = PlayFXOnTag(level.smoke_geotrail_barret, projectiles[i], "tag_origin");
 			}
 		}
@@ -3025,8 +3079,10 @@ _killed(eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, t
 	self notify ("stop_suicide_pd");
 	self notify ("flash_stop");
 	
-	self thread _flash("bright",1,0.1,0,1); //type,amp,dur,t1,t2
+	self thread _flash("bright",1,0.1,0.1,1); //type,amp,dur,t1,t2
 	self thread _flash("blur",1,0.1,0.1,1);
+	self thread _flash("bright",0.01,2,0.1,1); //type,amp,dur,t1,t2
+	self thread _flash("blur",0,01,0.1,1);
 	
 	self thread _bot_prone_when_danger();
 	
@@ -3464,6 +3520,9 @@ _blast(delay,dist,maxDist,blastOrigin,attacker,inflictor,wname){
 				self thread _disable_weapons(0.05+delay/4);				
 				//x /= 8; y /=8; z /=8;
 			}
+			
+			curView = self getPlayerAngles();
+			self setPlayerAngles(curView * (randomFloatRange(0.01, 0.02) * (1 / dist))); 
 		}
 		if (self.blastName == "frag_grenade_mp"){ self setVelocity((x,y,z)); }
 		else if (self.blastName == "frag_grenade_short_mp"){ self setVelocity((x,y,z)); }
@@ -3631,9 +3690,13 @@ _bomb_monitor(){
 	
 	for(;;){
 		while (level.bombExploded != true) { blastOrigin=level.sabBomb.curOrigin; wait 0.05; }
+
 		players = getentarray( "player", "classname" );
 		for( i = 0 ; i < players.size ; i++ )
 		{
+			players[i] takeWeapon("briefcase_bomb_mp");
+			players[i] takeWeapon("briefcase_bomb_defuse_mp");
+
 			dist = distance(blastOrigin, players[i].origin);
 			maxDist = 1200;
 			delay = 0.3*(dist/maxDist);
@@ -3749,11 +3812,11 @@ _menu_response()
 		
 		if(response == "axis" || response == "allies" || response == "autoassign")
 		{
+			//self notify("playerChoseTeam");
 			game["hasReadMOTD"][self.name]=true;
 			game["isJoinedSpectators"][self.name]=false;
 			self suicide();
 			self.sessionteam=self.pers["team"];
-			self thread _fs();
 			self thread _player_spectate(3,self.pers["team"]);
 			self notify("hasReadWelcomeMsg");
 			self notify("hasReadMOTD");
@@ -3764,6 +3827,7 @@ _menu_response()
 			self closeInGameMenu();
 			self setClientDvar("m_pitch",0.022);
 			self setClientDvar("m_yaw",0.022);
+			self thread _fs();
 		}
 		
 		if(response == "spectator"){ 
@@ -3844,7 +3908,7 @@ _bombPing(t){
 	
 	if(isDefined(self.bombPing)){ return; }
 	else {
-		self.bombPing=true; self playLocalSound("bombping"); alpha=1;
+		self.bombPing=true; self playSound("bombping"); alpha=1;
 		self setClientDvar( "v01d_tools_bp", 0 );
 		bombPos = level.sabBomb.curOrigin;
 		self thread _set_hud_wpt("bombMarker","waypoint_bomb", 8,8,0.5,bombPos[0],bombPos[1],bombPos[2],undefined,2);
@@ -4075,21 +4139,75 @@ _explosives_array(){
 	}
 }
 
-_weapon_cock_sound(){
+_weapon_cock_sound()
+{
 	self endon ( "disconnect" );
 	self endon ( "death" );
 	self endon( "intermission" );
 	level endon( "game_ended" );
+	
 	if(self.isbot){ return; }
 
-	for(;;){
-		if(isAlive(self)){
-			self waittill("weapon_fired");
+	for(;;)
+	{
+		if(isAlive(self))
+		{
+			//self waittill("weapon_fired");
+			self waittill("begin_firing");
 			weapon = self GetCurrentWeapon();
 			if(isSubStr(weapon,"grenade") || isSubStr(weapon,"claymore") || isSubStr(weapon,"knife")){ continue; }
-			if(isSubStr(weapon,"beretta") || isSubStr(weapon,"colt") || isSubStr(weapon,"deserteagle")){ self playLocalSound("pistol_cock"); }
+			if(isSubStr(weapon,"beretta") || isSubStr(weapon,"colt") || isSubStr(weapon,"deserteagle"))
+			{ 
+				self playLocalSound("pistol_cock"); 
+			}
+			else
+			{
+				//self playLocalSound("rifle_cock"); 
+			}
 		}
-		wait 0.1;
+		
+		wait 0.05;
+	}
+}
+
+_empty_weapon_cock_sound()
+{
+	self endon ( "disconnect" );
+	self endon ( "death" );
+	self endon( "intermission" );
+	level endon( "game_ended" );
+	
+	if(self.isbot){ return; }
+
+	for(;;)
+	{
+		if(isAlive(self))
+		{
+			//self waittill("begin_firing");
+			while (!self AttackButtonPressed()){ wait 0.05; }
+			
+			if(isDefined(self.isReloading)){ wait 0.05 ;continue; }
+			
+			weapon = self GetCurrentWeapon();
+			clip = self GetWeaponAmmoClip(weapon);
+			
+			if(clip < 1)
+			{
+				if(isSubStr(weapon,"grenade") || isSubStr(weapon,"claymore") || isSubStr(weapon,"knife")){ continue; }
+				if(isSubStr(weapon,"beretta") || isSubStr(weapon,"colt") || isSubStr(weapon,"deserteagle"))
+				{ 
+					self playLocalSound("pistol_cock"); 
+				}
+				else
+				{
+					self playLocalSound("rifle_cock"); 
+				}
+			}
+			
+			while (self AttackButtonPressed()){ wait 0.05; }
+		}
+		
+		wait 0.05;
 	}
 }
 
@@ -4185,12 +4303,15 @@ _hp_weapons_list(){
 		weaponsList = self GetWeaponsList();
 		if(isDefined(weaponsList)){
 			for(i=0;i<weaponsList.size;i++){
-				ammoList[i] = self getAmmoCount(weaponsList[i]);
+				//ammoList[i] = self getAmmoCount(weaponsList[i]);
 				//cl("weapon: "+weaponsList[i]+", ammo: "+ammoList[i]);
-				if (isDefined(weaponsList[i]) && weaponsList[i]=="radar_mp" && self getAmmoCount("radar_mp")>0){ self setClientDvar( "ui_uav_client", 1 ); } else { self setClientDvar( "ui_uav_client", 0 ); }
-				if (isDefined(weaponsList[i]) && weaponsList[i]=="airstrike_mp" && self getAmmoCount("airstrike_mp")>0){ self setClientDvar( "ui_airstrike_client", 1 ); } else { self setClientDvar( "ui_airstrike_client", 0 ); }
-				if (isDefined(weaponsList[i]) && weaponsList[i]=="helicopter_mp" && self getAmmoCount("helicopter_mp")>0){ self setClientDvar( "ui_helicopter_client", 1 ); } else { self setClientDvar( "ui_helicopter_client", 0 ); }
-				if (isDefined(weaponsList[i]) && weaponsList[i]=="artillery_mp" && self getAmmoCount("artillery_mp")>0){ self setClientDvar( "ui_artillery_client", 1 ); } else { self setClientDvar( "ui_artillery_client", 0 ); }
+				if (isDefined(weaponsList[i])) 
+				{
+					if (weaponsList[i]=="radar_mp" && self getAmmoCount("radar_mp")>0){ self setClientDvar( "ui_uav_client", 1 ); } else { self setClientDvar( "ui_uav_client", 0 ); }
+					if (weaponsList[i]=="airstrike_mp" && self getAmmoCount("airstrike_mp")>0){ self setClientDvar( "ui_airstrike_client", 1 ); } else { self setClientDvar( "ui_airstrike_client", 0 ); }
+					if (weaponsList[i]=="helicopter_mp" && self getAmmoCount("helicopter_mp")>0){ self setClientDvar( "ui_helicopter_client", 1 ); } else { self setClientDvar( "ui_helicopter_client", 0 ); }
+					if (weaponsList[i]=="artillery_mp" && self getAmmoCount("artillery_mp")>0){ self setClientDvar( "ui_artillery_client", 1 ); } else { self setClientDvar( "ui_artillery_client", 0 ); }
+				}
 			}
 		} 
 	}
@@ -4208,6 +4329,9 @@ _give_knife(delay){
 	wait delay;
 	giveKnife=false;
 	
+	while(isDefined(self.buyMenuShow)){ wait 1; }
+	wait 3;
+	
 	while(1){
 		wait 0.05;
 		weaponsList = self GetWeaponsList();
@@ -4224,7 +4348,8 @@ _give_knife(delay){
 				}
 			}
 			if(ammo < 1 && cw != "knife_mp"){ 
-				self DisableWeapons();
+				wait 1;
+				//self DisableWeapons();
 				giveKnife=true;
 				wait 0.1;
 			}

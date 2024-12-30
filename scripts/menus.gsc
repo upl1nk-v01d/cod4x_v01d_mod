@@ -135,6 +135,7 @@ _keystrokes(){
 		while (self LeanRightButtonPressed()){ cl(self.name+" pressed LEAN RIGHT key"); wait 0.5; }
 		while (self HoldBreathButtonPressed()){ cl(self.name+" pressed HOLD BREATH key"); wait 0.5; }
 		while (self AimButtonPressed()){ cl(self.name+" pressed AIM key"); wait 0.5; }
+		while (self AttackButtonPressed()){ cl(self.name+" pressed FIRE key"); wait 0.5; }
 		wait 0.05;
 		//waittillframeend;
 	}
@@ -1231,7 +1232,7 @@ _buy_menu_show(arr,prev,next,div){
 	}
 	//self.hasChosen=undefined;
 	//self _destroy_menu("hudBuyMenu",arr.size,div); 
-	self EnableWeapons();
+	//self EnableWeapons();
 	self setClientDvar("m_pitch",0.022);
 	self setClientDvar("m_yaw",0.022);
 	//cl("^3hud destroyed");
@@ -1348,7 +1349,7 @@ _buy_menu_main(){
 		buyMenuSMGs = StrTok("Uzi,320,uzi_mp,Skorpion,440,skorpion_mp,AK74U,580,ak74u_mp",",");
 		buyMenuMGs = StrTok("SAW,1200,saw_mp,RPD,1300,rpd_mp",",");
 		buyMenuRifles = StrTok("AK12,600,ak74u_reflex_mp,AK47 GL,800,ak47_gl_mp,G3 GL,1000,g3_gl_mp,",",");
-		buyMenuSnipers = StrTok("Dragunov,640,dragunov_mp,SVG-100,1200,barrett_mp,PSG-1,1500,ak47_relfex_mp",",");
+		buyMenuSnipers = StrTok("Dragunov,640,dragunov_mp,SVG-100,1200,barrett_mp,PSG-1,1500,ak47_reflex_mp,SVT,2300,m4_reflex_mp",",");
 		buyMenuRPGs = StrTok("RPG,1200,rpg_mp",",");
 		//buyMenuRPGs = StrTok("RPG,2300,rpg_mp,LAW,2500,law_mp,AT4,2600,at4_mp",",");
 		buyMenuGLs = StrTok("MM1,2400,barrett_acog_mp",",");
@@ -1389,6 +1390,7 @@ _buy_menu_main(){
 	//while(isAlive(self) && !self UseButtonPressed()){ wait 0.05; }
 	wait 0.3;
 	
+	self DisableWeapons();
 	self.spawnStartOrigin=self.origin;
 	self.hasChosen[0]="buyMenuMain";
 	while(!level.gameEnded && !level.bombExploded && !level.slowMo && isAlive(self) && !isDefined(self.lastStand) && distance(self.spawnStartOrigin,self.origin)<32){
@@ -1414,6 +1416,8 @@ _buy_menu_main(){
 		while(isDefined(self.buyMenuShow) && isDefined(self.hasChosen) && isAlive(self)){ 
 			if(distance(self.spawnStartOrigin,self.origin)>=16){ 
 				self.buyMenuShow=undefined;
+				//self SwitchToWeapon(weaponsList[0]);
+				//cl("33 outside of self.spawnStartOrigin");
 			}
 			//cl("^3self.spawnStartOrigin");
 			wait 0.05; 
@@ -1422,6 +1426,11 @@ _buy_menu_main(){
 		wait 0.05;
 		//while(isAlive(self) && self UseButtonPressed()){ wait 0.05; }
 	}
+					
+	self EnableWeapons();
+	weaponsList = self GetWeaponsList();
+	self SwitchToWeapon(weaponsList[weaponsList.size-1]);
+	cl("33 switched weapon");
 }
 
 _buy_menu_iterate(){
