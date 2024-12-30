@@ -60,6 +60,10 @@ v01d_full_ammo_clip_at_round_start 1 //give player full weapon ammo clip at roun
 
 updates log:
 
+2024 12 30
+smoothened bots aiming
+added bullet whizby sounds
+
 2024 11 18
 bullet tracers can be turned on or off
 
