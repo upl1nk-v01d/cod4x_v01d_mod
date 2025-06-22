@@ -4,14 +4,12 @@ the mod files for cod4x provided by v01d
 
 -------------------------------------------
 
-updated 2024.12.30 v01d mod.ff, iwd and other mod files zipped at https://drive.google.com/drive/folders/186GyQw-vKV_bFqAfxdYtRPXcxtaSnoCb
+updated 2025.06.21 v01d mod.ff, iwd and other mod files zipped at https://drive.google.com/drive/folders/186GyQw-vKV_bFqAfxdYtRPXcxtaSnoCb
 
 installation:<br>
-1) in Google Drive you can right click on folder 'cod4x_v01d_mod_files' and click 'Download' to download zip file.<br>
-2) open your 'Call Of Duty 4' game folder and create new folder 'mods'.<br>
-3) extract your downloaded ZIP file in your 'Call Of Duty 4' mods folder.<br>
-4) rename folder 'cod4x_v01d_mod_files' to 'v01d'.<br>
-5) add launch command on your desktop shortcut or in your batch file.<br>
+1) in Google Drive you can right click on file 'cod4x_v01d_mod.zip' and click 'Download'.<br>
+2) extract your downloaded ZIP file in your 'Call Of Duty 4' mods folder.<br>
+3) add launch command on your desktop shortcut or in your batch file.<br>
 
 -------------------------------------------
 
@@ -28,9 +26,15 @@ please add additional args to your cod4x server and client executable:
 to be able to play with bots, the server must be run independently. 
 more info in link: https://github.com/callofduty4x/CoD4x_Server
 
+v01d bots code is still in development stage.
+for sure v01d bots are very buggy but playable.
+the bot navigation algorithm coding puts a lot of strain on the brain.
+
 -------------------------------------------
 
-dvars:
+v01d mod dvars:
+
+v01d_bots 1 //enable v01d bots
 
 v01d_bullet_tracers 1 //shows traces after firing weapon: 1=on, 0=off
 
@@ -59,6 +63,17 @@ v01d_full_ammo_clip_at_round_start 1 //give player full weapon ammo clip at roun
 -------------------------------------------
 
 updates log:
+2025 06 13
+refurbished hardpoint code due to faulty code events
+
+2025 05 30
+fixed knife attack on head
+
+2025 05 29
+fixed headshot
+
+2025 05 23
+added rickrocket damage
 
 2024 12 30
 smoothened bots aiming; 
