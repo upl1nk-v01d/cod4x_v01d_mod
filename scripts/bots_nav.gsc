@@ -520,7 +520,7 @@ _bot_go_to_objective()
 				while(!isDefined(level.bombCarrier))
 				{
 					//self botMoveTo(bombPos);
-					cl("waiting to pickup the bomb...");
+					//cl("waiting to pickup the bomb...");
 					wait 1;
 				}
 				
@@ -1926,7 +1926,7 @@ _bot_nodes_acm() //bot nodes accumulation
 				
 				if(c >= 100)
 				{ 
-					cl(self.name + " destination approach timed out"); 
+					//cl(self.name + " destination approach timed out"); 
 		
 					self.wptArr = [];
 					self.gridArr = [];

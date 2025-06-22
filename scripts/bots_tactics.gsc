@@ -73,7 +73,7 @@ _bot_search_target()
 			
 			if(isDefined(ent) && ent.classname == "player" && isAlive(ent) && ent.pers["team"] != self.pers["team"])
 			{
-				cl(self.name + " targeting: " + ent.name);
+				//cl(self.name + " targeting: " + ent.name);
 				self.hasEnemyTarget = ent;
 				
 				if(randomIntRange(0, 10) > 4)
@@ -103,7 +103,6 @@ _bot_shoot()
 	while(isAlive(self) && isDefined(self.hasEnemyTarget) && isAlive(self.hasEnemyTarget))
 	{
 		h1 = self.hasEnemyTarget GetTagOrigin("j_head");
-		pos = (h1[0], h1[1], h1[2]+5);
 		
 		/*if(isDefined(self.hasEnemyTarget.lastStand))
 		{
@@ -117,20 +116,21 @@ _bot_shoot()
 			pos = (h[0], h[1], h[2]+5);
 		}*/
 		
-		h2 = self.hasEnemyTarget GetTagOrigin("j_head");
-		btp = bulletTracePassed((h2[0],h2[1],h2[2]+5), pos, false, self);
+		h2 = self GetTagOrigin("j_head");
+		btp = bulletTracePassed((h2[0], h2[1], h2[2]+5), (h1[0],h1[1],h1[2]+5), false, self);
 		
 		if(!btp)
 		{ 
-			self.hasEnemyTarget = undefined; break;
+			self.hasEnemyTarget = undefined; 
+			break;
 		}	
 		
-		self scripts\bots_nav::_bot_look_at(pos);
-		vd = scripts\bots_nav::_dp((h2[0],h2[1],h2[2]+5), pos, self.angles);
+		self scripts\bots_nav::_bot_look_at((h1[0]+randomFloatRange(-15,15), h1[1]+randomFloatRange(-15,15), h1[2]+randomFloatRange(-15,15)), 0.5);
+		vd = scripts\bots_nav::_dp((h2[0],h2[1],h2[2]+5), h1, self.angles);
 		
-		if(vd > 0.50)
+		if(vd > 0.90)
 		{
-			cl(self.name + " target acquired: " + self.hasEnemyTarget.name);
+			//cl(self.name + " target acquired: " + self.hasEnemyTarget.name);
 			self _bot_press_fire(0.3);
 		}
 		
@@ -210,7 +210,7 @@ _bot_hears_explosion()
 			dist = distance(self getEye(), pos);
 			wait 0.4 + dist * 0.0005;
 			
-			cl(self.name + " heard explosion from " + pos);
+			//cl(self.name + " heard explosion from " + pos);
 			self thread scripts\bots_nav::_bot_look_at(pos);
 		}
 		
