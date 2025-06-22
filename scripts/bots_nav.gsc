@@ -105,17 +105,18 @@ init()
 			{
 				player AllowSpectateTeam("axis",true);
 				player AllowSpectateTeam("allies",true);
-			}
-			bot = level maps\mp\bots\_bot::add_bot("axis");
-			bot = level maps\mp\bots\_bot::add_bot("axis");
-			bot = level maps\mp\bots\_bot::add_bot("axis");
-			bot = level maps\mp\bots\_bot::add_bot("allies");
-			bot = level maps\mp\bots\_bot::add_bot("allies");
-			bot = level maps\mp\bots\_bot::add_bot("allies");
-			//wait 0.1;
-			//_teleport(bot, (2491.21, 1633.58, 56.1249));
 			
-			//level maps\mp\bots\_bot::add_bot("allies");
+				bot = level maps\mp\bots\_bot::add_bot("axis");
+				bot = level maps\mp\bots\_bot::add_bot("axis");
+				bot = level maps\mp\bots\_bot::add_bot("axis");
+				bot = level maps\mp\bots\_bot::add_bot("allies");
+				bot = level maps\mp\bots\_bot::add_bot("allies");
+				bot = level maps\mp\bots\_bot::add_bot("allies");
+				//wait 0.1;
+				//_teleport(bot, (2491.21, 1633.58, 56.1249));
+				
+				//level maps\mp\bots\_bot::add_bot("allies");
+			}
 		}
 	}
 }
@@ -146,12 +147,12 @@ _player_connecting()
 			
 		//cl("player " + player.name + " connected!");
 		
-		if(getDvar("v01d_dev") != "nav")
+		/*if(getDvar("v01d_dev") != "nav")
 		{
 			setDvar("v01d_dev","nav");
 			setDvar("scr_game_spectatetype", "2"); 
 			exec("map mp_ancient_ultimate");
-		}
+		}*/
 
 		player thread _connecting();
 		wait 0.05;
@@ -540,7 +541,7 @@ _bot_go_to_objective()
 		{
 			self.isGoingToPoint = _get_nearest_node_by_class(self _bot_get_weapon_class());
 			to = self _construct_node(self.isGoingToPoint);
-			cl(self.name + " isGoingToPoint: " + self.isGoingToPoint);
+			//cl(self.name + " isGoingToPoint: " + self.isGoingToPoint);
 		}
 		
 		//self _bot_scanning_area();
