@@ -4,6 +4,7 @@
 #include common_scripts\utility;
 #include scripts\artillery;
 #include scripts\cl;
+#include scripts\pl;
 
 init()
 {
@@ -70,12 +71,12 @@ init()
 	level.hardpointHints["airstrike_mp"] = "AIRSTRIKE IS READY";
 	level.hardpointHints["helicopter_mp"] = "HELICOPTER IS READY";
 	level.hardpointHints["artillery_mp"] = "ARTILLERY IS READY";
-	level.additionalHintText = "Press 6 or B to access Tools";	
+	level.additionalHintText = "Press B to access Tools";	
 	precacheString(&"RADAR JAMMER IS READY");
 	precacheString(&"AIRSTRIKE IS READY");
 	precacheString(&"HELICOPTER IS READY");
 	precacheString(&"ARTILLERY IS READY");
-	precacheString(&"Press 6 or B to access Tools");
+	precacheString(&"Press B to access Tools");
 
 	precacheLocationSelector( "map_artillery_selector" );
 
@@ -888,19 +889,19 @@ giveHardpointItemForStreak()
 	{
 		if ( streak == 2 ){
 			self giveHardpoint( "radar_mp", streak );
-			self setClientDvar( "ui_uav_client", 1 );
+			//self setClientDvar( "ui_uav_client", 1 );
 		}
 		else if ( streak == 4 ){
 			self giveHardpoint( "airstrike_mp", streak ); 
-			self setClientDvar( "ui_airstrike_client", 1 );
+			//self setClientDvar( "ui_airstrike_client", 1 );
 		}
 		else if ( streak == 6 ){
 			self giveHardpoint( "helicopter_mp", streak );
-			self setClientDvar( "ui_helicopter_client", 1 );
+			//self setClientDvar( "ui_helicopter_client", 1 );
 		}
 		else if ( streak == 8 ){
 			self giveHardpoint( "artillery_mp", streak );
-			self setClientDvar( "ui_artillery_client", 1 );
+			//self setClientDvar( "ui_artillery_client", 1 );
 			streak = 0;
 			self.cur_kill_streak = streak;
 		}
@@ -966,7 +967,8 @@ hardpointNotify( hardpointType, streakVal )
 	self waittill( "playerKilledChallengesProcessed" );
 	wait .05;
 	
-	if(isAlive(self)){
+	if(isAlive(self))
+	{
 		//if (isdefined(level.hardpointHints[hardpointType])){
 			//if(hardpointType == "artillery_mp" ) {
 			//	hardpointType = "airstrike_mp";	}
@@ -980,7 +982,8 @@ hardpointNotify( hardpointType, streakVal )
 			notifyData.sound = level.hardpointInforms[hardpointType];
 			//self maps\mp\gametypes\_hud_message::notifyMessage( notifyData );
 			self thread scripts\menus::_show_hint_msg(level.hardpointHints[hardpointType],0,3,320,40,0,0,"left","middle",0,0,"objective",1.6,2.8,(0.9,1,0.9),1,(0.2,0.3,0.7),1,1,true,undefined,true);
-			if (isDefined(game["hasReadHardPointToolsMessage"][self.name]) && game["hasReadHardPointToolsMessage"][self.name] != true){ 
+			if (isDefined(game["hasReadHardPointToolsMessage"][self.name]) && game["hasReadHardPointToolsMessage"][self.name] != true)
+			{ 
 				self thread scripts\menus::_show_hint_msg(notifyData.notifyText,0.5,3,320,70,0,0,"left","middle",0,0,"objective",1.6,1.8,(0.9,1,0.9),1,(0.2,0.3,0.7),1,1,true,undefined);
 				game["hasReadHardPointToolsMessage"][self.name]=true; 
 			}
@@ -990,12 +993,11 @@ hardpointNotify( hardpointType, streakVal )
 	}
 }
 
-
 giveHardpointItem( hardpointType )
 {
 	if ( level.gameEnded )
 		return;
-		
+	
 	if ( isDefined( self.selectingLocation ) )
 		return false;
 
@@ -1005,12 +1007,12 @@ giveHardpointItem( hardpointType )
 	if ( (!isDefined( level.heli_paths ) || !level.heli_paths.size) && hardpointType == "helicopter_mp" )
 		return false;
 
-	if ( isDefined( self.pers["hardPointItem"] ) )
+	/*if ( isDefined( self.pers["hardPointItem"] ) )
 	{
 		if ( level.hardpointItems[hardpointType] < level.hardpointItems[self.pers["hardPointItem"]] )
 			return false;
-	}
-	
+	}*/
+		
 	self giveWeapon( hardpointType );
 	self giveMaxAmmo( hardpointType );
 	self setActionSlot( 4, "weapon", hardpointType );
@@ -1035,7 +1037,7 @@ upgradeHardpointItem()
 	
 	self giveWeapon( hardpointType );
 	self giveMaxAmmo( hardpointType );
-	self setActionSlot( 4, "weapon", hardpointType );
+	//self setActionSlot( 4, "weapon", hardpointType );
 	self.pers["hardPointItem"] = hardpointType;
 	
 	self thread maps\mp\gametypes\_hud_message::hintMessage( level.hardpointHints[hardpointType] );
@@ -1125,7 +1127,7 @@ triggerHardPoint( hardpointType )
 	if ( hardpointType == "radar_mp" )
 	{
 		self thread useRadarItem();
-		self setClientDvar( "ui_uav_client", 0 );
+		//self setClientDvar( "ui_uav_client", 0 );
 	}
 	else if ( hardpointType == "airstrike_mp" )
 	{
@@ -1140,7 +1142,7 @@ triggerHardPoint( hardpointType )
 		if ( !isDefined( result ) || !result )
 			return false;
 			
-		self setClientDvar( "ui_airstrike_client", 0 );
+		//self setClientDvar( "ui_airstrike_client", 0 );
 	}
 	else if ( hardpointType == "artillery_mp" )
 	{
@@ -1155,7 +1157,7 @@ triggerHardPoint( hardpointType )
 		if ( !isDefined( result ) || !result )
 			return false;
 			
-		self setClientDvar( "ui_artillery_client", 0 );
+		//self setClientDvar( "ui_artillery_client", 0 );
 	}
 	else if ( hardpointType == "helicopter_mp" )
 	{
@@ -1196,7 +1198,7 @@ triggerHardPoint( hardpointType )
 		}
 		
 		thread maps\mp\_helicopter::heli_think( self, startnode, self.pers["team"] );
-		self setClientDvar( "ui_helicopter_client", 0 );
+		//self setClientDvar( "ui_helicopter_client", 0 );
 	}
 	
 	return true;
@@ -1273,7 +1275,6 @@ useRadarItem()
 	}
 	else
 	{
-		self maps\mp\gametypes\_globallogic::leaderDialogOnPlayer( "uav_online" );
 		//self iprintln( &"MP_WAR_RADAR_ACQUIRED", self, level.radarViewTime );
 		
 		self notify("radar_timer_kill");
@@ -1291,13 +1292,12 @@ useTeamUAV( team, otherteam )
 	
 	wait level.radarViewTime;
 
-	self maps\mp\gametypes\_globallogic::leaderDialogOnPlayer( "uav_online" );
 	//if(self.pers["team"] == "axis"){ self playLocalSound(game["voice"]["axis"] + game["dialog"]["uav_online"]); }
 	//else if(self.pers["team"] == "allies"){ self playLocalSound(game["voice"]["allies"] + game["dialog"]["uav_online"]); }
 	
 	setTeamRadarWrapper( otherteam, false );
 	
-	
+	//self maps\mp\gametypes\_globallogic::leaderDialogOnPlayer( "uav_online" );
 	//printAndSoundOnEveryone( team, otherteam, &"MP_WAR_RADAR_EXPIRED", &"MP_WAR_RADAR_EXPIRED_ENEMY", undefined, undefined, "" );
 }
 
@@ -1309,12 +1309,12 @@ usePlayerUAV( team, otherteam )
 	self endon("disconnect");
 	
 	self.hasRadar = true;
-	self setClientDvar( "ui_uav_client", 1 );
+	//self setClientDvar( "ui_uav_client", 1 );
 	
 	wait level.radarViewTime;
 	
 	self.hasRadar = false;
-	self setClientDvar( "ui_uav_client", 0 );
+	//self setClientDvar( "ui_uav_client", 0 );
 	
 	//self iprintln( &"MP_WAR_RADAR_EXPIRED" );
 }

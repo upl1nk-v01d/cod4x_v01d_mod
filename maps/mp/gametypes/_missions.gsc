@@ -1071,7 +1071,7 @@ waitAndProcessPlayerKilledCallback( data )
 	wait .05;
 	maps\mp\gametypes\_globallogic::WaitTillSlowProcessAllowed();
 	
-	doMissionCallback( "playerKilled", data );
+	//doMissionCallback( "playerKilled", data );
 }
 
 playerAssist()

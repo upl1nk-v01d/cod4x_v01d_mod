@@ -69,7 +69,7 @@ init()
 		level.weaponlist[level.weaponlist.size] = level.weaponIDs[i];
 	}
 
-	level.skipPrecacheItems=0;
+	level.skipPrecacheItems=[];
 	level.botsWeapons=[];	
 	if(!isDefined(level.precachedItemsNum)){ level.precachedItemsNum=0; } //first precache
 	if(isDefined(level.skipPrecacheItems)){
@@ -563,7 +563,7 @@ dropOffhand()
 	// no dropping of primary grenades.
 	grenadeTypes[grenadeTypes.size] = "frag_grenade_mp";
 	// no dropping of secondary grenades.
-	//grenadeTypes[grenadeTypes.size] = "smoke_grenade_mp";
+	grenadeTypes[grenadeTypes.size] = "smoke_grenade_mp";
 	grenadeTypes[grenadeTypes.size] = "flash_grenade_mp";
 	grenadeTypes[grenadeTypes.size] = "concussion_grenade_mp";
 

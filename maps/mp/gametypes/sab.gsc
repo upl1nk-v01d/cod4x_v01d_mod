@@ -272,6 +272,27 @@ onDeadEvent( team )
 	if ( level.bombExploded )
 		return;
 		
+	/*
+	bombCarrierChoppers = 0;
+	otherChoppers = 0;
+		
+	if(isDefined(level.choppers))
+	{
+		for(i = 0; i < level.choppers.size; i++)
+		{
+			if(level.choppers[i].team == level.bombPlantedBy)
+			{
+				bombCarrierChoppers++;
+			}
+			
+			else
+			{
+				otherChoppers++;
+			}
+		}
+	}
+	*/
+		
 	if ( team == "all" )
 	{
 		if ( level.bombPlanted )
@@ -543,6 +564,8 @@ onPickup( player )
 
 onDrop( player )
 {
+	player.isBombCarrier = false;
+	
 	if ( level.bombPlanted )
 	{
 		
@@ -620,6 +643,7 @@ onUse( player )
 		level thread bombPlanted( self, player.pers["team"] );
 
 		level.bombOwner = player;
+		player.isBombCarrier = false;
 
 //		self.keyObject maps\mp\gametypes\_gameobjects::disableObject();
 		level.sabBomb.autoResetTime = undefined;
@@ -644,6 +668,8 @@ onUse( player )
 		player thread [[level.onXPEvent]]( "defuse" );
 
 		level thread bombDefused( self );
+		player.isBombCarrier = true; //grabbed the bomb
+		level.bombOwner = player;
 		
 		//if ( level.inOverTime && isDefined( level.plantingTeamDead ) )
 		if ( isDefined( level.plantingTeamDead ) )
@@ -712,6 +738,7 @@ bombPlanted( destroyedObj, team )
 	*/
 	explosionOrigin = level.sabBomb.visuals[0].origin;
 	level.bombExploded = true;	
+	level notify("bomb_exploded");
 	
 	if ( isdefined( level.bombOwner ) )
 		destroyedObj.visuals[0] radiusDamage( explosionOrigin, 512, 400, 50, level.bombOwner );
@@ -737,7 +764,7 @@ bombPlanted( destroyedObj, team )
 	}
 		
 	
-	setGameEndTime( 0 );
+	setGameEndTime( 1 );
 	
 	wait 3;
 	
