@@ -103,6 +103,7 @@ _bot_shoot()
 	while(isAlive(self) && isDefined(self.hasEnemyTarget) && isAlive(self.hasEnemyTarget))
 	{
 		h1 = self.hasEnemyTarget GetTagOrigin("j_head");
+		cl(self.name + " seen: " + self.hasEnemyTarget.name);
 		
 		/*if(isDefined(self.hasEnemyTarget.lastStand))
 		{

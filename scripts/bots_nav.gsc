@@ -181,10 +181,7 @@ _player_spawn_loop()
 		self waittill("spawned_player");
 		
 		if(self.isbot)
-		{
-			self.isLookingAt = undefined;
-			self.hasEnemyTarget = undefined;
-			
+		{			
 			self thread _bot_start_nav();
 			//self thread _grid();
 			self thread _bot_nodes_acm();
@@ -296,6 +293,9 @@ _bot_start_nav()
 	self.gridArr = [];
 	self.calculating = "idle";
 	self.isLookingAt = undefined;
+	self.hasEnemyTarget = undefined;
+	self.isGoingToPoint = undefined;
+	self.moveToPos = undefined;
 	
 	//self thread _add_wpt_for_bomb();
 	//self thread _nav_loop();
@@ -480,13 +480,8 @@ _bot_go_to_objective()
 	
 	//cl("_bot_go_to_objective started on " + self.name);
 	
-	minDist = 128;
-	maxDist = 360;
-	prevPos = (0, 0, 0);
 	to = _construct_node(self getEye());
 	nodes = undefined;
-	self.isGoingToPoint = undefined;
-	self.moveToPos = undefined;
 	
 	while(isAlive(self))
 	{
@@ -1854,7 +1849,7 @@ _bot_nodes_acm() //bot nodes accumulation
 				if(isDefined(self.hasEnemyTarget))
 				{
 					self thread _bot_look_at(self.hasEnemyTarget getEye()); //pos,aimspeed,c1,c2
-					while(isDefined(self.hasEnemyTarget)){ wait 1; }
+					//while(isDefined(self.hasEnemyTarget)){ wait 1; }
 				}
 				else
 				{
