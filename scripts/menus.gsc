@@ -86,7 +86,7 @@ _spawn_loop(){
 	self endon ( "disconnect" );
 	//self endon ( "death" );
 	self endon( "intermission" );
-	self endon( "game_ended" );
+	level endon( "game_ended" );
 	
 	if (!isDefined(game["hasReadMOTD"][self.name])){ game["hasReadMOTD"][self.name]=false; }
 	if (!isDefined(game["hasReadHintMessage"][self.name])){ game["hasReadHintMessage"][self.name]=false; }
@@ -121,7 +121,7 @@ _keystrokes(){
 	self endon ( "disconnect" );
 	self endon ( "death" );
 	self endon( "intermission" );
-	self endon( "game_ended" );
+	level endon( "game_ended" );
 	if(self.isbot){ return; }
 	
 	for(;;){
@@ -152,7 +152,8 @@ _create_menu_text(hud,arr,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,color,a,gc,ga,sort,sele
 	self endon ( "disconnect" );
 	self endon ( "death" );
 	self endon( "intermission" );
-	self endon( "game_ended" );
+	level endon( "game_ended" );
+	if(!isDefined(self)){ return; }
 	if(self.isbot){ return; }
 	//if(!isAlive(self)){ return; }
 	if(!isDefined(hud)){ cl("11no hud defined!"); return; }
@@ -239,7 +240,7 @@ _create_menu_bg(bg,x,y,w,h,ox,oy,ax,ay,color,a,sort,shader,aperc){
 	self endon ( "disconnect" );
 	self endon ( "death" );
 	self endon( "intermission" );
-	self endon( "game_ended" );
+	level endon( "game_ended" );
 	if(self.isbot){ return; }
 
 	if(!isDefined(x)){ x=160; } //max width = 640;
@@ -511,7 +512,7 @@ _show_message(txt,delay,dur,x,y,w,h,ax,ay,ox,oy,color,a,gc,ga,ft,fsz,fsc,sort){
 	self endon ( "disconnect" );
 	//self endon ( "death" );
 	self endon( "intermission" );
-	self endon( "game_ended" );
+	level endon( "game_ended" );
 	
 	if (self.isbot){ return; }
 	if (!isDefined(self.buyMenuShow)){ return; }
@@ -818,8 +819,25 @@ _welcome_msg(){
 	self endon ( "disconnect" );
 	//self endon ( "death" );
 	self endon( "intermission" );
-	self endon( "game_ended" );
+	level endon( "game_ended" );
 	if (self.isbot){ return; }
+	
+	if (getDvar("v01d_dev") != "0")
+	{
+		self notify("hasReadWelcomeMsg");
+		self thread _accept();
+		self notify("readyToPressAccept");
+		self waittill("hasPressedFButton");
+		
+		game["hasReadMOTD"][self.name]=true;
+		game["isJoinedSpectators"][self.name]=false;
+		self notify("hasReadWelcomeMsg");
+		self notify("hasReadMOTD");
+		self notify("hasPressedFButton");
+		self notify("readyToPressAccept");
+		
+		return; 
+	}
 	
 	if(!isDefined(self.readDay)){ self.readDay=0; }
 	if(!isDefined(self.prevReadDay)){ self.prevReadDay=-1; }
@@ -960,6 +978,7 @@ _accept(){
 	self playLocalSound("mp_last_stand");
 	cl("^2"+self.name+" has read MOTD");
 	//while (self UseButtonPressed()){ wait 0.05; }
+	if(!isDefined(game["id"][self.name])){ return; };
 	if(isDefined(game["id"])){ self iprintln("^5your ID is "+game["id"][self.name]+" in players database"); }
 }
 
@@ -1043,7 +1062,7 @@ _money_menu(){
 	self endon ( "disconnect" );
 	//self endon ( "death" );
 	self endon( "intermission" );
-	self endon( "game_ended" );
+	level endon( "game_ended" );
 	if (self.isbot){ return; }
 	
 	self waittill("spawned_player");
@@ -1316,7 +1335,7 @@ _buy_menu_main(){
 	self endon ( "disconnect" );
 	//self endon ( "death" );
 	self endon( "intermission" );
-	self endon( "game_ended" );
+	level endon( "game_ended" );
 	if (self.isbot){ return; }
 	//if (!getdvarint("developer")>0){ return; }
 	
@@ -1429,15 +1448,40 @@ _buy_menu_main(){
 					
 	self EnableWeapons();
 	weaponsList = self GetWeaponsList();
-	self SwitchToWeapon(weaponsList[weaponsList.size-1]);
-	cl("33 switched weapon");
+	
+	for(i = weaponsList.size-1; i >= 0; i--)
+	{
+		weapon = weaponsList[i];
+		
+		if(!isDefined(weapon)){ continue; }
+		if(_items(weapon)){ continue; }
+		
+		self SwitchToWeapon(weapon);
+		break;
+		
+	}
+}
+
+_items(weapon)
+{
+	items = StrTok("none,defkit,grenade,c4,claymode,airstrike,artillery,helicopter,gl_",",");
+	
+	for(i = 0; i < items.size; i++)
+	{
+		if(isSubStr(weapon, items[i]))
+		{ 
+			return true; 
+		}
+	}
+	
+	return false;
 }
 
 _buy_menu_iterate(){
 	self endon ( "disconnect" );
 	self endon ( "death" );
 	self endon( "intermission" );
-	self endon( "game_ended" );
+	level endon( "game_ended" );
 
 	for(;;){
 		if(isDefined(self.buyMenuShow)){

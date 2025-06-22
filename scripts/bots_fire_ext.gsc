@@ -17,30 +17,35 @@ init()
     {
 		level waittill("connected", player);
 		
-		player thread _start_fire_ext();
+		player thread _spawn_loop();
 	}
 }
 
-_start_fire_ext()
+_spawn_loop()
 {
 	self endon ( "disconnect" );
 	self endon( "intermission" );
-	self endon( "game_ended" );
+	level endon( "game_ended" );
+	
 	if (!self.isbot){ return; }
 
-	self waittill("spawned_player");  
-
-    self thread _bot_fire();
-    self thread _bot_stop_when_prone();
-    
-	wait 0.05;
+	for(;;)
+	{
+		self waittill("spawned_player");  
+	
+    	self thread _bot_fire();
+    	self thread _bot_stop_when_prone();
+    	
+		wait 0.05;
+	}
 }
 
 _bot_fire(){
-	//self endon ( "death" );
+	self endon ( "death" );
 	self endon ( "disconnect" );
 	self endon( "intermission" );
-	self endon( "game_ended" );
+	level endon( "game_ended" );
+	
 	if(!self.isbot){ return; }
 	
 	stances=strTok("stand,crouch,prone",",");
@@ -56,11 +61,16 @@ _bot_fire(){
 						self.bot.script_target=undefined;
 					}
 					if (self.bot.script_target.model == "vehicle_mi24p_hind_desert" || self.bot.script_target.model == "vehicle_cobra_helicopter_fly") { 
-						//cl("33"+self.bot.script_target.model);
-						self _bot_press_fire(0.3,self.bot.script_target);
+						vis = self SightConeTrace(self getEye(), self.bot.script_target);
+						cl("vis:" + vis);
+						if(vis > 0)
+						{
+							//cl("33"+self.bot.script_target.model);
+							self _bot_press_fire(0.3,self.bot.script_target);
+						}
 					}
 				}				
-				else if (isDefined(self.bot.after_target)) { 
+				if (isDefined(self.bot.after_target)) { 
 					//cl("33"+self.bot.after_target.model);
 					//isSubStr
 					//vehicle_mi24p_hind_desert
@@ -78,7 +88,8 @@ _bot_fire(){
 								stance=stances[randomIntRange(1,3)]; 
 								self botAction("+go"+stance);
 								//self botAction("-ads");
-								self.bot.stop_move=true; break;
+								self.bot.stop_move=true; 
+								break;
  							}
 						}
 					} 
@@ -100,7 +111,7 @@ _bot_fire(){
 				} else {
 					wait 1;
 					if(isDefined(stance)) { 
-						//self.bot.stop_move=false;
+						self.bot.stop_move=false;
 						self botAction("-go"+stance);
 					}
 				}
@@ -111,9 +122,19 @@ _bot_fire(){
 }
 
 _bot_stop_when_prone(){
+	self endon("death");
+	
 	while(isAlive(self)){
 		stance=self getStance();
-		if (stance == "prone"){ self botMoveTo(self.origin); }
+		if (stance == "prone")
+		{ 
+			self botMoveTo(self.origin); 
+			self.bot.stop_move=true;
+		}
+		else
+		{
+			self.bot.stop_move=false;
+		}
 		wait 0.05;
 	}
 }
@@ -156,4 +177,5 @@ _bot_press_fire(delay,target)
 		if(duration) { wait duration; }
 		self botAction("-fire");
 	}
+	//self.pers["bots"]["skill"]["aim_time"] = 0.5;
 }

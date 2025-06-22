@@ -195,7 +195,8 @@ _player_spawn_loop(){
 	self endon ( "disconnect" );
 	//self endon ( "death" );
 	self endon( "intermission" );
-	self endon( "game_ended" );
+	level endon( "game_ended" );
+	
 	//if (!getdvarint("developer")>0){ return; }
 	if(self.isbot){ return; }
 	
@@ -214,7 +215,8 @@ _start()
 	self endon ( "disconnect" );
 	self endon( "intermission" );
 	//self endon( "death" );
-	self endon( "game_ended" );
+	level endon( "game_ended" );
+	
 	if (self.isbot){ return; }
 	
 	self.money=[];
@@ -233,7 +235,8 @@ _player_start_inventory(){
 	self endon ( "disconnect" );
 	//self endon ( "death" );
 	self endon( "intermission" );
-	self endon( "game_ended" );
+	level endon( "game_ended" );
+	
 	//if (!getdvarint("developer")>0){ return; }
 	if(self.isbot){ return; }
 	
@@ -498,6 +501,12 @@ _game_end_weapons(){
 		ammoList=[];
 		for( j = 0; j < weaponsList.size; j++ )
 		{
+			if(isDefined(weaponsList[i]) && isSubStr(weaponsList[i], "briefcase"))
+			{
+				players[i] takeWeapon(weaponsList[i]);
+				continue;
+			}
+			
 			ammoList[j] = players[i] getAmmoCount(weaponsList[j]);
 			//cl("^3"+players[i].name+" weaponsList "+weaponsList[j]+":"+ammoList[j]);
 		}
@@ -559,7 +568,7 @@ _kills(){
 		//cl("^3killed true");
 		if(isPlayer(attacker) && !attacker.isbot){
 			if(attacker.pers["team"]==self.team){
-				attacker.money["acc"] -= 100 * level.moneyMultiplier;
+				attacker.money["acc"] -= 500 * level.moneyMultiplier;
 				//game["money"][attacker.name]=attacker.money["acc"];
 				//cl("^1attacker "+attacker.name+" has money: "+attacker.money["acc"]);
 				//cl("^1"+attacker.name+" has money: "+game["money"][attacker.name]);
@@ -591,7 +600,8 @@ _buy(){
 	self endon ( "disconnect" );
 	self endon ( "death" );
 	self endon( "intermission" );
-	self endon( "game_ended" );	
+	level endon( "game_ended" );
+		
 	if(self.isbot){ return; }
 	wait 0.5;
 	

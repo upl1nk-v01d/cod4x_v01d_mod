@@ -10,8 +10,12 @@ init()
 	
 	setDvar( "scr_heli_missile_max", 0 );
 	
+	level.choppers = undefined;
+	level.choppersAxis = undefined;
+	level.choppersAllies = undefined;
+	
 	//level thread _add_choppers();
-	level thread _fire_on_enemies();
+	level thread _get_all_choppers();
 	
 	for(;;)
     {
@@ -33,8 +37,8 @@ _add_choppers(){
 
 _dev_chopper_test(){
 	self endon ( "disconnect" );
-	self endon ( "game_ended" );
 	self endon ( "intermission" );
+	level endon ( "game_ended" );
 	
 	if(self.isbot){ return; }
 	
@@ -51,6 +55,7 @@ _dev_chopper_test(){
 			thread maps\mp\_helicopter::heli_think(self, startnode, "allies"); 
 			//level.chopper thread maps\mp\_helicopter::heli_crash(); 
 		}
+				
 		while(self LeanLeftButtonPressed() || self LeanRightButtonPressed()){ wait 0.05; }
 		wait 0.05;
 	}
@@ -61,8 +66,9 @@ _give_chopper_hardpoint()
 {
 	self endon ( "disconnect" );
 	self endon( "intermission" );
-	self endon( "game_ended" );
+	level endon ( "game_ended" );
 	//self endon( "death" );
+	
 	if (self.isbot){ return; }
 	
 	for(;;){
@@ -81,7 +87,20 @@ _give_chopper_hardpoint()
 	}
 }
 
-_fire_on_enemies(){
+_chopper_set_team()
+{
+	if(self.model == "vehicle_mi24p_hind_desert")
+	{
+		self.team = "axis";
+	}
+	
+	if(self.model == "vehicle_cobra_helicopter_fly")
+	{
+		self.team = "allies";
+	}
+}
+
+_get_all_choppers(){
 	level endon ( "disconnect" );
 	level endon( "intermission" );
 	level endon( "game_ended" );
@@ -90,85 +109,101 @@ _fire_on_enemies(){
 
 	for(;;){
 		choppers = GetEntArray( "script_vehicle", "classname" );
-		players = GetEntArray( "player", "classname" );
+		level.choppers = choppers;
+		
 		//models = GetEntArray( "vehicle_mi24p_hind_desert", "targetname" );
-		axis_choppers = GetEntArray( "vehicle_mi24p_hind_desert", "model" );
-		allies_choppers = GetEntArray( "vehicle_cobra_helicopter_fly", "model" );
-		if(isDefined(axis_choppers)){ cl("axis_choppers.size:"+axis_choppers.size); }
-		if(isDefined(allies_choppers)){ cl("allies_choppers.size:"+allies_choppers.size); }
-		if(isDefined(choppers)){
-			for(i=0;i<choppers.size;i++){ 
+		level.choppersAxis = GetEntArray( "vehicle_mi24p_hind_desert", "model" );
+		level.choppersAllies = GetEntArray( "vehicle_cobra_helicopter_fly", "model" );
+				
+		if(isDefined(level.choppersAxis)){ cl("level.choppersAxis.size:"+level.choppersAxis.size); }
+		if(isDefined(level.choppersAllies)){ cl("level.choppersAllies.size:"+level.choppersAllies.size); }
+		
+		if(isDefined(choppers))
+		{
+			for(i=0;i<choppers.size;i++)
+			{ 	
 				if(isDefined(choppers[i].model) && (choppers[i].model == "vehicle_cobra_helicopter_fly" || choppers[i].model == "vehicle_mi24p_hind_desert")){
+					choppers[i] _chopper_set_team();
 					choppers[i] thread _chopper_damage_monitor();
-					closest = 2147483647;
-					choppers[i].hasTarget=undefined;
-					//choppers[i].maxhealth=100;
-					//choppers[i].heli_armor=100;
-					//choppers[i] settargetyaw(choppers[i].angles[1]+90);
-					for(j=0;j<choppers.size;j++){ 
-						if(!isDefined(choppers[j])){ continue; }
-						if(choppers[i].team != choppers[j].team && choppers[i] != choppers[j]){
-							dist = distance( choppers[i].origin, choppers[j].origin );
-							if(dist<closest){ 
-								closest = dist; 
-								choppers[i].hasTarget=choppers[j];
-								choppers[i].primaryTarget = choppers[i].hasTarget;
-								choppers[i].secondaryTarget = choppers[i].hasTarget;
-								//target=choppers[i].hasTarget;
-								//choppers[i] setVehWeapon( "cobra_20mm_mp" );
-								//choppers[i] fireWeapon( "tag_flash" );
-								//choppers[i] SetLookAtEnt(choppers[j]);
-								//choppers[i] thread _fire_missile_loop();
-								//vis = choppers[i] SightConeTrace(choppers[j].origin, choppers[i]);
-								//cl("11"+vis);
-							}
-						}
-					}
-					if(!isDefined(choppers[i].primaryTarget)){
-						closest = 2147483647;
-						for(j=0;j<players.size;j++){ 
-							if(!isDefined(players[j])){ continue; }
-							if(players[j].team != choppers[i].team){
-								dist = distance( choppers[i].origin, players[j].origin );
-								if(dist<closest){ 
-									closest = dist; 
-									choppers[i].hasTarget = players[j];
-									choppers[i].primaryTarget = choppers[i].hasTarget;
-									choppers[i].secondaryTarget = choppers[i].hasTarget;
-									//choppers[i] SetLookAtEnt(players[j]);
-									//choppers[i] setVehWeapon( "cobra_20mm_mp" );
-									//choppers[i] fireWeapon( "tag_flash" );
-									if(isAlive(players[j]) && players[j].isbot){ 
-										players[j].bot.script_target=choppers[i]; 
-									}
-								}
-							}
-						}
-					}
-					//cl(choppers[i].origin);
-					if(!isDefined(choppers[i].hasTarget)){ continue; }
-					if(!isDefined(choppers[i].hasTarget.origin)){ continue; }
-					//vis = choppers[i] SightConeTrace(choppers[i].hasTarget.origin, choppers[i]);
-					//if(!vis){ choppers[i].hasTarget=undefined; }
-					//while(isDefined(choppers[i].hasTarget) && isAlive(choppers[i].hasTarget)){
-					//for(j=0;j<30;j++){
-						if(!isDefined(choppers[i].hasTarget)){ break; }
-						if(!isDefined(choppers[i].hasTarget.origin)){ break; }
-						choppers[i] SetLookAtEnt(choppers[i].hasTarget);
-						choppers[i] SetTurretTargetVec(choppers[i].hasTarget.origin);
-						choppers[i] thread _fire_bullets_loop();
-						choppers[i] thread _fire_missile_loop();
-						vis = choppers[i] SightConeTrace(choppers[i].hasTarget.origin, choppers[i]);
-						if(!vis){ choppers[i].hasTarget=undefined; break; }
-						wait 0.1;
-					//}
-					choppers[i].hasTarget=undefined;
+					choppers[i] thread _chopper_killed_monitor();
+					choppers[i] thread _chopper_targets();
 				}
 			}
 		//cl("models.size:"+models.size);
 		//cl("choppers.size:"+choppers.size);
 		}
-		wait 0.1;	
+		
+		wait 1;	
+	}
+}
+
+_chopper_targets()
+{
+	self endon( "death" );
+	
+	if(isDefined(self.isActive)){ return; }
+	self.isActive = true;
+		
+	//choppers[i].maxhealth=100;
+	//choppers[i].heli_armor=100;
+	//choppers[i] settargetyaw(choppers[i].angles[1]+90);
+	while(1)
+	{
+		closest = 2147483647;
+		self.hasTarget=undefined;
+		
+		for(j=0;j<level.choppers.size;j++)
+		{ 
+			if(level.choppers[j] == self){ continue; }
+			if(self.team != level.choppers[j].team)
+			{
+				dist = distance(self.origin, level.choppers[j].origin);
+				vis = self SightConeTrace(level.choppers[j].origin, self);
+				
+				if(dist < closest && vis > 0){ 
+					closest = dist; 
+					self.hasTarget = level.choppers[j];
+					//self.primaryTarget = choppers[j].hasTarget;
+					//self.secondaryTarget = choppers[j].hasTarget;
+				}
+			}
+		}
+		
+		if(!isDefined(self.primaryTarget))
+		{
+			players = GetEntArray( "player", "classname" );
+			closest = 2147483647;
+			for(j=0;j<players.size;j++)
+			{
+				if(players[j].team != self.team && players[j] != self.owner)
+				{
+					dist = distance( self.origin, players[j].origin );
+					vis = self SightConeTrace(players[j] getEye(), self);
+					if(dist < closest && vis > 0)
+					{ 
+						closest = dist; 
+						self.hasTarget = players[j];
+					}
+				}
+			}
+		}
+			
+		while(isDefined(self.hasTarget))
+		{
+			vis = self SightConeTrace(self.origin, self.hasTarget);
+			if(vis == 0)
+			{ 
+				self.hasTarget=undefined; break; 
+			}
+
+			self SetLookAtEnt(self.hasTarget);
+			self SetTurretTargetVec(self.hasTarget.origin);
+			self thread _fire_bullets_loop();
+			self thread _fire_missile_loop();
+			wait 1;
+		}
+		
+		wait 1;
 	}
 }
 
@@ -179,14 +214,46 @@ _chopper_damage_monitor(){
 	
 	if(isDefined(self.isMonitored)){ return; }
 	self.isMonitored = true;
-	
-	for(;;){
+		
+	for(;;)
+	{
 		self waittill( "damage", damage, attacker, direction_vec, P, type );
 		self.hasTarget = attacker;
 		self.primaryTarget = self.hasTarget;
 		//cl("damaged by " + attacker.name);
 		wait 0.1;
 	}
+}
+
+_chopper_killed_monitor()
+{
+	level endon("disconnect");
+	
+	//if(!isDefined(chopper)){ return; }
+	
+	if(isDefined(self.isMonitoredOnBeingKilled)){ return; }
+	self.isMonitoredOnBeingKilled = true;
+	
+	if(!isDefined(self.team)){ return; }
+	
+	team = self.team;
+	
+	level.aliveCount[team] += 1;
+		
+	self waittill( "crashing" );
+	
+	level.aliveCount[team] -= 1;
+		
+	if(isDefined(self.attacker) && self.attacker.pers["team"] != self.team && isDefined(game["money"][self.attacker.name]))
+	{
+		bonus=2000;
+		game["money"][self.attacker.name] += bonus; 
+		self.attacker thread scripts\menus::_show_hint_msg("You got "+bonus+"$ for destroying a helicopter!",0,3,0,300,0,0,"left","middle",0,0,"default",1.6,1.6,(0,1,0),1,(0,1,0),0.5,1,undefined,undefined);
+	}
+	
+	//self.hasTarget = attacker;
+	//self.primaryTarget = self.hasTarget;
+	//cl("33" + team + " chopper has been destroyed!");
 }
 
 _fire_bullets_loop(){
@@ -197,12 +264,16 @@ _fire_bullets_loop(){
 	if(isDefined(self.isFiringBullets)){ return; }
 	
 	self.isFiringBullets = true;
-	wait 1;
-	for(i=0;i<30;i++){
+	
+	wait randomIntRange(5,7);
+	
+	for(i=0;i<60;i++)
+	{
 		self setVehWeapon( "cobra_20mm_mp" );
 		self fireWeapon( "tag_flash" );
 		wait 0.1;
 	}
+	
 	self.isFiringBullets = undefined;
 }
 
@@ -218,12 +289,15 @@ _fire_missile_loop(){
 	
 	self.isFiringMissiles = true;
 	wait 1;
-	for(i=0;i<5;i++){
-		if (isDefined(self)){
+	for(i=0;i<5;i++)
+	{
+		if (isDefined(self) && isDefined(self.owner))
+		{
 			self _fire_missile( "ffar", 1, self.primaryTarget, self.owner.pers["team"] ); wait 0.3;
 		}
 	}
-	wait (randomIntRange(10,15));
+	
+	wait randomIntRange(10,15);
 	self.isFiringMissiles = undefined;
 }
 
