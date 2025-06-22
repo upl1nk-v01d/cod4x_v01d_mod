@@ -97,7 +97,7 @@ init()
 		player thread _clear_nodes();
 		//player thread _bot_take_cover();
 		player thread _node_info();
-		player thread _dev_pause();
+		//player thread _dev_pause();
 				
 		if(!player.isbot)
 		{
@@ -191,7 +191,7 @@ _player_spawn_loop()
 			self thread _bot_look_at_bombpos();
 			self thread _bot_look_at_enemy();
 			//self thread _bot_move_to_nearest_wpt();
-			//self thread _bot_strafe();
+			self thread _bot_strafe();
 			self thread _bot_lean();
 			//self thread _bot_push();
 		}
@@ -385,6 +385,8 @@ _bot_look_at_enemy()
 		
 		for(i = 0; i < players.size; i++)
 		{
+			if(!isDefined(players[i])){ continue; }
+			
 			if(players[i] != self && players[i].pers["team"] != self.pers["team"] && !isDefined(self.hasEnemyTarget))
 			{
 				self thread _bot_look_at(players[i] getEye()); 
@@ -434,11 +436,12 @@ _bot_scanning_area()
 	if(!isDefined(nearestNode))
 	{
 		nearestNode = self _get_visible_node(from, to, 0, 64, -0.3); //from, to, indent, minDist, sector
-		//self _bot_push_node(nearestNode);
+		
 		if(isDefined(nearestNode))
 		{
-			thread _ping_marked_node(nearestNode);
+			//thread _ping_marked_node(nearestNode);
 			self thread _bot_look_at(nearestNode.pos);
+			self _bot_push_node(nearestNode);
 		}
 	}
 	
@@ -458,8 +461,9 @@ _bot_scanning_area()
 
 		if(isDefined(nearestNode))
 		{
-			thread _ping_marked_node(nearestNode);
+			//thread _ping_marked_node(nearestNode);
 			self thread _bot_look_at(nearestNode.pos);
+			self _bot_push_node(nearestNode);
 		}
 	}
 	
@@ -551,9 +555,9 @@ _bot_go_to_objective()
 		else
 		{
 			from = self _construct_node(self getEye());
-			//self _bot_scanning_area();
+			self _bot_scanning_area();
 			
-			nearestNode = self _get_visible_node(from, to, 0, 64, -0.3); //from, to, indent, minDist, sector
+			nearestNode = self _get_visible_node(from, to, 0, 64, -0.5); //from, to, indent, minDist, sector
 
 			if(isDefined(nearestNode))
 			{
@@ -986,46 +990,60 @@ _bot_strafe() //bot trying avoid obstacles by strafing
 	if(!self.isbot) { return; }
 	
 	stop = undefined;
+	_c = 100; 
+	c = _c;
 		
 	while(isAlive(self) && !isDefined(stop))
 	{
 		
-		a = self GetPlayerAngles();
-		sp = self getEye();
-		aff = sp + anglesToForward((a[0], a[1], a[2]+20))*36;
-		afl = sp + anglesToForward((a[0], a[1]+45, a[2]+20))*36; //left
-		afr = sp + anglesToForward((a[0], a[1]-45, a[2]+20))*36; //right
+		if(isDefined(self.moveToPos))
+		{	
+			c--;
+			
+			if(c < 1)
+			{
+				a = self GetPlayerAngles();
+				sp = self getEye();
+				aff = sp + anglesToForward((a[0], a[1], a[2]+20))*36;
+				afl = sp + anglesToForward((a[0], a[1]+45, a[2]+20))*36; //left
+				afr = sp + anglesToForward((a[0], a[1]-45, a[2]+20))*36; //right
+				
+				btf = bulletTrace(sp, aff, true, self);
+				btl = bulletTrace(sp, afl, true, self);
+				btr = bulletTrace(sp, afr, true, self);
+				
+				posf = btf["position"];
+				posl = btl["position"];
+				posr = btr["position"];
 		
-		btf = bulletTrace(sp, aff, true, self);
-		btl = bulletTrace(sp, afl, true, self);
-		btr = bulletTrace(sp, afr, true, self);
-		
-		posf = btf["position"];
-		posl = btl["position"];
-		posr = btr["position"];
-
-		distf=distance(self getEye(),posf);
-		distl=distance(self getEye(),posl);
-		distr=distance(self getEye(),posr);
-		dist = distance(sp, self getEye());
-		
-		if(distl < 32 && distr > 32)
-		{ 
-			wait 0.1;
-			//self thread _bot_look_at(posr);
-			//cl("22" + self.name + " looking right");		
-			//cl("22" + self.name + " moving right");			
-			dist = distance(sp, self getEye());
-			if(dist < 32){ self botMoveTo(posr); }
+				distf=distance(self getEye(),posf);
+				distl=distance(self getEye(),posl);
+				distr=distance(self getEye(),posr);
+				dist = distance(sp, self getEye());
+				
+				if(distl < 32 && distr > 32)
+				{ 
+					wait 0.1;
+					//self thread _bot_look_at(posr);
+					//cl("22" + self.name + " looking right");		
+					//cl("22" + self.name + " moving right");			
+					dist = distance(sp, self getEye());
+					if(dist < 32){ self botMoveTo(posr); }
+				}
+				else if(distr < 32 && distl > 32)
+				{ 
+					wait 0.1;
+					//self thread _bot_look_at(posf);
+					//cl("22" + self.name + " looking left");
+					//cl("22" + self.name + " moving left");
+					dist = distance(sp, self getEye());
+					if(dist < 32){ self botMoveTo(posl); }
+				}
+			}
 		}
-		else if(distr < 32 && distl > 32)
-		{ 
-			wait 0.1;
-			//self thread _bot_look_at(posf);
-			//cl("22" + self.name + " looking left");
-			//cl("22" + self.name + " moving left");
-			dist = distance(sp, self getEye());
-			if(dist < 32){ self botMoveTo(posl); }
+		else
+		{
+			c = _c;
 		}
 		
 		wait 0.1;
@@ -2130,7 +2148,7 @@ _add_remove_nodes(){
 					}
 					else if(hbr == true)
 					{					
-						cl("hbr pos: " + objs[nr].pos);
+						//cl("hbr pos: " + objs[nr].pos);
 						players = getentarray("player", "classname");
 						
 						for(i1=0;i1<players.size;i1++)

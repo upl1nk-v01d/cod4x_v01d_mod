@@ -56,7 +56,7 @@ _bot_search_target()
 
 	for(;;)
 	{
-		wait 1 + randomFloatRange(0, 1);
+		wait 0.1 + randomFloatRange(0, 1);
 		
 		self.hasEnemyTarget = undefined;
 		players = getentarray( "player", "classname" );
@@ -66,8 +66,8 @@ _bot_search_target()
 			if(players[i] == self){ continue; }
 			if(players[i].pers["team"] == self.pers["team"]){ continue; }
 			
-			bt = bulletTrace(self getEye(), players[i].origin, true, self);
-			btp = bulletTracePassed(self getEye(), players[i].origin, true, self);
+			bt = bulletTrace(self getEye(), players[i] getEye(), true, self);
+			btp = bulletTracePassed(self getEye(), players[i] getEye(), true, self);
 			pos = bt["position"];
 			ent = bt["entity"];
 			
@@ -82,8 +82,10 @@ _bot_search_target()
 					//self botMoveTo(self getEye());
 				}
 				
-				h = self.hasEnemyTarget GetTagOrigin("j_head");
-				self scripts\bots_nav::_bot_look_at((h[0], h[1], h[2]+5));
+				h = self.hasEnemyTarget getEye();
+				self scripts\bots_nav::_bot_look_at((h[0], h[1], h[2]-5));
+				//h = self.hasEnemyTarget GetTagOrigin("j_head");
+				//self scripts\bots_nav::_bot_look_at((h[0], h[1], h[2]+5));
 				self _bot_shoot();
 				wait 1;
 				self botAction( "-goprone" );
@@ -102,8 +104,14 @@ _bot_shoot()
 		
 	while(isAlive(self) && isDefined(self.hasEnemyTarget) && isAlive(self.hasEnemyTarget))
 	{
-		h1 = self.hasEnemyTarget GetTagOrigin("j_head");
+		//h1 = self.hasEnemyTarget GetTagOrigin("j_head");
+		h1 = self.hasEnemyTarget getEye();
 		//cl(self.name + " seen: " + self.hasEnemyTarget.name);
+		
+		if(self.hasEnemyTarget getStance() == "prone")
+		{
+			h1 = (h1[0], h1[1], h1[2]-15);
+		}
 		
 		/*if(isDefined(self.hasEnemyTarget.lastStand))
 		{
@@ -117,8 +125,10 @@ _bot_shoot()
 			pos = (h[0], h[1], h[2]+5);
 		}*/
 		
-		h2 = self GetTagOrigin("j_head");
-		btp = bulletTracePassed((h2[0], h2[1], h2[2]+5), (h1[0],h1[1],h1[2]+5), false, self);
+		h2 = self getEye();
+		//h2 = self GetTagOrigin("j_head");
+		btp = bulletTracePassed((h2[0], h2[1], h2[2]-5), (h1[0],h1[1],h1[2]-5), false, self);
+		//btp = bulletTracePassed((h2[0], h2[1], h2[2]+5), (h1[0],h1[1],h1[2]+5), false, self);
 		
 		if(!btp)
 		{ 
@@ -126,12 +136,14 @@ _bot_shoot()
 			break;
 		}	
 		
-		self scripts\bots_nav::_bot_look_at((h1[0]+randomFloatRange(-15,15), h1[1]+randomFloatRange(-15,15), h1[2]+randomFloatRange(-15,15)), 0.5);
-		vd = scripts\bots_nav::_dp((h2[0],h2[1],h2[2]+5), h1, self.angles);
+		self scripts\bots_nav::_bot_look_at((h1[0]+randomFloatRange(-5,5), h1[1]+randomFloatRange(-5,5), h1[2]+randomFloatRange(-5,5)), 0.5);
+		vd = scripts\bots_nav::_dp((h2[0],h2[1],h2[2]), h1, self.angles);
+		//vd = scripts\bots_nav::_dp((h2[0],h2[1],h2[2]+5), h1, self.angles);
 		
 		if(vd > 0.90)
 		{
-			//cl(self.name + " target acquired: " + self.hasEnemyTarget.name);
+			//cl(self.name + " targeting: " + self.hasEnemyTarget.name);
+			if(self getStance() == "prone"){ self botMoveTo(self getEye()); }
 			self _bot_press_fire(0.3);
 		}
 		
