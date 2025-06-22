@@ -1,9 +1,11 @@
 #include maps\mp\_load;
 #include maps\mp\_utility;
+#include scripts\cl;
 
 init()
 {
 	setDvar( "bots_aim_ext", 1 );
+	
 	if (!getdvarint("developer")>0){ return; }
 	
 	precacheShader("compass_waypoint_defend");
@@ -25,26 +27,43 @@ init()
 	}
 }
 
+// var = !var
+
+_template(){
+	self endon ( "disconnect" );
+	self endon ( "death" );
+	self endon ( "intermission" );
+	level endon( "game_ended" );
+	
+	//if (!getdvarint("developer")>0){ return; }
+	//if(self.isbot){ return; }
+	
+	for(;;)
+	{
+	
+		wait 0.05;
+	}
+}
+
 _start()
 {
 	self endon ( "disconnect" );
-	//self endon( "intermission" );
-	//self endon( "death" );
-	self endon( "game_ended" );
+	//self endon ( "intermission" );
+	//self endon ( "death" );
+	level endon( "game_ended" );
+	
 	if (!self.isbot){ return; }
 	
 	self waittill("spawned_player");
 	cl("_start started on "+self.name);
 	
-	for(;;){
-		if(isAlive(self)){
+	for(;;)
+	{
+		if(isAlive(self))
+		{
 			wait 1;
 		}
+		
 		wait 1;
 	}
-}
-
-cl(txt){
-	if (isDefined(txt)){ print("-- "+txt+" -- \n"); }
-	else { print("!! undefined !! \n"); }
 }
