@@ -1053,7 +1053,7 @@ start_bot_threads()
 	// nades
 	if ( getDvarInt( "bots_play_nade" ) )
 	{
-		self thread bot_use_tube_think();
+		//self thread bot_use_tube_think();
 		self thread bot_use_grenade_think();
 		self thread bot_use_equipment_think();
 		self thread bot_watch_think_mw2();

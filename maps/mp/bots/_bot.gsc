@@ -439,6 +439,8 @@ add_bot(team)
 		bot notify( "menuresponse", game["menu_team"], team );
 		bot thread added();
 	}
+	
+	return bot; //added to return object for dev purposes
 }
 
 /*
