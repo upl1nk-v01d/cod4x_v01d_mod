@@ -27,7 +27,9 @@ to be able to play with bots, the server must be run independently.
 more info in link: https://github.com/callofduty4x/CoD4x_Server
 
 v01d bots code is still in development stage.
-for sure v01d bots are very buggy but playable.
+for sure v01d bots are very buggy but playable only in map mp_ancient_ultimate.
+you can add new nodes for other maps if you know how.
+I will make tutorial in future how to add nodes for v01d bots.
 the bot navigation algorithm coding puts a lot of strain on the brain.
 
 -------------------------------------------
