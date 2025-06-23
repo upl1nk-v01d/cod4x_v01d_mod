@@ -62,6 +62,8 @@ v01d_knifed_sfx 1 // //knifed screaming sounds: 1=on, 0=off
 
 v01d_full_ammo_clip_at_round_start 1 //give player full weapon ammo clip at round start: 1=on, 0=off
 
+v01d_player_no_collision 24 //option to switch no collision for players certain seconds: default 24;
+
 -------------------------------------------
 
 updates log:
