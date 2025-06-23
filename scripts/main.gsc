@@ -56,6 +56,7 @@ init(){
 	if(getDvar("v01d_knifed_sfx") == ""){ setDvar("v01d_knifed_sfx",1); } //knifed screaming sounds: 1=on, 0=off
 	if(getDvar("v01d_full_ammo_clip_at_round_start") == ""){ setDvar("v01d_full_ammo_clip_at_round_start",1); } //give player full weapon ammo clip at round start: 1=on, 0=off
 	if(getDvar("v01d_bullet_tracers") == ""){ setDvar("v01d_bullet_tracers", 1); } //shows traces after firing weapon: 1=on, 0=off
+	if(getDvar("v01d_player_no_collision") == ""){ setDvar("v01d_player_no_collision", 24); } //option to switch no collision for players certain seconds: default 24;
 	if(getDvar("v01d_bots") == ""){ setDvar("v01d_bots", 1); } //option to play with v01d bots: 1=on, 0=off
 		
 	setDvar("pl",""); //in terminal argument a = show all players, r = real players, b = bot players
@@ -110,7 +111,7 @@ init(){
 	level thread scripts\money::init();
 	level thread scripts\menus::init();
 	
-	level thread scripts\bots_nav::init();
+	level thread scripts\bots_navigation::init();
 	level thread scripts\bots_tactics::init();
 	
 	level._maps = StrTok("mp_ancient_ultimate,12,mp_carentan,14,mp_rasalem,12,mp_efa_lake,8,mp_bo2carrier,12,mp_bog,16,mp_summit,18,mp_backlot,16,mp_harbor_v2,16,mp_sugarcane,8,mp_csgo_assault,12,mp_csgo_inferno,12,mp_csgo_office,12,mp_csgo_overpass,12,mp_csgo_mirage,12,mp_finca,12,mp_csgo_safehouse,10,mp_csgo_cbble,12,mp_csgo_shortdust,12,mp_csgo_stmarc,8,mp_ins_panj,10,mp_creek,12,mp_csgo_mirage,12,mp_csgo_overpass,12,mp_ins_heights,12,mp_ins_peak,12", "," );
@@ -125,6 +126,7 @@ init(){
 	level.slowMo=false;
 	level.gracePeriod = 60;
 	level.screams_sfx=false;
+	level.playerNoCollision = getDvarInt("v01d_player_no_collision");
 	
 	/*
 	level.classSniper = StrTok("svg100,dragunov,m21", "," );
@@ -193,7 +195,7 @@ init(){
 	level thread _randomize_bomb_pos();
 	level thread _artillery_monitor();
 	level thread _bc();
-	level thread _player_collision(24);
+	level thread _player_no_collision(level.playerNoCollision);
 	level thread _maps_randomizer();
 	level thread _slowMo();
 	level thread _get_team_score();
@@ -1755,8 +1757,16 @@ _last_allie_taunting(){
 	}
 }
 
-_player_collision(timer){
+_player_no_collision(timer)
+{
+	if(!isDefined(level.playerNoCollision) || level.playerNoCollision < 1)
+	{ 
+		setDvar("g_friendlyplayercanblock",1); 
+		return; 
+	}
+	
 	while (isDefined(level.inPrematchPeriod) && level.inPrematchPeriod==true){ wait 1; }
+	
 	setDvar("g_friendlyplayercanblock",0);
 	wait timer;
 	setDvar("g_friendlyplayercanblock",1);
@@ -4641,13 +4651,15 @@ _hp_trigger()
 	level endon("game_ended");
 
 	if(self.isbot){ return; }
+	
+	self.hp_items = [];
 
 	for(;;)
 	{
 		self waittill( "playerKilledChallengesProcessed" );
 		if(!isDefined(self.pers["hardPointItem"])){ continue; }
 		if(!self _construct_hp_item(self.pers["hardPointItem"])){ continue; }
-		cl("_hp_trigger");
+		//cl("_hp_trigger");
 	}
 }
 
@@ -4672,6 +4684,7 @@ _check_hp_item(item)
 	
 	for(i = 0; i < self.hp_items.size; i++)
 	{
+		//cl(self.name + " has item: " + self.hp_items[i]);
 		if(self.hp_items[i] == item){ return true; }
 	}
 	
