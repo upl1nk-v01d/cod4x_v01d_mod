@@ -1015,7 +1015,7 @@ giveHardpointItem( hardpointType )
 		
 	self giveWeapon( hardpointType );
 	self giveMaxAmmo( hardpointType );
-	self setActionSlot( 4, "weapon", hardpointType );
+	//self setActionSlot( 4, "weapon", hardpointType );
 	self.pers["hardPointItem"] = hardpointType;	
 	
 	return true;
