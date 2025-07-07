@@ -5,7 +5,9 @@
 #include scripts\bots_utilities;
 
 init()
-{	
+{
+	if (getDvar("v01d_bots") != "1"){ return; }
+
 	precacheShader("compass_waypoint_defend");
 	precacheShader("compass_waypoint_target");
 	precacheShader("compass_waypoint_bomb");
@@ -14,25 +16,6 @@ init()
 	precacheShader("compassping_player"); 
 	precacheShader("map_artillery_selector"); 
 
-	if (getDvar("v01d_bots") == "1")
-	{
-		cl("v01d bots is active!");
-		//if (isDefined(game["devmode"]) && game["devmode"] != "on"){ 
-			game["devmode"]="on"; 
-			//setdvar( "developer_script", 1 );
-			//setdvar( "developer", 1 );		
-			//setdvar( "sv_mapRotation", "map " + getDvar( "mapname" ) );
-			//exitLevel( false );
-			_toggle_ineedbots(0);
-			//level.doNotAddBots=true;
-			//wait 5;
-		//}
-	} 
-	else 
-	{
-		game["devmode"] = "off";
-	}
-	
 	//if (!getdvarint("v01d_dev")>0){ return; }
 	if (getdvarint("bots_main_debug")>0) { return; }
 
@@ -55,12 +38,8 @@ init()
 		cl("22this level has a bomb!");
 	}
 	
-	level.sniper_weapons = StrTok("tac330_sil_mp,mors_acog_mp,svg100_mp,barrett_mp,dragunov_mp,m40a3_mp,m21_mp",",");
-	level.grenade_weapons = StrTok("mm1_mp",",");
-	level.rocket_weapons = StrTok("em1_mp,rpg_mp,law_mp",",");
-	level.mg_weapons = StrTok("saw_mp,rpd_mp,m60e4_mp",",");
-	
 	level.objectives = [];
+	
 	for(i=1;i<16;i++){
 		level.objectives[i] = spawnStruct();
 		level.objectives[i].id = i;
@@ -75,14 +54,25 @@ init()
 	//setDvar( "bots_play_move", false );
 	
 	level _load_nodes();
-	if(_check_if_no_nodes(level.nodes)){ return; }
+	
+	if(_check_if_no_nodes())
+	{ 
+		return true; 
+	}
 
-    level thread _player_connecting();
 	level thread _bomb_pos();
 	//level thread _add_some_bots(2);
+	level thread _player_connected();
+}
+
+_player_connected()
+{
+	level endon ( "disconnect" );
+	level endon( "intermission" );
+	level endon( "game_ended" );
 	
 	for(;;)
-    {
+	{
 		level waittill("connected", player);
 		
 		player thread _player_spawn_loop();
@@ -98,72 +88,6 @@ init()
 		//player thread _bot_take_cover();
 		player thread _node_info();
 		//player thread _dev_pause();
-				
-		if(!player.isbot)
-		{
-			if (getDvar("v01d_dev") != "0")
-			{
-				player AllowSpectateTeam("axis",true);
-				player AllowSpectateTeam("allies",true);
-			
-				bot = level maps\mp\bots\_bot::add_bot("axis");
-				bot = level maps\mp\bots\_bot::add_bot("axis");
-				bot = level maps\mp\bots\_bot::add_bot("axis");
-				bot = level maps\mp\bots\_bot::add_bot("allies");
-				bot = level maps\mp\bots\_bot::add_bot("allies");
-				bot = level maps\mp\bots\_bot::add_bot("allies");
-				//wait 0.1;
-				//_teleport(bot, (2491.21, 1633.58, 56.1249));
-				
-				//level maps\mp\bots\_bot::add_bot("allies");
-			}
-		}
-	}
-}
-
-_toggle_ineedbots(n)
-{
-	setDvar( "bots_play_move", n );
-	setDvar( "bots_aim_ext", n );
-	setDvar( "bots_fire_ext", n );
-	//setDvar( "bots_play_fire", n );
-	//setDvar( "bots_play_aim", n );
-	setDvar( "bots_play_nade", n );
-	setDvar( "bots_play_knife", n );
-}
-
-_player_connecting()
-{
-	level endon ( "disconnect" );
-	level endon( "intermission" );
-	level endon( "game_ended" );
-
-	//if (getdvarint("developer")>0){ return; }
-	//if(self.isbot){ return; }
-		
-	for(;;)
-	{
-		level waittill("connecting", player);
-			
-		//cl("player " + player.name + " connected!");
-		
-		/*if(getDvar("v01d_dev") != "nav")
-		{
-			setDvar("v01d_dev","nav");
-			setDvar("scr_game_spectatetype", "2"); 
-			exec("map mp_ancient_ultimate");
-		}*/
-
-		player thread _connecting();
-		wait 0.05;
-	}
-}
-
-_connecting(){
-	if (getdvarInt("v01d_dev") != 0){
-		//self setClientDvar( "developer_script", 1 );
-		//self setClientDvar( "developer", 1 );
-		//cl("33connecting");
 	}
 }
 
@@ -189,11 +113,11 @@ _player_spawn_loop()
 			//self thread _open_map();		
 			self thread _bot_go_to_objective();
 			self thread _bot_look_at_bombpos();
-			self thread _bot_look_at_enemy();
 			//self thread _bot_move_to_nearest_wpt();
 			self thread _bot_strafe();
 			self thread _bot_lean();
 			//self thread _bot_push();
+			self thread _bot_check_position();
 		}
 		else
 		{
@@ -296,6 +220,10 @@ _bot_start_nav()
 	self.hasEnemyTarget = undefined;
 	self.isGoingToPoint = undefined;
 	self.moveToPos = undefined;
+	self.isFindingAnotherWay = undefined;
+	
+	self botStop();
+	self botMoveTo(self GetEye());
 	
 	//self thread _add_wpt_for_bomb();
 	//self thread _nav_loop();
@@ -370,34 +298,6 @@ _bot_look_at_bombpos()
 	}
 }
 
-_bot_look_at_enemy()
-{
-	self endon ( "disconnect" );
-	self endon( "intermission" );
-	self endon( "death" );
-	level endon( "game_ended" );
-	
-	if (!self.isbot){ return; }
-	
-	while(isAlive(self))
-	{
-		players = getentarray("player", "classname");
-		
-		for(i = 0; i < players.size; i++)
-		{
-			if(!isDefined(players[i])){ continue; }
-			
-			if(players[i] != self && players[i].pers["team"] != self.pers["team"] && !isDefined(self.hasEnemyTarget))
-			{
-				self thread _bot_look_at(players[i] getEye()); 
-				wait 5;
-			}
-		}
-		
-		wait 1;
-	}
-}
-
 _dev_pause()
 {
 	self endon ( "disconnect" );
@@ -415,7 +315,7 @@ _dev_pause()
 	}
 }
 
-_bot_go_to_objective()
+_bot_check_position()
 {
 	self endon ( "disconnect" );
 	self endon( "intermission" );
@@ -424,16 +324,74 @@ _bot_go_to_objective()
 	
 	if (!self.isbot){ return; }
 	
+	self.isStuck = undefined;
+	
+	prevPos = self getEye();
+	minDist = 64;
+	_c = 10;
+	c = _c;
+	
+	wait 5;
+	
+	while(isAlive(self))
+	{		
+		if(distance(self getEye(), prevPos) < minDist)
+		{
+			c--;
+			
+			if(c < 1)
+			{
+				self.isStuck = true;
+				cl(self.name + " got stuck!");
+				
+				while(distance(self getEye(), prevPos) < minDist){ wait 1; }
+				
+				//cl(self.name + " is Ok!");
+			}
+			else
+			{
+				
+			}
+		}
+		else
+		{
+			c = _c;
+		}
+		
+		prevPos = self getEye();
+		
+		wait 1;
+	}
+}
+
+_bot_go_to_objective()
+{
+	self endon ( "disconnect" );
+	self endon( "intermission" );
+	self endon( "death" );
+	level endon( "game_ended" );
+	
+	if (!self.isbot){ return; }
+		
 	//cl("_bot_go_to_objective started on " + self.name);
 	
 	to = _construct_node(self getEye());
 	nodes = undefined;
-	self.isFindingAnotherWay = undefined;
 	
 	while(isAlive(self))
 	{
-		//while(isDefined(self.hasEnemyTarget)){ wait 1; }
-		while(isDefined(self.moveToPos)){ wait 0.1; }
+		while(isDefined(self.hasEnemyTarget)){ wait 1; }
+		while(isDefined(self.moveToPos)){ wait 0.5; }
+		
+		from = self _construct_node(self getEye());
+		
+		if(isDefined(self.isStuck) && !isDefined(self.isGoingToPoint))
+		{
+			nearestNode = self _get_visible_node(from, undefined, 1, 64, -1, 40);
+			self _bot_self_nav(nearestNode);
+			self.isStuck = undefined;
+			self.hasEnemyTarget = undefined;
+		}
 
 		if(isDefined(level.bombCarrier))
 		{
@@ -458,59 +416,83 @@ _bot_go_to_objective()
 				}*/
 			}
 		}
-		else
+		else if(!level.bombPlanted)
 		{
 			bombPos = level.objectivePos;
 			btpBomb = BulletTracePassed(self getEye(), (bombPos[0],bombPos[1],bombPos[2]), false, self);
 			distObj = distance(bombPos, self getEye());
 			
-			if(btpBomb && distObj < 333)
+			if(btpBomb && distObj < 333 && bombPos[2] - self getEye()[2] < 20)
 			{
 				node = _construct_node(bombPos);
 				self _bot_push_node(node);
 				
-				while(!isDefined(level.bombCarrier))
+				while(!isDefined(level.bombCarrier) && btpBomb)
 				{
-					//self botMoveTo(bombPos);
 					//cl("waiting to pickup the bomb...");
 					wait 1;
+					bombPos = level.objectivePos;
+					btpBomb = BulletTracePassed(self getEye(), (bombPos[0],bombPos[1],bombPos[2]), false, self);
+					if(!btpBomb && !isDefined(level.bombCarrier)){ cl(self.name + " lost bomb!"); }
 				}
-				
-				//self.wptPassed = [];
-				//self _bot_scanning_area();
-				//from = self _construct_node(self getEye());
-				
-				//nearestNode = self _get_visible_node(from, undefined, 0, 64); //from, to, indent, minDist, sector
-				//self _bot_push_node(nearestNode);
-				//thread _ping_marked_node(nearestNode);
 			}
 		}
 		
-		from = self _construct_node(self getEye());
 		to = self _construct_node(level.objectivePos);
+		
+		while(isDefined(level.bombPlantedBy) && level.bombPlantedBy == self.pers["team"])
+		{
+			//cl(self.name + " is evacuating!");
+			from = self _construct_node(self getEye());
+			nearestNode = self _get_visible_node(from, undefined, 0, 64, -0.75, 999);
+			self _bot_push_node(nearestNode);
+			thread _ping_marked_node(nearestNode);
+			
+			wait 5;
+		}
 		
 		if(isDefined(level.bombCarrier) && self != level.bombCarrier && isDefined(_get_nearest_node_by_class(self _bot_get_weapon_class())))
 		{
 			self.isGoingToPoint = _get_nearest_node_by_class(self _bot_get_weapon_class());
-			
 		}
 		
-		if(isDefined(self.isGoingToPoint))
+		while(isDefined(self.isGoingToPoint))
 		{
+			from = self _construct_node(self getEye());
 			to = self _construct_node(self.isGoingToPoint);
+			nearestNode = self _get_visible_node(from, undefined, -256, 64, -0.5, 999);
+			self _bot_push_node(nearestNode);
+			thread _ping_marked_node(nearestNode);
 			//cl(self.name + " isGoingToPoint: " + self.isGoingToPoint);
-			self.isGoingToPoint = undefined;
+			
+			wait 5;
 		}
 		
-		//self _bot_scanning_area();
-		
-		nearestNode = self _get_visible_node(from, to, 0, 64, 0.5); //from, to, indent, minDist, sector
+		nearestNode = self _get_visible_node(from, to, 1, 64, 0.5); 
+		//from, to, indent, minDist, sector, distzMax, ignoreVis
 		
 		if(isDefined(self.isFindingAnotherWay))
 		{
-			nearestNode = self _get_visible_node(from, undefined, 0, 64, 0.25);
-			self _bot_push_node(nearestNode);
-			thread _ping_marked_node(nearestNode);
+			nearestNodeDest = self _get_visible_node(from, to, 1, 64, -1, 999, true);
+			
+			if(isDefined(nearestNodeDest))
+			{
+				btp = BulletTracePassed(self getEye(), nearestNodeDest.pos, false, self);
+
+				if(btp)
+				{
+					//cl(self.name + " found way out!");
+					self _bot_push_node(nearestNodeDest);
+					thread _ping_marked_node(nearestNodeDest);
+					self.isFindingAnotherWay = undefined;
+				}
+				else
+				{
+					nearestNode = self _get_visible_node(from, undefined, 12, 64, -0.5, 999);
+					self _bot_push_node(nearestNode);
+					thread _ping_marked_node(nearestNode);
+				}
+			}
 		}
 		else if(isDefined(nearestNode))
 		{
@@ -519,21 +501,8 @@ _bot_go_to_objective()
 		}
 		else
 		{
-			from = self _construct_node(self getEye());
-			//self _bot_scanning_area();
+			//cl(self.name + " tries to find another way!");
 			self.isFindingAnotherWay = true;
-			
-			nearestNode = self _get_visible_node(from, to, 0, 64, -0.5); //from, to, indent, minDist, sector
-
-			if(isDefined(nearestNode))
-			{
-				self _bot_push_node(nearestNode);
-				thread _ping_marked_node(nearestNode);
-			}
-			else
-			{
-				cl(self.name + " got stuck!");
-			}
 		}
 
 		wait 1;
@@ -598,14 +567,15 @@ _bot_scanning_area()
 	//cl(self.name + " scanned nodes");
 }
 
-_get_visible_node(from, to, indent, minDist, sector, distzMax, ignoreNodes)
+_get_visible_node(from, to, indent, minDist, sector, distzMax, ignoreVis)
 {
 	if(!isDefined(level.nodes)){ return; }
 	if(!isDefined(indent)){ indent = 0; }
-	if(!isDefined(distzMax)){ distzMax = 999; }
 	if(!isDefined(minDist)){ minDist = 0; }
 	if(!isDefined(sector)){ sector = 0; }
-			
+	if(!isDefined(distzMax)){ distzMax = 999; }
+	if(!isDefined(ignoreVis)){ ignoreVis = false; }
+		
 	eye = self getEye();
 	nr = undefined;
 
@@ -617,23 +587,6 @@ _get_visible_node(from, to, indent, minDist, sector, distzMax, ignoreNodes)
 					
 	for( i2 = 0 ; i2 < level.nodes.size; i2++ )
 	{
-		/*if(level.nodes[i2].pos == from.pos){ continue; }
-		
-		skip = undefined;
-		if(isDefined(ignoreNodes))
-		{
-			for(i = 0 ; i < ignoreNodes.size; i++ )
-			{
-				if(level.nodes[i2].pos == ignoreNodes[i].pos)
-				{
-					skip = true; 
-					break;
-				}
-			}
-		}
-		
-		if(isDefined(skip)){ continue; }*/
-		
 		distTo = undefined;
 		distFromTo = undefined;
 		distFrom = distance(level.nodes[i2].pos, self getEye());
@@ -648,7 +601,7 @@ _get_visible_node(from, to, indent, minDist, sector, distzMax, ignoreNodes)
 		btp = BulletTracePassed(self getEye(), level.nodes[i2].pos, false, self);
 		angles = VectorToAngles(level.nodes[i2].pos - self getEye());
 		vd = _dp(self getEye(), level.nodes[i2].pos, self.angles);
-		adj = self _check_adjacent(self getEye(), level.nodes[i2].pos);
+		adj = self _check_adjacent(self getEye(), level.nodes[i2].pos, distzMax);
 		ocp = self _check_occuppied(level.nodes[i2].pos);
 		//cl("vd: " + vd);
 		//cl("angles: " + angles);
@@ -656,7 +609,15 @@ _get_visible_node(from, to, indent, minDist, sector, distzMax, ignoreNodes)
 		
 		//wait 0.1;
 		
-		if(isDefined(to) && vd > sector && btp && adj)
+		if(ignoreVis && isDefined(to))
+		{
+			if(distFrom < closestFrom && distFromTo - distTo > indent && distFrom > minDist)
+			{			
+				nr = i2;
+				closestFrom = distFrom;
+			}
+		}
+		else if(isDefined(to) && vd > sector && btp && adj && !ocp)
 		{
 			//if(btp && adj && distz < distzMax && distFrom > 12 && distFrom < closestFrom && distFromTo - distTo > indent)
 			if(distFrom < closestFrom && distFromTo - distTo > indent && distFrom > minDist)
@@ -665,7 +626,7 @@ _get_visible_node(from, to, indent, minDist, sector, distzMax, ignoreNodes)
 				closestFrom = distFrom;
 			}
 		}
-		else if(vd > sector && adj)
+		else if(vd > sector && adj && !ocp)
 		{
 			if(distFrom > minDist && distFrom < closestFrom)
 			{			
@@ -793,122 +754,6 @@ _get_nearest_node_by_class(class)
 	return undefined;
 }
 
-_get_nearest_node(from, to, indent, getOnlyVisible, distzMax, ignoreNodes, direction, minDist)
-{
-	if(!isDefined(level.nodes)){ return; }
-	if(!isDefined(indent)){ indent = -32; }
-	if(!isDefined(getOnlyVisible)){ getOnlyVisible = false; }
-	if(!isDefined(distzMax)){ distzMax = 999; }
-	if(!isDefined(minDist)){ minDist = 64; }
-			
-	eye = self getEye();
-	nr = undefined;
-
-	closestFrom = 99999;
-	closestTo = 99999;
-		
-	//cl("self eye/origin dist: " + distance(self getEye(), self.origin)); 
-	//40 units
-					
-	for( i2 = 0 ; i2 < level.nodes.size; i2++ )
-	{
-		if(level.nodes[i2].pos == from.pos){ wait 0.5; continue; }
-		
-		skip = undefined;
-		if(isDefined(ignoreNodes))
-		{
-			for(i = 0 ; i < ignoreNodes.size; i++ )
-			{
-				if(level.nodes[i2].pos == ignoreNodes[i].pos)
-				{
-					skip = true; 
-					break;
-				}
-			}
-		}
-		
-		if(isDefined(skip)){ continue; }
-		
-		distTo = undefined;
-		distFromTo = undefined;
-		distFrom = distance(level.nodes[i2].pos, from.pos);
-		distz = level.nodes[i2].pos[2] - self getEye()[2];
-		
-		if(isDefined(to))
-		{ 
-			distTo = distance(level.nodes[i2].pos, to.pos); 
-			distFromTo = distance(from.pos, to.pos);
-		}
-		
-		angles = VectorToAngles(level.nodes[i2].pos - from.pos);
-		vd = _dp(from.pos, level.nodes[i2].pos, angles);
-		//cl("vd: " + vd);
-		//cl("angles: " + angles);
-		
-		//wait 1;
-		
-		if(isDefined(to))
-		{
-			if(getOnlyVisible)
-			{
-				//if(btp && adj && distz < distzMax && distFrom > 12 && distFrom < closestFrom && distFromTo - distTo > indent)
-				if(distFrom > 12 && distFrom < closestFrom && distFromTo - distTo > indent && distFrom > minDist)
-				{			
-					btp = BulletTracePassed(from.pos, level.nodes[i2].pos, false, self);
-					adj = self _check_adjacent(from.pos, level.nodes[i2].pos);
-					
-					if(btp && adj)
-					{
-						nr = i2;
-						closestFrom = distFrom;
-					}
-				}
-			}
-			/*else
-			{
-				if(adj && distz < distzMax && distFrom > 12 && distFrom < closestFrom && distFromTo - distTo > indent)
-				{			
-					nr = i2;
-					closestFrom = distFrom;
-				}
-			}*/
-		}
-		else
-		{
-			if(getOnlyVisible)
-			{
-				//if(btp && adj && distz < distzMax && distFrom > 12 && distFrom < closestFrom && distFromTo - distTo > indent)
-				if(distFrom > 12 && distFrom < closestFrom && distFrom > minDist)
-				{			
-					btp = BulletTracePassed(from.pos, level.nodes[i2].pos, false, self);
-					adj = self _check_adjacent(from.pos, level.nodes[i2].pos);
-					
-					if(btp && adj)
-					{
-						nr = i2;
-						closestFrom = distFrom;
-					}
-				}
-			}
-			/*else
-			{
-				if(adj && distz < distzMax && distFrom > 12 && distFrom < closestFrom && distFromTo - distTo > indent)
-				{			
-					nr = i2;
-					closestFrom = distFrom;
-				}
-			}*/
-		}
-	}
-	
-	if(isDefined(nr))
-	{
-		return level.nodes[nr];
-	}	
-	
-	return undefined;
-}
-
 _calc_ground(pos, indent)
 {
 	if(!isDefined(indent)){ indent = 20; }
@@ -925,7 +770,7 @@ _calc_ground(pos, indent)
 
 _check_occuppied(pos, minDist)
 {
-	if(!isDefined(minDist)){ minDist = 48; }
+	if(!isDefined(minDist)){ minDist = 64; }
 	
 	players = getentarray("player", "classname");
 	for(i = 0; i < players.size; i++)
@@ -938,7 +783,7 @@ _check_occuppied(pos, minDist)
 	return false;
 }
 
-_check_adjacent(from, to) //vector
+_check_adjacent(from, to, distzMax) //vector
 {
 	btp = bulletTracePassed(from, to, false, self);
 	eyeHeight = 40;
@@ -960,9 +805,9 @@ _check_adjacent(from, to) //vector
 			//cl("zdiff: " + zdiff);
 			//wait 0.05;
 			
-			if(distance(from, posz) < 24 )
+			if(zdiff > distzMax )
 			{
-				//cl("posz distance less than 24");
+				//cl(self.name + " zdiff distance greater than " + distzMax);
 				//level waittill("next");
 				//wait 2;
 				self.gridArr = [];
@@ -1110,7 +955,7 @@ _bot_lean() //bot trying avoid obstacles by strafing
 		distl=distance(self getEye(),posl);
 		distr=distance(self getEye(),posr);
 		
-		if(distl < 32 && distr > 32)
+		if(distl < 48 && distr > 48)
 		{ 
 			//cl("22" + self.name + " leaning right");
 			
@@ -1119,7 +964,7 @@ _bot_lean() //bot trying avoid obstacles by strafing
 			self botAction("-leanright");
 			wait 1;
 		}
-		else if(distr < 32 && distl > 32)
+		else if(distr < 48 && distl > 48)
 		{ 
 			//cl("22" + self.name + " leaning left");
 			
@@ -1133,7 +978,7 @@ _bot_lean() //bot trying avoid obstacles by strafing
 	}
 }
 
-_bot_self_nav(direction, to)  //bot trying avoid obstacles by turning, not strafing
+_bot_self_nav(to)  //bot trying avoid obstacles by turning, not strafing
 {
 	self endon ( "disconnect" );
 	self endon( "intermission" );
@@ -1142,24 +987,19 @@ _bot_self_nav(direction, to)  //bot trying avoid obstacles by turning, not straf
 	
 	if(!self.isbot) { return; }
 	if(!isDefined(to)){ return; }
-	
-	//wait 0.5;
-	
+		
 	stop = undefined;
 	
-	self thread _bot_look_at(direction);
-	//thread _ping_marked_node(to);
+	self thread _bot_look_at(to.pos);
 	
-	cl(self.name + " is looking at " + direction);
-	
-	wait 1;
-	
+	//cl(self.name + " is looking at " + to.pos);
+		
 	while(isAlive(self) && !isDefined(stop))
 	{
 	
 		if(isDefined(stop)){ break; }
-		btpd = bulletTracePassed(self getEye(), to.pos, false, self);
-		if(btpd){ cl("btpd true"); break; }
+		//btpd = bulletTracePassed(self getEye(), to.pos, false, self);
+		//if(btpd){ break; }
 	
 		a = self GetPlayerAngles();
 		sp = self getEye();
@@ -1203,7 +1043,7 @@ _bot_self_nav(direction, to)  //bot trying avoid obstacles by turning, not straf
 			self botMoveTo(to.pos);	 
 			self _bot_look_at(to.pos);
 			
-			cl("bt: " + bt);
+			//cl("bt: " + bt);
 			stop = true;
 			
 			if(distance(bt, self getEye()) < 64)
@@ -1213,10 +1053,10 @@ _bot_self_nav(direction, to)  //bot trying avoid obstacles by turning, not straf
 			}
 
 		}	
-		else if(distf<32 && distr<32 && distl<32)
+		else if(distf<64 && distr<32 && distl<32)
 		{
 			btpd = bulletTracePassed(self getEye(), to.pos, false, self);
-			if(btpd){ cl("btpd true"); break; }
+			if(btpd){ break; }
 			self botMoveTo(self getEye());
 		 	self _bot_look_at(posrr);
 		 	cl("22" + self.name + " turning 180 degrees");
@@ -1877,7 +1717,7 @@ _bot_nodes_acm() //bot nodes accumulation
 				self botMoveTo(self getEye());	 
 				//self _bot_self_nav(wpt);
 				//self _bot_calc_path(_construct_node(self getEye()), wpt);
-				wait 5;
+				//wait 5;
 				//self _grid_create(self.wptArr[nr], self getEye()); 
 				break;
 			}
@@ -2176,7 +2016,7 @@ _add_remove_nodes(){
 					}
 					else if(hbr == true)
 					{					
-						//cl("hbr pos: " + objs[nr].pos);
+						cl("hbr pos: " + objs[nr].pos);
 						players = getentarray("player", "classname");
 						
 						for(i1=0;i1<players.size;i1++)
@@ -2185,7 +2025,7 @@ _add_remove_nodes(){
 							from = bot _construct_node(bot getEye());
 							to = bot _construct_node(objs[nr].pos);
 							
-							adj = bot _check_adjacent(bot getEye(), objs[nr].pos);
+							//adj = bot _check_adjacent(bot getEye(), objs[nr].pos);
 							//if(adj){ bot _bot_push_node(to); }
 						}
 					}
@@ -2605,13 +2445,14 @@ parseTokensIntoNodes( tokens )
 	return node;
 }
 
-_check_if_no_nodes(nodes)
+_check_if_no_nodes()
 {
-	if(!isDefined(nodes)){ 
+	if(!isDefined(level.nodes))
+	{ 
 		cl( "No nodes to load from file" ); 
 		return true; 
 	}
-	else if(nodes.size < 1) 
+	else if(level.nodes.size < 1) 
 	{ 
 		cl( "No nodes available in this map" ); 
 		return true; 
@@ -2628,10 +2469,9 @@ _load_nodes()
 	nodes = readNodesFromFile( mapname );
 	level.nodes = nodes;
 	
-	if(_check_if_no_nodes(level.nodes))
-	{ 
-		_toggle_ineedbots(1); 
-		return;
+	if(_check_if_no_nodes())
+	{  
+		return true;
 	}
 	
 	cl( "33Loaded " + nodes.size + " nodes from file." );
