@@ -5131,7 +5131,8 @@ Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDi
 	}
 	
 	self.deathTime = getTime();
-	perks = getPerks( attacker );
+	perks = undefined;
+	//perks = getPerks( attacker ); //got rid of perks [20250628]
 	
 	// let the player watch themselves die
 	wait ( 0.25 );
