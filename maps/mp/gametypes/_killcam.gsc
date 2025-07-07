@@ -38,8 +38,6 @@ killcam(
 	
 	//self scripts\menus::_create_menu_bg("hudWelcomeBG","CENTER","CENTER",0,0,400,400,(1,1,1),1,1,"black",50);
 	//self SetClientDvar("ui_ShowMenuOnly", "none");
-	//self _film_tweaks(1,0,"1 1 1","1 1 1",0.4,1,1);
-	self scripts\main::_film_tweaks(1,0.05,"1 0.6 0.6","1 0.6 0.6",0.6,1,1,0,1);
 
 	if(attackerNum < 0)
 		return;
@@ -112,9 +110,7 @@ killcam(
 	killcamoffset = camtime + predelay;
 	
 	self notify ( "begin_killcam", getTime() );
-	
-	self thread scripts\main::_flash("bright",1,0,0.1,1);
-	
+		
 	self.sessionstate = "spectator";
 	self.spectatorclient = attackerNum;
 	self.killcamentity = killcamentity;
@@ -179,22 +175,7 @@ killcam(
 
 	if ( !level.splitscreen )
 	{
-		if (isDefined(self.kb)){
-			self.kc_killedBy = createFontString( "objective", 2.0 );
-			if (level.console){ self.kc_killedBy setPoint( "BOTTOM", undefined, 0, -60 ); }
-			else { self.kc_killedBy setPoint( "BOTTOM", undefined, 0, -20 ); }
-			self.kc_killedBy.alpha = 0;
-			self.kc_killedBy.archived = false;
-			self.kc_killedBy.foreground = false;
-			self.kc_killedBy.fontscale = 1.4;
-			//self.kc_killedBy.alignX = "bottom";
-			//self.kc_killedBy.alignY = "right";
-			//self.kc_killedBy.horzAlign = "center_safearea";
-			//self.kc_killedBy.vertAlign = "bottom";
-			self.kc_killedBy settext(self.kb.name);
-			self thread scripts\menus::_show_hint_msg(self.kb.name,0.3,3,320,450,0,0,"left","middle",0,0,"objective",1.6,1.4,(1,1,1),1,(0.2,0.3,0.7),1,1,true,undefined);		
-		} 
-		else if ( !isdefined( self.kc_timer ) )
+		if ( !isdefined( self.kc_timer ) )
 		{
 			self.kc_timer = createFontString( "objective", 2.0 );
 			if ( level.console )
@@ -218,9 +199,12 @@ killcam(
 			self.kc_timer setTenthsTimer(camtime);
 		}
 		
-		//self showPerk( 0, perks[0], -10 );
-		//self showPerk( 1, perks[1], -10 );
-		//self showPerk( 2, perks[2], -10 );
+		if (getdvarint( "scr_showperksonspawn" ) == 1)
+		{
+			self showPerk( 0, perks[0], -10 );
+			self showPerk( 1, perks[1], -10 );
+			self showPerk( 2, perks[2], -10 );
+		}
 	}
 	
 	self thread spawnedKillcamCleanup();
@@ -270,19 +254,19 @@ endKillcam()
 	if(isDefined(self.kc_timer))
 		self.kc_timer.alpha = 0;
 	
-	if ( !level.splitscreen )
+	if (!level.splitscreen && getdvarint( "scr_showperksonspawn" ) == 1)
 	{
 		self hidePerk( 0 );
 		self hidePerk( 1 );
 		self hidePerk( 2 );
 	}
+	
 	self.killcam = undefined;
 	
 	self thread maps\mp\gametypes\_spectating::setSpectatePermissions();
 	if(isDefined(self.kc_killedBy)){ self.kc_killedBy destroy(); }
 	//self scripts\menus::destroy_bg("hudWelcomeBG","CENTER","CENTER",0,0,400,400,(1,1,1),1,1,"black",50);
 	self SetClientDvar("ui_ShowMenuOnly", "");
-	self scripts\main::_film_tweaks(0,0,"1 1 1","1 1 1",0.4,1,1,0,1.4);
 }
 
 spawnedKillcamCleanup()

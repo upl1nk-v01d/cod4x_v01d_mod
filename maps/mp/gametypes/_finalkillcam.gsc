@@ -43,7 +43,7 @@ beginFK()
         
         self notify ( "reset_outcome" );
         
-        self setClientDvars("cg_thirdperson", 1);
+        //self setClientDvars("cg_thirdperson", 1);
         
         if(level.TeamBased)
         {
@@ -64,9 +64,6 @@ finalkillcam( attacker, attackerNum, deathtime, victim)
     //print (victim getEntityNumber()+"\n");
     victimNum = victim getEntityNumber();
     
-    //self SetClientDvar("ui_ShowMenuOnly", "none");
-    self scripts\main::_film_tweaks(1,0.05,"1 0.6 0.6","1 0.6 0.6",0.6,1,1,0,1);
-
     camtime = 5;
     predelay = getTime()/1000 - deathTime;
     postdelay = 2;
@@ -77,7 +74,6 @@ finalkillcam( attacker, attackerNum, deathtime, victim)
     
     self notify ( "begin_killcam", getTime() );
     self.killcam = true;
-    self thread scripts\main::_flash("bright",1,0,0.1,1);
     
     self allowSpectateTeam("allies", true);
 	self allowSpectateTeam("axis", true);
@@ -98,13 +94,6 @@ finalkillcam( attacker, attackerNum, deathtime, victim)
     self.killcam = true;
     
     wait 0.05;
-    
-    if( !level.killcam_style ){
-    	self thread scripts\menus::_show_hint_msg("GAME WINNING KILL",0,3,320,50,0,0,"left","middle",0,0,"objective",3.6,3.6,(1,1,1),1,(0.2,0.3,0.7),1,1,true,undefined);
-    } else {
-    	self thread scripts\menus::_show_hint_msg("ROUND WINNING KILL",0,3,320,50,0,0,"left","middle",0,0,"objective",3.6,3.6,(1,1,1),1,(0.2,0.3,0.7),1,1,true,undefined);    
-    }
-    
     
     if(!isDefined(self.top_fk_shader))
     {
@@ -130,7 +119,6 @@ finalkillcam( attacker, attackerNum, deathtime, victim)
     
     self waittill("end_killcam");
     self.killcam = false;
-    self thread scripts\main::_flash("bright",1,0,0.1,1);
     
     self thread CleanFK();
     
@@ -165,10 +153,8 @@ CleanFK()
     self.top_fk_shader.alpha = 0;
     self.bottom_fk_shader.alpha = 0;
     self.credits.alpha = 0;
-    self setClientDvars("cg_thirdperson", 0);
     
     self SetClientDvar("ui_ShowMenuOnly", "");
-    self scripts\main::_film_tweaks(0,0,"1 1 1","1 1 1",0.4,1,1,0,1.4);
     
     visionSetNaked( "mpOutro", 1.0 );
 }
@@ -258,7 +244,6 @@ CreateFKMenu( victim , attacker)
     //self.credits.alpha = 0.2;
 
     //self.credits setText("^1Created by: ^2FzBr.^3d4rk");
-    self thread scripts\menus::_show_hint_msg(victim.name,0.3,3,320,440,0,0,"left","middle",0,0,"objective",2.6,2.6,(1,1,1),1,(0.2,0.3,0.7),1,1,true,undefined);
     //self.fk_title_low setText(victim.name);
     //self.fk_title_low setText("victim: " + victim.name);
     //self.fk_title_low setText(attacker.name + " killed " + victim.name);
@@ -271,33 +256,31 @@ CreateFKMenu( victim , attacker)
 
 onPlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psOffsetTime, deathAnimDuration)
 {
-    //if(attacker != self){
-        level.showFinalKillcam=true;
+	level.showFinalKillcam=true;
 
-        level.fckTimePassed=(gettime()-level.fckTime)/1000;
-        //cl("33level.fckTimePassed:"+level.fckTimePassed);
-        level.fckTime=gettime();
+	level.fckTimePassed=(gettime()-level.fckTime)/1000;
+	//cl("33level.fckTimePassed:"+level.fckTimePassed);
+	level.fckTime=gettime();
 
-        team = attacker.team;
-        if (!isDefined(team)) return;
-        
-        level.doFK[team] = true;
-        
-        if(level.teamBased)
-        {
-            level.KillInfo[team]["attacker"] = attacker;
-            level.KillInfo[team]["attackerNumber"] = attacker getEntityNumber();
-            level.KillInfo[team]["victim"] = self;
-            level.KillInfo[team]["deathTime"] = GetTime()/1000;
-        }
-        else
-        {
-            attacker.KillInfo["attacker"] = attacker;
-            attacker.KillInfo["attackerNumber"] = attacker getEntityNumber();
-            attacker.KillInfo["victim"] = self;
-            attacker.KillInfo["deathTime"] = GetTime()/1000;
-        }
-    //}
+	team = attacker.team;
+	if (!isDefined(team)) return;
+	
+	level.doFK[team] = true;
+	
+	if(level.teamBased)
+	{
+		level.KillInfo[team]["attacker"] = attacker;
+		level.KillInfo[team]["attackerNumber"] = attacker getEntityNumber();
+		level.KillInfo[team]["victim"] = self;
+		level.KillInfo[team]["deathTime"] = GetTime()/1000;
+	}
+	else
+	{
+		attacker.KillInfo["attacker"] = attacker;
+		attacker.KillInfo["attackerNumber"] = attacker getEntityNumber();
+		attacker.KillInfo["victim"] = self;
+		attacker.KillInfo["deathTime"] = GetTime()/1000;
+	}
 
     //print (attacker getEntityNumber()+"\n");
     //thread startFK (attacker.team);
@@ -381,12 +364,9 @@ endGame( winner, endReasonText )
 				
 				if ( level.teamBased ){
 					player thread maps\mp\gametypes\_hud_message::teamOutcomeNotify( winner, true, endReasonText );
-					//player thread scripts\menus::_show_hint_msg(endReasonText,1.7,2,320,70,0,0,"left","middle",0,0,"objective",1.6,2.6,(1,0.5,0.5),1,(0.2,0.3,0.7),1,1,true,true);
-					//player thread scripts\menus::_show_hint_msg(endReasonText,0,3,320,50,0,0,"left","middle",0,0,"objective",3.6,3.6,(1,1,1),1,(1,0.3,0.2),1,1,true);
 				}
 				else{
 					player thread maps\mp\gametypes\_hud_message::outcomeNotify( winner, endReasonText );
-					//player thread scripts\menus::_show_hint_msg(endReasonText,0,3,320,50,0,0,"left","middle",0,0,"objective",3.6,3.6,(1,1,1),1,(1,0.3,0.2),1,1,true);
 				}
 				player setClientDvars( /*"ui_hud_hardcore", 0,*/
 									   "cg_drawSpectatorMessages", 0,
