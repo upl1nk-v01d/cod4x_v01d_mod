@@ -1,31 +1,31 @@
-//
-cl(txt)
+color(color)
 {
-	//if (!getdvarint("developer")>0) { return; }
-	txt += "";
+	color = "^3";
 	
-	if(isDefined(txt) && txt.size > 0)
+	if(!isDefined(color)){ color = "^3"; }
+	
+	if(color == "white"){ color = "^0"; }
+	if(color == "red"){ color = "^1"; }
+	if(color == "green"){ color = "^2"; }
+	if(color == "yellow"){ color = "^3"; }
+	if(color == "darkblue"){ color = "^4"; }
+	if(color == "blue"){ color = "^5"; }
+	if(color == "violet"){ color = "^6"; }
+	if(color == "grey"){ color = "^7"; }
+	if(color == "darkgrey"){ color = "^8"; }
+	
+	return color;
+}
+
+cl(txt, color)
+{		
+	if(isDefined(txt) && txt != "" && txt.size > 0)
 	{ 
-		_txt="";
-		if(txt[0]!=txt[1])
-		{
-			print("^3-- "+txt+" -- \n"); 
-		} 
-		else if (txt[0]==txt[1])
-		{
-			for(i=2;i<txt.size;i++)
-			{
-				_txt+=txt[i];
-			}
-			print("^"+txt[0]+"-- "+_txt+" -- \n"); 
-		} 
-		else 
-		{
-			print("-- "+_txt+" -- \n"); 
-		}
-	}
-	else 
-	{ 
-		print("^1!! undefined !! \n"); 
+		c = "^3";
+		
+		if(!isDefined(color)){ c = color(); }
+		else{ c = color(color); }
+				
+		print(c + "-- " + txt + " -- \n"); 
 	}
 }
