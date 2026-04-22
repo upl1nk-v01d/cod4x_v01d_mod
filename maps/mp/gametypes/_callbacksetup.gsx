@@ -81,6 +81,14 @@ CodeCallback_PlayerLastStand(eInflictor, eAttacker, iDamage, sMeansOfDeath, sWea
 	[[level.callbackPlayerLastStand]](eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, timeOffset, deathAnimDuration );
 }
 
+/*================
+Called by code when a script defined command has been invoked.
+================*/
+/*CodeCallback_ScriptCommand(command, arguments)
+{
+    [[level.callbackScriptCommand]](command, arguments);
+}*/
+
 //=============================================================================
 
 /*================
@@ -112,6 +120,8 @@ SetDefaultCallbacks()
 	level.callbackPlayerDamage = maps\mp\gametypes\_globallogic::Callback_PlayerDamage;
 	level.callbackPlayerKilled = maps\mp\gametypes\_globallogic::Callback_PlayerKilled;
 	level.callbackPlayerLastStand = maps\mp\gametypes\_globallogic::Callback_PlayerLastStand;
+	
+	//level.callbackScriptCommand = scripts\player::Callback_ScriptCommand;
 }
 
 /*================

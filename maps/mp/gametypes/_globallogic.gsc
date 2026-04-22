@@ -5339,8 +5339,8 @@ Callback_PlayerLastStand( eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon,
 	self.lastStandParams.lastStandStartTime = gettime();
 	
 	//mayDoLastStand = mayDoLastStand( sWeapon, sMeansOfDeath, sHitLoc );
-	mayDoLastStand = true;
-	self.lastStand = true;
+	mayDoLastStand = false;
+	//self.lastStand = true;
 	/#
 	if ( getdvar("scr_forcelaststand" ) == "1" )
 		mayDoLastStand = true;
@@ -5349,7 +5349,7 @@ Callback_PlayerLastStand( eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon,
 	{
 		self.useLastStandParams = true;
 		self ensureLastStandParamsValidity();
-		//self suicide();
+		self suicide();
 		return;
 	}
 	

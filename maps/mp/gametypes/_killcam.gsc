@@ -36,7 +36,6 @@ killcam(
 	
 	if(self.isbot){ return; }
 	
-	//self scripts\menus::_create_menu_bg("hudWelcomeBG","CENTER","CENTER",0,0,400,400,(1,1,1),1,1,"black",50);
 	//self SetClientDvar("ui_ShowMenuOnly", "none");
 
 	if(attackerNum < 0)
@@ -208,7 +207,7 @@ killcam(
 	}
 	
 	self thread spawnedKillcamCleanup();
-	self thread endedKillcamCleanup();
+	//self thread endedKillcamCleanup();
 	self thread waitSkipKillcamButton();
 	self thread waitKillcamTime();
 

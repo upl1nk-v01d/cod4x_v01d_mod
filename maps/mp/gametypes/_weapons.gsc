@@ -1,6 +1,5 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
-#include scripts\cl;
 
 init()
 {
@@ -8,9 +7,6 @@ init()
 	// attachments are now shown here, they are per weapon settings instead
 	
 	// generating weaponIDs array
-	level.droppedItems=[];
-	level.droppedItemsCount=0;
-	level.claymoreActivateDelay=10;
 	level.weaponIDs = [];
 	max_weapon_num = 149;
 	attachment_num = 150;
@@ -69,35 +65,16 @@ init()
 		level.weaponlist[level.weaponlist.size] = level.weaponIDs[i];
 	}
 
-	level.skipPrecacheItems=[];
-	level.botsWeapons=[];	
-	if(!isDefined(level.precachedItemsNum)){ level.precachedItemsNum=0; } //first precache
-	if(isDefined(level.skipPrecacheItems)){
-		level.skipPrecacheItems=StrTok("defaultweapon_mp,m16_mp,m16_gl_mp,m16_acog_mp,m16_silencer_mp,m16_reflex_mp,m4_mp,mp5_acog_mp,mp5_reflex_mp,skorpion_silencer_mp,uzi_reflex_mp,uzi_silencer_mp,uzi_acog_mp,p90_acog_mp,p90_reflex_mp,aw50_mp,aw50_acog_mp,g3_acog_mp,g3_silencer_mp,m1014_grip_mp,rpd_acog_mp,rpd_grip_mp,rpd_reflex_mp,saw_acog_mp,saw_grip_mp,saw_reflex_mp,m60e4_reflex_mp,m40a3_acog_mp,remington700_mp,m4_acog_mp", "," ); // those weapons will be not available in-game
-		//level.skipPrecacheItems=StrTok("m16_mp,m16_reflex_mp,m16_silencer_mp,m16_acog_mp,m16_gl_mp,aw50_mp,aw50_acog_mp,barrett_mp,barrett_acog_mp,skorpion_silencer_mp,skorpion_acog_mp,skorpion_reflex_mp,uzi_reflex_mp,uzi_silencer_mp,uzi_acog_mp,ak74u_silencer_mp,ak74u_reflex_mp,ak74u_acog_mp,m14_reflex_mp,p90_reflex_mp,ak47_reflex_mp,g3_reflex_mp,g36c_reflex_mp,m4_reflex_mp,m1014_grip_mp,m1014_reflex_mp,winchester1200_grip_mp,winchester1200_reflex_mp,rpd_acog_mp,rpd_grip_mp,rpd_reflex_mp,saw_acog_mp,saw_grip_mp,saw_reflex_mp,m60e4_acog_mp,m60e4_grip_mp,m60e4_reflex_mp", "," ); // those weapons will be not available in-game
-	}
 	// based on weaponList array, precache weapons in list
 	for ( index = 0; index < level.weaponList.size; index++ )
 	{
-		skip=undefined;
-		for(j=0;j<level.skipPrecacheItems.size;j++){
-			if(level.skipPrecacheItems[j] == level.weaponList[index]){ 
-				skip=true;
-				//cl("33Skipped item precache: " + level.skipPrecacheItems[j]);
-				break;
-			}
-		}
-		if(isDefined(skip)){ continue; }
 		precacheItem( level.weaponList[index] );
-		level.botsWeapons[level.botsWeapons.size]=level.weaponList[index];
-		level.precachedItemsNum++;
-		//cl("Precached nr "+level.precachedItemsNum+" weapon: " + level.weaponList[index]);
-		//println( "Precached weapon: " + level.weaponList[index] );	
+		println( "Precached weapon: " + level.weaponList[index] );	
 	}
-	
-	precacheItem( "frag_grenade_short_mp" ); level.precachedItemsNum++;
 
-	precacheItem( "destructible_car" ); level.precachedItemsNum++;
+	precacheItem( "frag_grenade_short_mp" );
+	
+	precacheItem( "destructible_car" );	
 	
 	precacheModel( "weapon_rpg7_stow" );
 	
@@ -117,9 +94,6 @@ init()
 	
 	level.C4FXid = loadfx( "misc/light_c4_blink" );
 	level.claymoreFXid = loadfx( "misc/claymore_laser" );
-	
-	level.claymoreArray = []; 
-	level.claymoreID = 0;
 	
 	level thread onPlayerConnect();
 	
@@ -213,9 +187,6 @@ mayDropWeapon( weapon )
 {
 	if ( weapon == "none" )
 		return false;
-	
-	if ( weapon == "knife_mp" )
-		return false;
 		
 	if ( isHackWeapon( weapon ) )
 		return false;
@@ -230,7 +201,7 @@ mayDropWeapon( weapon )
 	return true;
 }
 
-dropWeaponForDeath( attacker, fullAmmo )
+dropWeaponForDeath( attacker )
 {
 	weapon = self.lastDroppableWeapon;
 	
@@ -288,7 +259,6 @@ dropWeaponForDeath( attacker, fullAmmo )
 	if ( stockAmmo > stockMax )
 		stockAmmo = stockMax;
 
-	
 	item = self dropItem( weapon );
 	/#
 	if ( getdvar("scr_dropdebug") == "1" )
@@ -297,17 +267,11 @@ dropWeaponForDeath( attacker, fullAmmo )
 	
 	self.droppedDeathWeapon = true;
 
-	if(isDefined(fullAmmo)){ item ItemWeaponSetAmmo( randomIntRange(0,clipAmmo), int(stockAmmo) ); }
-	else{ stockAmmo = int(stockAmmo/10)+1; item ItemWeaponSetAmmo( randomIntRange(0,clipAmmo), int(stockAmmo/10)+1 ); }
-	
+	item ItemWeaponSetAmmo( clipAmmo, stockAmmo );
 	item itemRemoveAmmoFromAltModes();
 	
 	item.owner = self;
 	item.ownersattacker = attacker;
-	item.ownersInventory = spawnStruct();
-	item.ownersInventory.weaponItemName = weapon;
-	item.ownersInventory.clipAmmo = clipAmmo;
-	item.ownersInventory.stockAmmo = stockAmmo;
 	
 	item thread watchPickup();
 	
@@ -338,15 +302,11 @@ watchPickup()
 {
 	self endon("death");
 	
-	if(getDvar("v01d_item_pickup_mode") == "1"){ self thread watchPickupNew(); return; }
-	
 	weapname = self getItemWeaponName();
 	
 	while(1)
 	{
 		self waittill( "trigger", player, droppedItem );
-		
-		//print( "^3picked up weapon: " + weapname + ", " + isdefined( self.ownersattacker ) + "\n" );
 		
 		if ( isdefined( droppedItem ) )
 			break;
@@ -381,167 +341,6 @@ watchPickup()
 	}
 }
 
-watchPickupNew(){
-	self endon("death");
-	
-	weapname = self getItemWeaponName();
-	//player = attacker;
-	droppedItem=self;
-	droppedItemsLimit = 5;
-	itemNewPos=droppedItem.origin;
-	itemOldPos=(0,0,0);
-	
-	while(isDefined(droppedItem) && isDefined(itemNewPos)){ 
-		if(itemNewPos != itemOldPos){ itemOldPos=itemNewPos; }
-		else{ break; }
-		wait 0.3;
-		itemNewPos=droppedItem.origin;
-	}
-	if(!isDefined(droppedItem)){ return; }	
-	
-	level.droppedItemsCount++;
-	level.droppedItems[level.droppedItemsCount] = spawnStruct();
-	level.droppedItems[level.droppedItemsCount].ent = spawn("script_model", droppedItem.origin);
-	level.droppedItems[level.droppedItemsCount].ent.targetname = "droppedItem"+level.droppedItemsCount;
-	level.droppedItems[level.droppedItemsCount].vis = getEnt("droppedItem"+level.droppedItemsCount, "targetname");
-	level.droppedItems[level.droppedItemsCount].vis setModel(droppedItem.model);
-	//level.droppedItems[level.droppedItemsCount].vis.origin = droppedItem.origin;
-	level.droppedItems[level.droppedItemsCount].vis.angles = droppedItem.angles;
-	level.droppedItems[level.droppedItemsCount].ent.waitTimerUnits = 0;
-	level.droppedItems[level.droppedItemsCount].ent.ownersInventory=droppedItem.ownersInventory;
-	//cl("level.droppedItemsCount: "+level.droppedItemsCount);
-	//cl("level.droppedItems.size: "+level.droppedItems.size);
-	//cl("item "+droppedItem.model+" is on ground");
-	//cl("item origin: "+droppedItem.origin);
-	//cl("item angles: "+droppedItem.angles);
-	//cl("item model: "+droppedItem.model);
-	//cl("item weapon: "+droppedItem.ownersInventory.weaponItemName);
-	
-	level.droppedItems[level.droppedItemsCount].ent thread watchDroppedItem();
-	
-	if(level.droppedItemsCount > droppedItemsLimit){ 
-		if(isDefined(level.droppedItems[level.droppedItemsCount - droppedItemsLimit].ent)){
-			ent = level.droppedItems[level.droppedItemsCount - (droppedItemsLimit-1)].ent;
-			index = level.droppedItemsCount - (droppedItemsLimit-1);
-			//cl("deleted item "+ent.model+" with index "+index);
-			if(isDefined(ent)){ ent delete(); }
-		}
-	}
-	
-	droppedItem delete(); // remove original dropped item
-}
-
-playerPickupItem(item){
-	self endon("death");
-
-	if(!isDefined(item.ownersInventory)){ return; }
-	if(isDefined(self.gettingItem)){ return; }
-	
-	pickupItemTime=1;
-	if(getDvarFloat("v01d_item_pickup_time") > 0){ pickupItemTime=getDvarFloat("v01d_item_pickup_time"); }
-
-	itemPickupTimerUnits=1000*pickupItemTime;
-	_itemPickupTimerUnits=itemPickupTimerUnits;
-	itemPickupTimerUnits=0;
-	maxItemPickupDist=48;
-	
-	while(isAlive(self) && isDefined(item.ownersInventory)){
-		weapon=item.ownersInventory.weaponItemName;
-		ammo=item.ownersInventory.clipAmmo;
-		//cl(self.name+" is searching an item "+weapon);
-		dist=undefined;
-		//self takeWeapon("briefcase_bomb_mp");
-		//self takeWeapon("briefcase_bomb_defuse_mp");
-		if(isDefined(item.origin)){
-			dist = distance(self.origin, item.origin);
-		}
-		if(isDefined(dist) && isDefined(weapon) && self UseButtonPressed() && !isSubStr(weapon,"briefcase_bomb")){
-			if(dist<maxItemPickupDist && item.waitTimerUnits<item.deleteTimerUnits && !isDefined(self.gettingItem)){ 
-				self thread scripts\main::_progress_bar(_itemPickupTimerUnits,0,1,"");
-				self.gettingItem=true;
-				//cl(self.name+" is picking up an item "+weapon);
-			}
-			if(itemPickupTimerUnits>_itemPickupTimerUnits && isDefined(self.gettingItem)){
-				weaponsList = self GetWeaponsList();
-				giveAnotherWeapon=undefined;
-				if(isDefined(weaponsList)){
-					c=0;
-					for(i=0;i<weaponsList.size;i++){
-						//cl("33"+weaponsList[i]);
-						if(isDefined(weaponsList[i])){
-							if (WeaponInventoryType(weaponsList[i]) == "primary"){
-								c++;
-							}
-						}
-					}
-					if(c>2){ self takeWeapon(self GetCurrentWeapon()); }
-					else{  }
-				}
-
-				self giveWeapon(weapon);
-				self switchToWeapon(weapon);
-				self SetWeaponAmmoClip(weapon, ammo);
-				self setWeaponAmmoStock(weapon, 0);
-				self playSound("weap_pickup");
-				self.inUse = false;
-				self.gettingItem=undefined;
-				item.waitTimerUnits=undefined;
-				item delete();
-				self notify("picked_weapon_from_ground");
-				wait 0.5;
-				//cl(self.name+" picked up an item");
-				break;
-			} else {
-				itemPickupTimerUnits+=100;
-			}
-			if(dist>=maxItemPickupDist || !isDefined(item) || !isAlive(self) || item.waitTimerUnits > item.deleteTimerUnits){
-				self.gettingItem=undefined;
-				self.inUse = false;
-				itemPickupTimerUnits=0;
-				break;
-			}
-		} else {
-			self.gettingItem=undefined;
-			self.inUse = false;
-			break;
-		}
-		wait 0.1;
-	}
-}
-
-watchDroppedItem(){
-	//self endon("death");
-	
-	//cl("item model: "+self.model);
-	//cl("item timeCreated: "+self.timeCreated);
-	
-	if(!isDefined(self.ownersInventory)){ return; }
-	self.deleteTimerUnits=100;
-	if(getDvarFloat("v01d_item_remove_time") > 0){ self.deleteTimerUnits=getDvarFloat("v01d_item_remove_time")*10; }
-	maxItemPickupDist=48;
-	self MoveZ(-2,self.deleteTimerUnits*0.1);
-	for(;;){
-		//if(!isAlive(self)){ return; }
-		if(!isDefined(self.waitTimerUnits) || !isDefined(self.deleteTimerUnits)){ return; }
-		if(self.waitTimerUnits > self.deleteTimerUnits){ 
-			//cl("deleted item:"+self.model);
-			self delete(); 
-			return;
-		}
-		else{ self.waitTimerUnits++; }
-		if(isDefined(self.origin)){
-			players = getentarray( "player", "classname" );
-			for(i=0;i<players.size;i++){
-				dist = distance(players[i].origin, self.origin);
-				if(dist<maxItemPickupDist && !isDefined(players[i].gettingItem)){
-					players[i] thread playerPickupItem(self);
-				}
-			}
-		}
-		wait 0.1;
-	}
-}
-
 itemRemoveAmmoFromAltModes()
 {
 	origweapname = self getItemWeaponName();
@@ -549,7 +348,7 @@ itemRemoveAmmoFromAltModes()
 	curweapname = weaponAltWeaponName( origweapname );
 	
 	altindex = 1;
-	while ( curweapname != "none" && curweapname != origweapname && altindex < 3 )
+	while ( curweapname != "none" && curweapname != origweapname )
 	{
 		self itemWeaponSetAmmo( 0, 0, altindex );
 		curweapname = weaponAltWeaponName( curweapname );
@@ -561,11 +360,11 @@ dropOffhand()
 {
 	grenadeTypes = [];
 	// no dropping of primary grenades.
-	grenadeTypes[grenadeTypes.size] = "frag_grenade_mp";
+	//grenadeTypes[grenadeTypes.size] = "frag_grenade_mp";
 	// no dropping of secondary grenades.
-	grenadeTypes[grenadeTypes.size] = "smoke_grenade_mp";
-	grenadeTypes[grenadeTypes.size] = "flash_grenade_mp";
-	grenadeTypes[grenadeTypes.size] = "concussion_grenade_mp";
+	//grenadeTypes[grenadeTypes.size] = "smoke_grenade_mp";
+	//grenadeTypes[grenadeTypes.size] = "flash_grenade_mp";
+	//grenadeTypes[grenadeTypes.size] = "concussion_grenade_mp";
 
 	for ( index = 0; index < grenadeTypes.size; index++ )
 	{
@@ -762,7 +561,7 @@ watchGrenadeUsage()
 	self.gotPullbackNotify = false;
 	
 	if ( getdvar("scr_deleteexplosivesonspawn") == "" )
-		setdvar("scr_deleteexplosivesonspawn", "0");
+		setdvar("scr_deleteexplosivesonspawn", "1");
 	if ( getdvarint("scr_deleteexplosivesonspawn") == 1 )
 	{
 		// delete c4 from previous spawn
@@ -917,18 +716,13 @@ watchClaymores()
 		self waittill( "grenade_fire", claymore, weapname );
 		if ( weapname == "claymore" || weapname == "claymore_mp" )
 		{
-			self.claymorearray[level.claymoreID] = claymore;
-			level.claymoreArray[level.claymoreID] = claymore;
-			claymore.ID = level.claymoreID;
-			level.claymoreID++;
-			claymore.trigger = claymore.origin;
-			claymore.activated = false;
+			self.claymorearray[self.claymorearray.size] = claymore;
 			claymore.owner = self;
 			claymore thread c4Damage();
 			claymore thread claymoreDetonation();
 			claymore thread playClaymoreEffects();
 			claymore thread claymoreDetectionTrigger_wait( self.pers["team"] );
-			//claymore maps\mp\_entityheadicons::setEntityHeadIcon(self.pers["team"], (0,0,20));
+			claymore maps\mp\_entityheadicons::setEntityHeadIcon(self.pers["team"], (0,0,20));
 			
 			/#
 			if ( getdvarint("scr_claymoredebug") )
@@ -1005,21 +799,17 @@ claymoreDetonation()
 	damagearea = spawn("trigger_radius", self.origin + (0,0,0-level.claymoreDetonateRadius), 0, level.claymoreDetonateRadius, level.claymoreDetonateRadius*2);
 	self thread deleteOnDeath( damagearea );
 	
-	wait level.claymoreActivateDelay;
-	self.activated = true;
-	self playsound ("claymore_activated");
-	
 	while(1)
 	{
 		damagearea waittill("trigger", player);
 		
-		/*if ( getdvarint("scr_claymoredebug") != 1 )
+		if ( getdvarint("scr_claymoredebug") != 1 )
 		{
 			if ( isdefined( self.owner ) && player == self.owner )
 				continue;
 			if ( !friendlyFireCheck( self.owner, player, 0 ) )
 				continue;
-		}*/
+		}
 		if ( lengthsquared( player getVelocity() ) < 10 )
 			continue;
 		
@@ -1035,10 +825,7 @@ claymoreDetonation()
 	wait level.claymoreDetectionGracePeriod;
 	
 	self maps\mp\_entityheadicons::setEntityHeadIcon("none");
-	self.detonated = true;
 	self detonate();
-	level.claymoreArray[self.ID].removed = true;
-	level.claymoreArray[self.ID] delete();
 }
 
 shouldAffectClaymore( claymore )
@@ -1483,8 +1270,6 @@ playClaymoreEffects()
 {
 	self endon("death");
 	
-	wait level.claymoreActivateDelay;
-	
 	while(1)
 	{
 		self waittillNotMoving();
@@ -1776,7 +1561,7 @@ updateStowedWeapon()
 				self.weapon_array_inventory[self.weapon_array_inventory.size] = weaponsList[idx];
 		}
 
-		//detach_all_weapons();
+		detach_all_weapons();
 		//stow_on_back();
 		//stow_on_hip();
 	}

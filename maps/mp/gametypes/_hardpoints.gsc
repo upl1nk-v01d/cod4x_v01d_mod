@@ -223,9 +223,7 @@ doArtillery(origin, owner, team)
 	/# level thread debugArtilleryDangerCenters(); #/
 	
 	callStrike( owner, targetpos, yaw );
-	
-	thread scripts\main::_bot_prone_when_danger(300,0,targetpos);
-	
+		
 	wait 8.5;
 	
 	found = false;
