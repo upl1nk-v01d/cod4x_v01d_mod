@@ -4,7 +4,7 @@ the mod files for cod4x provided by v01d
 
 -------------------------------------------
 
-updated 2025.06.21 v01d mod.ff, iwd and other mod files zipped at https://drive.google.com/drive/folders/186GyQw-vKV_bFqAfxdYtRPXcxtaSnoCb
+updated 2026.04.22 v01d mod.ff, iwd and other mod files zipped at https://drive.google.com/drive/folders/186GyQw-vKV_bFqAfxdYtRPXcxtaSnoCb
 
 installation:<br>
 1) in Google Drive you can right click on file 'cod4x_v01d_mod.zip' and click 'Download'.<br>
@@ -67,6 +67,37 @@ v01d_player_no_collision 24 //option to switch no collision for players certain 
 -------------------------------------------
 
 updates log:
+
+2026 04 16
+v01d bots using botWarfare waypoints;
+v01d bots crouch below obstacles
+
+2026 02 10
+[wip] v01d bots navigation is compatible 
+with botWarfare waypoints system
+
+2026 02 10
+bots can use radio
+bots can follow player
+
+2026 01 14
+killed player drops multiple items
+
+2026 01 13
+bots can be blinded with flashbangs
+
+2026 01 03
+added claymore hit by bullet
+
+2025 12 27
+optimized bots navigation
+fixed bots using hardpoints
+fixed bots not following leader
+fixed knifing system
+
+2025 07 09
+fixed lastStand headshot issue
+
 2025 06 13
 refurbished hardpoint code due to faulty code events
 
