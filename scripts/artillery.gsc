@@ -262,6 +262,5 @@ calculateDirection( pos )
 	}
 	
 	self thread startBarrage( pos, startLocation );
-	thread scripts\main::_bot_prone_when_danger(500,0,pos);
 }
 

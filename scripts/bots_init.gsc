@@ -9,17 +9,18 @@ init()
 {
 	if (getDvar("v01d_bots") != "1")
 	{
-		init_botwarfare();
+		//init_botwarfare();
 		
 		return;
 	}
 	
-	/*if(getDvar("v01d_dev") != "nav")
+	if(getDvarInt("developer") == 1 && getDvar("v01d_dev") != "nav")
 	{
 		setDvar("v01d_dev","nav");
 		setDvar("scr_game_spectatetype", "2"); 
-		exec("map mp_ancient_ultimate");
-	}*/
+		//exec("map mp_ancient_ultimate");
+		exec("map mp_broadcast");
+	}
 	
 	cl("v01d bots is active!");
 	//_toggle_ineedbots(0);
@@ -31,14 +32,27 @@ init()
 	level thread scripts\bots_navigation::init();
 	level thread scripts\bots_tactics::init();
 	
-	if(scripts\bots_navigation::_check_if_no_nodes())
+    level thread _player_connecting();
+    level thread _player_connected();
+
+	/*if(scripts\bots_navigation::_check_if_no_nodes())
 	{ 
 		init_botwarfare();
 		return; 
-	}
+	}*/
 	
-    level thread _player_connecting();
-    level thread _player_connected();
+	
+	//bot = level scripts\bots_utilities::bot_add("axis");
+	//bot = level scripts\bots_utilities::bot_add("allies");
+	
+	/*wait 5;
+	bot = level scripts\bots_utilities::bot_add("axis");
+	bot = level scripts\bots_utilities::bot_add("axis");
+	bot = level scripts\bots_utilities::bot_add("axis");
+	bot = level scripts\bots_utilities::bot_add("allies");
+	bot = level scripts\bots_utilities::bot_add("allies");
+	bot = level scripts\bots_utilities::bot_add("allies");
+	*/
 }
 
 _player_connecting()
@@ -61,7 +75,7 @@ _player_connected()
 	level endon ("disconnect");
 	level endon("intermission");
 	level endon("game_ended");
-		
+
 	for(;;)
 	{					
 		level waittill("connected", player);
@@ -70,23 +84,42 @@ _player_connected()
 		{
 			player AllowSpectateTeam("axis",true);
 			player AllowSpectateTeam("allies",true);
-		
-			bot = level scripts\bots_utilities::bot_add("axis");
-			bot = level scripts\bots_utilities::bot_add("axis");
+			
+			//bot = level scripts\bots_utilities::bot_add("axis");
+			//bot = level scripts\bots_utilities::bot_add("allies");
+						
 			bot = level scripts\bots_utilities::bot_add("axis");
 			bot = level scripts\bots_utilities::bot_add("allies");
+			bot = level scripts\bots_utilities::bot_add("axis");
 			bot = level scripts\bots_utilities::bot_add("allies");
+			bot = level scripts\bots_utilities::bot_add("axis");
 			bot = level scripts\bots_utilities::bot_add("allies");
+			
 			//wait 0.1;
 			//_teleport(bot, (2491.21, 1633.58, 56.1249));
-			
-			//level maps\mp\bots\_bot::add_bot("allies");
 		}
 
 		//player thread _bot_connected();
+		//player thread _dev_player_spawned();
 
 		wait 0.05;
 	}
+}
+
+_dev_player_spawned()
+{
+	//self endon( "death" );
+	self endon ( "disconnect" );
+	self endon( "intermission" );
+	level endon( "game_ended" );
+		
+	self waittill("spawned_player");	
+
+	if(self.isbot){ return; }
+	
+	cl("_dev_player_spawned(): " + self.name);
+
+	bot = level scripts\bots_utilities::bot_add(self.pers["team"]);
 }
 
 _dev_weapons()

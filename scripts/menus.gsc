@@ -98,6 +98,7 @@ _spawn_loop(){
 		
 		self thread _buy_menu_main();
 		//self thread _buy_menu_iterate();
+		self thread _destroy_buymenu();
 			
 		wait 1;
 		if(game["hasReadHintMessage"][self.name]==false){
@@ -720,22 +721,36 @@ _hint_msg_process(player,msgID,txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,colo
 	//wait 1;
 	//while(_a>0){
 	//self playLocalSound("cypher_start");
-	while(size>0 && !isDefined(stop)){
+	while(size>0 && !isDefined(stop))
+	{
+		if(!isDefined(player)){ return; }
+		
 		r=randomIntRange(0,blob.size);
 		//for(i=0;i<txt.size;i++){ if(txt[i] != " "){ txt[i]=" "; }}
 		//while(txt[r] == " " && r>0){ r--; }
 		//txt = StrRepl(txt,txt[r],blob[r]);
 		ntxt="";
-		for(i=0;i<size-1;i+=2){ ntxt+=txt[i]; ntxt+=txt[i+1]; }
-		ntxt+=blob[r];					//stop=true;
+		for(i = 0; i < size - 1; i += 2)
+		{ 
+			ntxt += txt[i]; 
+			ntxt += txt[i+1]; 
+		}
+		
+		ntxt += blob[r];					//stop=true;
 
 		hudHint[0]=ntxt;
 		
-		if(isDefined(self.override)){ 
-			if(self.override==true){
+		if(isDefined(self.override))
+		{ 
+			if(self.override==true)
+			{
 				a-=0.1;
-			} else if(self.override==false){
-			} else {
+			} 
+			else if(self.override==false)
+			{
+			} 
+			else 
+			{
 				//stop=true;
 			}
 		}
@@ -747,10 +762,10 @@ _hint_msg_process(player,msgID,txt,delay,dur,x,y,w,h,ax,ay,ox,oy,ft,fsz,fsc,colo
 		//if(a==_a){ wait dur; }
 		//if(a>0){ a-=0.1; }
 		wait 0.05;
-		size-=chre;
+		size -= chre;
 		//if(size == txt.size){ wait 1; }
 		player _destroy_menu("hudHint"+msgID); 
-		if(a<=0){ stop=true; }
+		if(a <= 0){ stop = true; }
 	}
 }
 
@@ -884,7 +899,7 @@ _welcome_msg(){
 	}
 	
 	self notify("hasReadWelcomeMsg");
-	cl("^2before waittill hasReadMOTD");
+	//cl("^2before waittill hasReadMOTD");
 	//self waittill("spawned_player");
 	wait 0.05;
 
@@ -1124,7 +1139,7 @@ _buy_menu_show(arr,prev,next,div){
 	//cl("^3_buy_menu_show div:"+div);
 	while(!isDefined(self.money)) { wait 0.5; }
 		
-	if(isAlive(self) && isDefined(self.buyMenuShow)){
+	if(isAlive(self) && isDefined(self.buyMenuShow) && !level.gameEnded){
 		sw=0; selector=1; selected=1;
 		curView = self getPlayerAngles();
 		pitch=curView[0];
@@ -1331,23 +1346,28 @@ _match_weapon_name(arr,name){
 	}
 }
 
-_buy_menu_main(){
+_buy_menu_main()
+{
 	self endon ( "disconnect" );
 	//self endon ( "death" );
 	self endon( "intermission" );
 	level endon( "game_ended" );
-	if (self.isbot){ return; }
-	//if (!getdvarint("developer")>0){ return; }
 	
-	self.buyMenuShow=undefined;
-	self.hasChosen=[];
+	if (self.isbot){ return; }
+		
+	while(!isAlive(self) || self.sessionstate == "spectator")
+	{ 
+		wait 0.1; 
+	}
+	
+	self.buyMenuShow = undefined;
+	self.hasChosen = [];
+	
 	while(!isDefined(self.money)) { wait 0.5; }
 	while(level.inPrematchPeriod){ wait 0.1; }
-	//wait 0.1;
-	//cl("^2spawned");
-	//while (game["state"] == "postgame" || level.gameEnded || !isAlive(self)) { wait 0.1; }
 	
-	buyMenuMain = StrTok("Pistols,SMGs,MGs,Rifles,Snipers,RPGs,GLs,Grenades,Explosives,Tools",",");
+	buyMenuMain = StrTok("Pistols,SMGs,MGs,Rifles,Snipers,RPGs,GLs,Grenades, Explosives,Tools", ",");
+	
 	buyMenuPistols = undefined;
 	buyMenuSMGs = undefined;
 	buyMenuMGs = undefined;
@@ -1360,8 +1380,10 @@ _buy_menu_main(){
 	buyMenuAmmo = undefined;
 	buyMenuTools = undefined;	
 
-	if(self.pers["team"] == "axis"){
-		buyMenuMain = StrTok("Pistols,SMGs,MGs,Rifles,Snipers,RPGs,GLs,Grenades,Tools",",");
+	if(self.pers["team"] == "axis")
+	{
+		buyMenuMain = StrTok("Pistols,SMGs,MGs,Rifles,Snipers,RPGs,GLs,Grenades,Tools", ",");
+		
 		//buyMenuAmmo = StrTok(self _buy_weapons_ammo(),",");
 		buyMenuPistols = StrTok("Beretta Silenced,138,beretta_silencer_mp,Desert Eagle,230,deserteagle_mp,Desert Eagle Gold,400,deserteaglegold_mp,RW1,450,winchester1200_grip_mp",",");
 		//buyMenuPistols = StrTok("Beretta Silenced,138,beretta_silencer_mp,Desert Eagle,230,deserteagle_mp,Desert Eagle Gold,400,deserteaglegold_mp,RW1,450,rw1_mp",",");
@@ -1375,15 +1397,18 @@ _buy_menu_main(){
 		//buyMenuGLs = StrTok("MM1,2400,mm1_mp",",");
 		buyMenuGrenades = StrTok("Frag Grenade,15,frag_grenade_mp",",");
 		buyMenuExplosives = StrTok("Claymore,100,claymore_mp,C4,400,c4_mp",",");
-		buyMenuTools = StrTok("Defuse Kit,75,tools_defkit",",");
+		buyMenuTools = StrTok("Defuse Kit,75,tools_defkit,UAV,2000,tools_uav,Airstrike,5000,tools_airstrike,Helicopter,7500,tools_helicopter,Artillery,10000,tools_artillery,",",");
 		//buyMenuGrenades = StrTok("Smoke Grenade,10,smoke_grenade_mp,Flash Grenade,20,flash_grenade_mp,Concussion Grenade,30,concussion_grenade_mp,Frag Grenade,40,frag_grenade_mp",",");
-	} else if (self.pers["team"] == "allies") {
+	} 
+	else if (self.pers["team"] == "allies") 
+	{
 		buyMenuMain = StrTok("Pistols,SMGs,MGs,Rifles,Snipers,RPGs,GLs,Grenades,Explosives,Tools",",");
+		
 		//buyMenuAmmo = StrTok(self _buy_weapons_ammo(),",");
 		buyMenuPistols = StrTok("Colt 45 Silenced,155,colt45_silencer_mp,USP Silenced,167,usp_silencer_mp",",");
 		buyMenuSMGs = StrTok("MP5,550,mp5_silencer_mp,G36C GL,630,g36c_gl_mp,UMP45,750,m60e4_grip_mp,P90,900,p90_silencer_mp",",");
 		buyMenuMGs = StrTok("M60E4,1600,m60e4_mp,Pytaek,2000,m60e4_acog_mp",",");
-		buyMenuRifles = StrTok("CZ805,800,ak74u_silencer_mp,Honeybadger,1000,g36c_reflex_mp,M4 GL,1200,m4_gl_mp,M21,1650,m21_mp,Striker,1800,winchester1200_reflex_mp,GPAS12,2200,m1014_reflex_mp",","); //M4 is automatic
+		buyMenuRifles = StrTok("CZ805,800,g36c_reflex_mp,Honeybadger,1000,ak74u_silencer_mp,M4 GL,1200,m4_gl_mp,M21,1650,m21_mp,Striker,1800,winchester1200_reflex_mp,GPAS12,2200,m1014_reflex_mp",","); //M4 is automatic
 		//buyMenuRifles = StrTok("M4 GL,1200,m4_gl_mp,M21,1650,m21_mp,Striker,1800,striker_mp",","); //M4 is automatic
 		buyMenuSnipers = StrTok("TAC330 Silenced,2300,ak47_silencer_mp,CHEYTAC M200,2800,remington700_acog_mp",",");
 		//buyMenuSnipers = StrTok("TAC330,2000,tac330_mp,TAC330 Silenced,2300,tac330_sil_mp",",");
@@ -1394,7 +1419,7 @@ _buy_menu_main(){
 		//buyMenuGLs = StrTok("MM1,3000,mm1_mp",",");
 		buyMenuGrenades = StrTok("Concussion Grenade,20,concussion_grenade_mp,Frag Grenade,35,frag_grenade_mp",",");
 		buyMenuExplosives = StrTok("Claymore,100,claymore_mp,C4,400,c4_mp",",");
-		buyMenuTools = StrTok("Defuse Kit,150,tools_defkit",",");
+		buyMenuTools = StrTok("Defuse Kit,75,tools_defkit,UAV,2000,tools_uav,Airstrike,5000,tools_airstrike,Helicopter,7500,tools_helicopter,Artillery,10000,tools_artillery,",",");
 	}
 	
 	//buyMenuTools = StrTok("test1,0,ak74u_reflex_mp,test2,0,ak74u_acog_mp,test3,0,ak74u_silencer_mp,test4,0,g36c_reflex,",",");
@@ -1404,52 +1429,102 @@ _buy_menu_main(){
 	//buyMenuTest = StrTok("test,0,ak74u_silencer_mp",",");
 	//cl(buyMenuMain[buyMenuMain.size-1]);
 
-	while(!isAlive(self) || self.sessionstate == "spectator"){ wait 0.1; }
-	//cl("^3self.spawnStartOrigin");
-	//while(isAlive(self) && !self UseButtonPressed()){ wait 0.05; }
 	wait 0.3;
 	
 	self DisableWeapons();
-	self.spawnStartOrigin=self.origin;
-	self.hasChosen[0]="buyMenuMain";
-	while(!level.gameEnded && !level.bombExploded && !level.slowMo && isAlive(self) && !isDefined(self.lastStand) && distance(self.spawnStartOrigin,self.origin)<32){
-		//if(!isDefined(self.hasChosen)){ self _buy_menu_show(buyMenuMain); cl("^3self.buyMenuMain"); }
-		if(isDefined(self.hasChosen)){
-			for(i=0;i<self.hasChosen.size;i++){
-				//cl("^3isDefined(self.hasChosen)");
-				if (self.hasChosen[i]=="buyMenuMain"){ self _buy_menu_show(buyMenuMain,"buyMenuMain",true,1); }
-				//else if (self.hasChosen[i]=="Ammo"){ self _buy_menu_show(buyMenuAmmo,"buyMenuMain",false,3); }
-				else if (self.hasChosen[i]=="Pistols"){ self _buy_menu_show(buyMenuPistols,"buyMenuMain",false,3); }
-				else if (self.hasChosen[i]=="SMGs"){ self _buy_menu_show(buyMenuSMGs,"buyMenuMain",false,3); }
-				else if (self.hasChosen[i]=="MGs"){ self _buy_menu_show(buyMenuMGs,"buyMenuMain",false,3); }
-				else if (self.hasChosen[i]=="Rifles"){ self _buy_menu_show(buyMenuRifles,"buyMenuMain",false,3); }
-				else if (self.hasChosen[i]=="Snipers"){ self _buy_menu_show(buyMenuSnipers,"buyMenuMain",false,3); }
-				else if (self.hasChosen[i]=="RPGs"){ self _buy_menu_show(buyMenuRPGs,"buyMenuMain",false,3); }
-				else if (self.hasChosen[i]=="GLs"){ self _buy_menu_show(buyMenuGLs,"buyMenuMain",false,3); }
-				else if (self.hasChosen[i]=="Grenades"){ self _buy_menu_show(buyMenuGrenades,"buyMenuMain",false,3); }
-				else if (self.hasChosen[i]=="Explosives"){ self _buy_menu_show(buyMenuExplosives,"buyMenuMain",false,3); }
-				else if (self.hasChosen[i]=="Tools"){ self _buy_menu_show(buyMenuTools,"buyMenuMain",false,3); }
-				else if (self.hasChosen[i]=="Test"){ self _buy_menu_show(buyMenuTools,"buyMenuMain",false,3); }
+	self.spawnStartOrigin = self.origin;
+	self.hasChosen[0] = "buyMenuMain";
+	
+	while
+	(
+		!level.gameEnded 
+		&& !level.bombExploded 
+		&& !level.slowMo 
+		&& isAlive(self) 
+		&& !isDefined(self.lastStand) 
+		&& distance(self.spawnStartOrigin, self.origin) < 32
+	)
+	{
+		if(isDefined(self.hasChosen))
+		{
+			for(i = 0 ;i < self.hasChosen.size; i++)
+			{
+				if(self.hasChosen[i] == "buyMenuMain")
+				{ 
+					self _buy_menu_show(buyMenuMain, "buyMenuMain", true, 1);
+				}
+				else if(self.hasChosen[i] == "Pistols")
+				{ 
+					self _buy_menu_show(buyMenuPistols, "buyMenuMain", false, 3);
+				}
+				else if(self.hasChosen[i] == "SMGs")
+				{
+					self _buy_menu_show(buyMenuSMGs, "buyMenuMain", false, 3); 
+				}
+				else if(self.hasChosen[i] == "MGs")
+				{ 
+					self _buy_menu_show(buyMenuMGs, "buyMenuMain", false, 3);
+				}
+				else if(self.hasChosen[i] == "Rifles")
+				{ 
+					self _buy_menu_show(buyMenuRifles, "buyMenuMain" ,false , 3); 
+				}
+				else if(self.hasChosen[i] == "Snipers")
+				{ 
+					self _buy_menu_show(buyMenuSnipers, "buyMenuMain", false ,3); 
+				}
+				else if(self.hasChosen[i] == "RPGs")
+				{ 
+					self _buy_menu_show(buyMenuRPGs, "buyMenuMain", false, 3);
+				}
+				else if(self.hasChosen[i] == "GLs")
+				{ 
+					self _buy_menu_show(buyMenuGLs, "buyMenuMain", false, 3);
+				}
+				else if(self.hasChosen[i] == "Grenades")
+				{ 
+					self _buy_menu_show(buyMenuGrenades, "buyMenuMain", false, 3); 
+				}
+				else if(self.hasChosen[i] == "Explosives")
+				{ 
+					self _buy_menu_show(buyMenuExplosives, "buyMenuMain", false, 3); 
+				}
+				else if(self.hasChosen[i] == "Tools")
+				{ 
+					self _buy_menu_show(buyMenuTools, "buyMenuMain", false, 3); 
+				}
+				else if(self.hasChosen[i] == "Test")
+				{ 
+					self _buy_menu_show(buyMenuTools, "buyMenuMain", false, 3); 
+				}
 			}
 		}
-		while(isDefined(self.buyMenuShow) && isDefined(self.hasChosen) && isAlive(self)){ 
-			if(distance(self.spawnStartOrigin,self.origin)>=16){ 
-				self.buyMenuShow=undefined;
+		
+		while
+		(
+			isDefined(self.buyMenuShow) 
+			&& isDefined(self.hasChosen) 
+			&& isAlive(self)
+		)
+		{ 
+			if(distance(self.spawnStartOrigin, self.origin) >= 16)
+			{ 
+				self.buyMenuShow = undefined;
 				//self SwitchToWeapon(weaponsList[0]);
 				//cl("33 outside of self.spawnStartOrigin");
 			}
-			//cl("^3self.spawnStartOrigin");
+
 			wait 0.05; 
 		}
-		//cl("^3self.buyMenuShowNext");
+
 		wait 0.05;
-		//while(isAlive(self) && self UseButtonPressed()){ wait 0.05; }
 	}
 					
 	self EnableWeapons();
+	self notify("buymenu_ended");
 	weaponsList = self GetWeaponsList();
 	
-	for(i = weaponsList.size-1; i >= 0; i--)
+	for(i = weaponsList.size - 1; i >= 0; i--)
 	{
 		weapon = weaponsList[i];
 		
@@ -1492,4 +1567,14 @@ _buy_menu_iterate(){
 		}
 		wait 1;
 	}
+}
+
+_destroy_buymenu()
+{
+	self endon ( "disconnect" );
+	self endon ( "death" );
+	self endon( "intermission" );
+	level endon( "game_ended" );
+
+	self.buyMenuShow = undefined;
 }
