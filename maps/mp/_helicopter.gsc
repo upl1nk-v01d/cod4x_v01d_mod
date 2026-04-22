@@ -572,11 +572,11 @@ heli_damage_monitor()
 		
 		heli_friendlyfire = maps\mp\gametypes\_weapons::friendlyFireCheck( self.owner, attacker );
 		// skip damage if friendlyfire is disabled
-		if( !heli_friendlyfire )
-			continue;
+		//if( !heli_friendlyfire )
+		//	continue;
 
-		if(	isDefined( self.owner ) && attacker == self.owner )
-			continue;
+		//if(	isDefined( self.owner ) && attacker == self.owner )
+		//	continue;
 		
 		if ( level.teamBased )
 			isValidAttacker = (isdefined( attacker.pers["team"] ) && attacker.pers["team"] != self.team);
@@ -690,56 +690,15 @@ heli_evasive()
 	self thread heli_fly( loop_startnode );
 }
 
-heli_crash_site(){
-		a = self.angles;
-		sp = self.origin;
-		affd = sp + anglesToForward((a[0]+40, a[1], a[2]))*9999;
-		btfd = bulletTrace(sp, affd, true, self);
-		posfd = btfd["position"];
-		
-		return posfd;
-}
-
-heli_crash_land(){
-	while(isDefined(self)){
-		a = self.angles;
-		sp = self.origin;
-		aff = sp + anglesToForward((a[0], a[1], a[2]))*256;
-		affd = sp + anglesToForward((a[0]+40, a[1], a[2]))*256;
-		btf = bulletTrace(sp, aff, true, self);
-		btfd = bulletTrace(sp, affd, true, self);
-		posf = btf["position"];
-		posfd = btfd["position"];
-		distf=distance(sp,posf);
-		distfd=distance(sp,posfd);
-		
-		//cl("distf: "+distf);
-		//cl("distfd: "+distfd);
-	
-		if(distf<99 || distfd<99){
-			self thread heli_explode();
-		}
-		wait 0.05;
-	}
-}
-
 // attach helicopter on crash path
 heli_crash()
 {
-	
 	self notify( "crashing" );
-	if(randomIntRange(0,5)>2){ 
-		wait 0.3; 
-		self thread heli_explode(); 
-		self notify( "death" );
-		return; 
-	}
-	//else{ self notify( "crashing" ); }
 	
 	// fly to crash path
-	//self thread heli_fly( level.heli_crash_paths[0] );
-	self thread heli_crash_fly(heli_crash_site());
-	self thread heli_crash_land();
+	self thread heli_fly( level.heli_crash_paths[0] );
+	//self thread heli_crash_fly(heli_crash_site());
+	//self thread heli_crash_land();
 	
 	// helicopter losing control and spins
 	self thread heli_spin( 180 );
@@ -758,21 +717,6 @@ heli_crash()
 	
 	self waittill( "destination reached" );
 	self thread heli_explode();
-}
-
-heli_crash_fly(pos){
-	self endon( "death" );
-	
-	// only one thread instance allowed
-	self notify( "flying");
-	self endon( "flying" );
-	
-	self.reached_dest = false;
-	heli_reset();
-	
-	//self setgoalyaw(self.angles[1]+randomFloatRange(-100,100));
-	self setvehgoalpos((pos), 0);
-
 }
 
 // self spin at one rev per 2 sec
