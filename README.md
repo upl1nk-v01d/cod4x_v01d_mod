@@ -16,6 +16,9 @@ installation:<br>
 linux server launch command example:<br>
 ./cod4x18_dedrun +set r_xassetnum xmodel=2300 material=4096 image=4000 loaded_sound=2400 weapon=256 +set net_port 28961 +set fs_game mods/v01d +exec server.cfg +exec sv_maps.cfg +exec sv_bots.cfg +exec sv_custom.cfg +set g_gametype sab +map mp_rotate
 
+windows server launch command example:<br>
+./cod4x18_dedrun.exe +loadplugin v01d_extrafunctions +set sv_noauth 1 +set r_xassetnum xmodel=2300 material=4096 image=4000 weapon=256 +set net_ip 127.0.0.1 +set net_port 28961 +set fs_game mods/v01d +exec server.cfg +exec sv_maps.cfg +exec sv_bots.cfg +exec sv_custom.cfg +set g_gametype sab +map mp_rotate
+
 client launch command example:<br>
 ./iw3mp.exe +set r_xassetnum xmodel=2300 material=4096 image=4000 loaded_sound=2400 weapon=256 +set net_port 28961 +set fs_game mods/v01d +exec server.cfg +exec sv_maps.cfg +exec sv_bots.cfg +exec sv_custom.cfg +set g_gametype sab +map mp_rotate
 
